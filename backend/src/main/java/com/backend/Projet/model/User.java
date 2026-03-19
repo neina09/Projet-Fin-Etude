@@ -45,6 +45,10 @@ public class User implements UserDetails {
 
     private boolean enabled;
 
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
     public User(String username, String email, String password) {
         this.username = username;
         this.email = email;
