@@ -4,6 +4,7 @@ import AuthForm from "./components/AuthForm"
 import Dashboard from "./components/Dashboard"
 import logo from "./assets/logo.png"
 import bg from "./assets/worker-bg.jpg"
+import BecomeWorker from "./components/BecomeWorker"
 import { Users, Wrench, Star } from "lucide-react"
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/dashboard" element={isLoggedIn ? <Dashboard /> : <Navigate to="/" />} />
+      <Route path="/become-worker" element={<BecomeWorker />} />
     </Routes>
   )
 }
@@ -21,14 +23,14 @@ function AuthPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="flex w-full h-screen">
+    <div className="flex w-full h-screen" dir="rtl">
 
-      {/* Left — Auth Form */}
+      {/* Right — Auth Form (يمين في RTL) */}
       <div className="w-full flex items-center justify-center lg:w-1/2 bg-gray-100">
         <AuthForm onLoginSuccess={() => navigate("/dashboard")} />
       </div>
 
-      {/* Right — Brand Panel */}
+      {/* Left — Brand Panel (يسار في RTL) */}
       <div
         className="hidden lg:flex w-1/2 h-full relative items-center justify-center bg-cover bg-center"
         style={{ backgroundImage: `url(${bg})` }}
@@ -45,23 +47,20 @@ function AuthPage() {
         />
 
         {/* Content */}
-        <div className="relative z-6 flex flex-col items-center gap-3 px-10 text-center">
+        <div className="relative z-10 flex flex-col items-center gap-3 px-10 text-center">
 
           {/* Logo */}
-          <img src={logo} alt="chghloni" className="w-16 h-16 object-contain" />
+          <img src={logo} alt="شغلني" className="w-16 h-16 object-contain" />
 
           {/* Name */}
           <div className="flex flex-col items-center gap-2">
-            <span
-              className="text-2xl font-black text-white leading-none"
-              style={{ fontFamily: "Georgia, serif" }}
-            >
-              chghloni
+            <span className="text-2xl font-black text-white leading-none" style={{ fontFamily: "'Cairo', sans-serif" }}>
+              شغلني
             </span>
             <div className="flex items-center gap-2 mt-1">
               <div className="w-2 h-2 rounded-full bg-[#FFB909]" />
-              <span className="text-sm font-bold uppercase tracking-[4px] text-white/50">
-                Recrutement
+              <span className="text-sm font-bold uppercase text-white/50" style={{ letterSpacing: '4px', fontFamily: "'Cairo', sans-serif" }}>
+                توظيف
               </span>
               <div className="w-2 h-2 rounded-full bg-[#FFB909]" />
             </div>
@@ -69,29 +68,29 @@ function AuthPage() {
 
           {/* Tagline */}
           <div>
-            <h2 className="text-3xl font-extrabold text-white leading-snug">
-              Connect with skilled
+            <h2 className="text-3xl font-extrabold text-white leading-snug" style={{ fontFamily: "'Cairo', sans-serif" }}>
+              تواصل مع عمال مهرة
             </h2>
-            <h2 className="text-3xl font-extrabold leading-snug">
-              <span className="text-[#FFB909]">workers</span>
-              <span className="text-white"> near you</span>
+            <h2 className="text-3xl font-extrabold leading-snug" style={{ fontFamily: "'Cairo', sans-serif" }}>
+              <span className="text-[#FFB909]">بالقرب</span>
+              <span className="text-white"> منك</span>
             </h2>
-            <p className="text-base text-white/45 mt-3 leading-relaxed max-w-sm">
-              Connect with skilled local workers — simple, fast, and reliable.
+            <p className="text-base text-white/45 mt-3 leading-relaxed max-w-sm" style={{ fontFamily: "'Cairo', sans-serif" }}>
+              تواصل مع عمال محليين مهرة — بسرعة وسهولة وموثوقية.
             </p>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 w-full">
             {[
-              { icon: Users,  value: "12K+", label: "Active Workers" },
-              { icon: Wrench, value: "850+", label: "Jobs Posted"    },
-              { icon: Star,   value: "4.8",  label: "Avg Rating"     },
+              { icon: Users,  value: "+12K", label: "عامل نشط"       },
+              { icon: Wrench, value: "+850", label: "وظيفة منشورة"   },
+              { icon: Star,   value: "4.8",  label: "متوسط التقييم"  },
             ].map(({ icon: Icon, value, label }) => (
               <div key={label} className="bg-white/10 border border-white/20 rounded-xl p-4">
                 <Icon size={20} className="text-[#FFB909] mb-3" />
-                <p className="text-white text-2xl font-bold">{value}</p>
-                <p className="text-white/40 text-sm mt-1">{label}</p>
+                <p className="text-white text-2xl font-bold" style={{ fontFamily: "'Cairo', sans-serif" }}>{value}</p>
+                <p className="text-white/40 text-sm mt-1" style={{ fontFamily: "'Cairo', sans-serif" }}>{label}</p>
               </div>
             ))}
           </div>

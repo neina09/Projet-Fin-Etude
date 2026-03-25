@@ -1,6 +1,7 @@
 package com.backend.Projet.service;
 
 import com.backend.Projet.dto.*;
+import com.backend.Projet.model.Role;
 import com.backend.Projet.model.User;
 import com.backend.Projet.repository.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -33,6 +34,7 @@ public class AuthenticationService {
             throw new RuntimeException("Email already in use");
         }
         User user = new User(input.getUsername(), input.getEmail(), passwordEncoder.encode(input.getPassword()));
+        user.setRole(Role.USER);
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);

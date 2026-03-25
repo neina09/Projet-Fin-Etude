@@ -5,25 +5,25 @@ import { useScrollAnimation } from "../hooks/useScrollAnimation"
 
 const testimonials = [
   {
-    name: "Ahmed Ould Salem",
-    role: "Homeowner",
-    text: "I found a plumber in less than 10 minutes! Incredible service, very professional.",
+    name: "أحمد ولد سالم",
+    role: "صاحب منزل",
+    text: "وجدت سباكاً في أقل من 10 دقائق! خدمة رائعة ومحترفة جداً.",
     rating: 5,
-    avatar: "AO",
+    avatar: "أو",
   },
   {
-    name: "Fatima Mint Cheikh",
-    role: "Business Owner",
-    text: "The workers are verified and reliable. I use Chghloni every week for my shop.",
+    name: "فاطمة منت الشيخ",
+    role: "صاحبة عمل",
+    text: "العمال موثوقون وموثقون. أستخدم شغلني كل أسبوع لمتجري.",
     rating: 5,
-    avatar: "FM",
+    avatar: "فم",
   },
   {
-    name: "Mohamed Lemine",
-    role: "Tasker",
-    text: "Since I joined as a Tasker, my income doubled. The platform is easy to use بسهولة.",
+    name: "محمد لمين",
+    role: "عامل مستقل",
+    text: "منذ انضمامي كعامل، تضاعف دخلي. المنصة سهلة الاستخدام للغاية.",
     rating: 5,
-    avatar: "ML",
+    avatar: "مل",
   },
 ]
 
@@ -31,7 +31,7 @@ function Testimonials() {
   const { ref, isVisible } = useScrollAnimation()
 
   return (
-    <section className="py-24 px-6 bg-white" ref={ref}>
+    <section className="py-24 px-6 bg-white" ref={ref} dir="rtl">
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
@@ -41,14 +41,17 @@ function Testimonials() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <p className="text-xs uppercase tracking-widest text-gray-400 mb-3">
-            Testimonials
+          <p className="text-xs uppercase tracking-widest text-gray-400 mb-3"
+            style={{ fontFamily: "'Cairo', sans-serif" }}>
+            آراء العملاء
           </p>
-          <h2 className="text-4xl font-extrabold text-[#004384]">
-            What People Say 💬
+          <h2 className="text-4xl font-extrabold text-[#004384]"
+            style={{ fontFamily: "'Cairo', sans-serif" }}>
+            ماذا يقول الناس 💬
           </h2>
-          <p className="text-gray-400 mt-3 max-w-md mx-auto text-sm">
-            Real reviews from real users who use Chghloni every day.
+          <p className="text-gray-400 mt-3 max-w-md mx-auto text-sm"
+            style={{ fontFamily: "'Cairo', sans-serif" }}>
+            تقييمات حقيقية من مستخدمين يستخدمون شغلني كل يوم.
           </p>
         </motion.div>
 
@@ -67,7 +70,7 @@ function Testimonials() {
               transition-colors duration-300"
             >
               {/* Big quote mark */}
-              <span className="absolute top-4 right-5 text-5xl font-black
+              <span className="absolute top-4 left-5 text-5xl font-black
                 text-gray-100 leading-none select-none">"</span>
 
               {/* Stars */}
@@ -85,7 +88,8 @@ function Testimonials() {
               </div>
 
               {/* Text */}
-              <p className="text-gray-600 text-sm leading-relaxed mb-6">
+              <p className="text-gray-600 text-sm leading-relaxed mb-6"
+                style={{ fontFamily: "'Cairo', sans-serif" }}>
                 "{t.text}"
               </p>
 
@@ -96,12 +100,15 @@ function Testimonials() {
                   className="w-9 h-9 rounded-full bg-[#004384]
                   flex items-center justify-center
                   text-xs font-bold text-white flex-shrink-0"
+                  style={{ fontFamily: "'Cairo', sans-serif" }}
                 >
                   {t.avatar}
                 </motion.div>
                 <div>
-                  <p className="text-sm font-semibold text-[#004384]">{t.name}</p>
-                  <p className="text-xs text-gray-400">{t.role}</p>
+                  <p className="text-sm font-semibold text-[#004384]"
+                    style={{ fontFamily: "'Cairo', sans-serif" }}>{t.name}</p>
+                  <p className="text-xs text-gray-400"
+                    style={{ fontFamily: "'Cairo', sans-serif" }}>{t.role}</p>
                 </div>
               </div>
 

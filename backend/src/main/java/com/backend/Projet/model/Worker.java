@@ -42,4 +42,14 @@ public class Worker {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    // بعد حقل user مباشرة
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private WorkerAvailability availability = WorkerAvailability.AVAILABLE;
+
+    @Column(name = "average_rating")
+    @Builder.Default
+    private double averageRating = 0.0;
 }

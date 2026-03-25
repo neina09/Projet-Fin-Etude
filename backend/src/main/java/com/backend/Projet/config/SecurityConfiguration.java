@@ -1,10 +1,10 @@
-// SecurityConfiguration.java
 package com.backend.Projet.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -18,7 +18,9 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfiguration {
+
     private final AuthenticationProvider authenticationProvider;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -36,8 +38,23 @@ public class SecurityConfiguration {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
+
+                        // ── Auth (public) ──────────────────────────────────────
                         .requestMatchers("/auth/**").permitAll()
+
+                        // ── Workers (GET public, reste authentifié) ────────────
+                        .requestMatchers(HttpMethod.GET,  "/api/workers").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/workers/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/workers/register").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/bookings").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/bookings/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/workers/admin/create/**").hasRole("ADMIN")
+
+                        // ── OPTIONS (CORS preflight) ───────────────────────────
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // ── Tout le reste nécessite une authentification ────────
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
