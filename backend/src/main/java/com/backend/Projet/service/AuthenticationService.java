@@ -8,10 +8,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class AuthenticationService {
@@ -29,7 +31,8 @@ public class AuthenticationService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User signup(RegisterUserDto input) {
+    @Transactional
+    public UserResponseDto signup(RegisterUserDto input) {
         if (userRepository.findByEmail(input.getEmail()).isPresent()) {
             throw new RuntimeException("Email already in use");
         }
@@ -39,7 +42,8 @@ public class AuthenticationService {
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
         sendVerificationEmail(user);
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        return toDto(saved);
     }
 
     public User authenticate(LoginUserDto input) {
@@ -54,6 +58,7 @@ public class AuthenticationService {
         return user;
     }
 
+    @Transactional
     public void verifyUser(VerifyUserDto input) {
         Optional<User> optionalUser = userRepository.findByEmail(input.getEmail());
         if (optionalUser.isPresent()) {
@@ -74,6 +79,7 @@ public class AuthenticationService {
         }
     }
 
+    @Transactional
     public void resendVerificationCode(String email) {
         Optional<User> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isPresent()) {
@@ -90,35 +96,34 @@ public class AuthenticationService {
         }
     }
 
-    // ← كود 6 أرقام بدلاً من UUID
+    @Transactional
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        String token = generateVerificationCode();
+        String token = UUID.randomUUID().toString();
         user.setResetPasswordToken(token);
         user.setResetPasswordExpiresAt(LocalDateTime.now().plusMinutes(15));
         userRepository.save(user);
-
+        // TODO: remplacer par un vrai envoi d'email via JavaMailSender
         System.out.println("==================================");
         System.out.println("RESET PASSWORD CODE: " + token);
         System.out.println("==================================");
     }
 
+    @Transactional
     public void resetPassword(ResetPasswordDto input) {
         User user = userRepository.findByResetPasswordToken(input.getToken())
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
-
         if (user.getResetPasswordExpiresAt().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Token has expired");
         }
-
         user.setPassword(passwordEncoder.encode(input.getNewPassword()));
         user.setResetPasswordToken(null);
         user.setResetPasswordExpiresAt(null);
         userRepository.save(user);
     }
 
+    @Transactional
     public void changePassword(User currentUser, ChangePasswordDto input) {
         if (!passwordEncoder.matches(input.getCurrentPassword(), currentUser.getPassword())) {
             throw new RuntimeException("Current password is incorrect");
@@ -127,16 +132,36 @@ public class AuthenticationService {
         userRepository.save(currentUser);
     }
 
-    public User updateProfile(User currentUser, UpdateProfileDto input) {
-        currentUser.setUsername(input.getUsername());
-        return userRepository.save(currentUser);
+    @Transactional
+    public UserResponseDto updateProfile(User currentUser, UpdateProfileDto input) {
+        if (input.getUsername() != null && !input.getUsername().isBlank()) {
+            currentUser.setUsername(input.getUsername());
+        }
+        if (input.getEmail() != null && !input.getEmail().isBlank()) {
+            if (userRepository.findByEmail(input.getEmail()).isPresent()) {
+                throw new RuntimeException("Email already in use");
+            }
+            currentUser.setEmail(input.getEmail());
+        }
+        User saved = userRepository.save(currentUser);
+        return toDto(saved);
     }
 
+    @Transactional
     public void deleteAccount(User currentUser) {
         userRepository.delete(currentUser);
     }
 
+    private UserResponseDto toDto(User user) {
+        return UserResponseDto.builder()
+                .id(user.getId())
+                .username(user.getName())
+                .email(user.getEmail())
+                .build();
+    }
+
     private void sendVerificationEmail(User user) {
+        // TODO: remplacer par un vrai envoi d'email via JavaMailSender
         System.out.println("==================================");
         System.out.println("VERIFICATION CODE: " + user.getVerificationCode());
         System.out.println("==================================");

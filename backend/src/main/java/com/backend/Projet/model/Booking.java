@@ -2,14 +2,16 @@ package com.backend.Projet.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
 @Entity
-@Table(name = "bookings")
+@Table(name = "bookings", indexes = {
+        @Index(name = "idx_booking_user_id",   columnList = "user_id"),
+        @Index(name = "idx_booking_worker_id", columnList = "worker_id"),
+        @Index(name = "idx_booking_status",    columnList = "status")
+})
 public class Booking {
 
     @Id
@@ -41,7 +43,7 @@ public class Booking {
     @Column
     private Double price;
 
-    @Builder.Default
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 }

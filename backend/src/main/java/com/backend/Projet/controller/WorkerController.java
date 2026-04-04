@@ -1,16 +1,17 @@
 package com.backend.Projet.controller;
 
+import com.backend.Projet.dto.WorkerRequestDto;
 import com.backend.Projet.dto.WorkerResponseDto;
 import com.backend.Projet.model.User;
-import com.backend.Projet.model.Worker;
 import com.backend.Projet.model.WorkerAvailability;
 import com.backend.Projet.service.JwtService;
 import com.backend.Projet.service.WorkerService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -20,20 +21,17 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/workers")
 @RequiredArgsConstructor
-@CrossOrigin("*")
 public class WorkerController {
 
     private final WorkerService workerService;
-    private final JwtService jwtService; // ← أضفنا هذا
+    private final JwtService jwtService;
 
-    // أي مستخدم مسجل يسجل نفسه كعامل
-    // بعد التسجيل نرجع token جديد يحتوي Role.WORKER
     @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> registerAsWorker(@RequestBody Worker workerData) {
-        User currentUser = getCurrentUser();
-        WorkerResponseDto worker = workerService.registerAsWorker(workerData, currentUser);
+    public ResponseEntity<Map<String, Object>> registerAsWorker(
+            @Valid @RequestBody WorkerRequestDto dto,
+            @AuthenticationPrincipal User currentUser) {
+        WorkerResponseDto worker = workerService.registerAsWorker(dto, currentUser);
 
-        // ← Token جديد بعد تغيير الدور
         String newToken = jwtService.generateToken(currentUser);
 
         Map<String, Object> response = new HashMap<>();
@@ -44,18 +42,24 @@ public class WorkerController {
         return ResponseEntity.ok(response);
     }
 
-    // Admin فقط
     @PostMapping("/admin/create/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<WorkerResponseDto> createWorker(
-            @RequestBody Worker worker,
+            @Valid @RequestBody WorkerRequestDto dto,
             @PathVariable Long userId) {
-        return ResponseEntity.ok(workerService.createWorker(worker, userId));
+        return ResponseEntity.ok(workerService.createWorker(dto, userId));
     }
 
     @GetMapping
     public ResponseEntity<List<WorkerResponseDto>> getAllWorkers() {
         return ResponseEntity.ok(workerService.getAllWorkers());
+    }
+
+    @GetMapping("/paged")
+    public ResponseEntity<Page<WorkerResponseDto>> getAllWorkersPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(workerService.getAllWorkersPaged(page, size));
     }
 
     @GetMapping("/available")
@@ -68,26 +72,27 @@ public class WorkerController {
         return ResponseEntity.ok(workerService.getWorkerById(id));
     }
 
-    // ← حذفنا @PreAuthorize لأن الـ Service يتحقق من isOwner/isAdmin
     @PutMapping("/{id}")
     public ResponseEntity<WorkerResponseDto> updateWorker(
             @PathVariable Long id,
-            @RequestBody Worker worker) {
-        return ResponseEntity.ok(workerService.updateWorker(id, worker, getCurrentUser()));
+            @Valid @RequestBody WorkerRequestDto dto,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(workerService.updateWorker(id, dto, currentUser));
     }
 
-    // ← حذفنا @PreAuthorize
     @PatchMapping("/{id}/availability")
     public ResponseEntity<WorkerResponseDto> updateAvailability(
             @PathVariable Long id,
-            @RequestParam WorkerAvailability availability) {
-        return ResponseEntity.ok(workerService.updateAvailability(id, availability, getCurrentUser()));
+            @RequestParam WorkerAvailability availability,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(workerService.updateAvailability(id, availability, currentUser));
     }
 
-    // ← حذفنا @PreAuthorize
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteWorker(@PathVariable Long id) {
-        workerService.deleteWorker(id, getCurrentUser());
+    public ResponseEntity<String> deleteWorker(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        workerService.deleteWorker(id, currentUser);
         return ResponseEntity.ok("Worker deleted successfully");
     }
 
@@ -99,10 +104,5 @@ public class WorkerController {
     @GetMapping("/address/{address}")
     public ResponseEntity<List<WorkerResponseDto>> getWorkersByAddress(@PathVariable String address) {
         return ResponseEntity.ok(workerService.getWorkersByAddress(address));
-    }
-
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return (User) authentication.getPrincipal();
     }
 }

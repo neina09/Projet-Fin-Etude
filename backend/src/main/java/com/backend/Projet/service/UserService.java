@@ -1,10 +1,9 @@
 package com.backend.Projet.service;
 
-import com.backend.Projet.model.User;
+import com.backend.Projet.dto.UserResponseDto;
 import com.backend.Projet.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -15,9 +14,14 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public List<User> allUsers() {
-        List<User> users = new ArrayList<>();
-        userRepository.findAll().forEach(users::add);
-        return users;
+    public List<UserResponseDto> allUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(user -> UserResponseDto.builder()
+                        .id(user.getId())
+                        .username(user.getName())
+                        .email(user.getEmail())
+                        .build())
+                .toList();
     }
 }

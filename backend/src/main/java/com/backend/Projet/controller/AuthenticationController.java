@@ -5,6 +5,7 @@ import com.backend.Projet.model.User;
 import com.backend.Projet.responses.LoginResponse;
 import com.backend.Projet.service.AuthenticationService;
 import com.backend.Projet.service.JwtService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,13 +22,13 @@ public class AuthenticationController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
-        User registeredUser = authenticationService.signup(registerUserDto);
+    public ResponseEntity<UserResponseDto> register(@Valid @RequestBody RegisterUserDto registerUserDto) {
+        UserResponseDto registeredUser = authenticationService.signup(registerUserDto);
         return ResponseEntity.ok(registeredUser);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
+    public ResponseEntity<LoginResponse> authenticate(@Valid @RequestBody LoginUserDto loginUserDto) {
         User authenticatedUser = authenticationService.authenticate(loginUserDto);
         String jwtToken = jwtService.generateToken(authenticatedUser);
         LoginResponse loginResponse = new LoginResponse(jwtToken, jwtService.getExpirationTime());
@@ -35,7 +36,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<?> verifyUser(@RequestBody VerifyUserDto verifyUserDto) {
+    public ResponseEntity<?> verifyUser(@Valid @RequestBody VerifyUserDto verifyUserDto) {
         try {
             authenticationService.verifyUser(verifyUserDto);
             return ResponseEntity.ok("Account verified successfully");
@@ -54,9 +55,8 @@ public class AuthenticationController {
         }
     }
 
-    // ← جديد
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordDto input) {
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordDto input) {
         try {
             authenticationService.forgotPassword(input.getEmail());
             return ResponseEntity.ok("Reset code sent");
@@ -65,9 +65,8 @@ public class AuthenticationController {
         }
     }
 
-    // ← جديد
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDto input) {
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordDto input) {
         try {
             authenticationService.resetPassword(input);
             return ResponseEntity.ok("Password reset successfully");

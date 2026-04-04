@@ -1,7 +1,10 @@
 package com.backend.Projet.service;
 
+import com.backend.Projet.dto.WorkerRequestDto;
 import com.backend.Projet.dto.WorkerResponseDto;
+import com.backend.Projet.exception.BusinessException;
 import com.backend.Projet.exception.ResourceNotFoundException;
+import com.backend.Projet.exception.UnauthorizedException;
 import com.backend.Projet.model.Role;
 import com.backend.Projet.model.User;
 import com.backend.Projet.model.Worker;
@@ -9,7 +12,12 @@ import com.backend.Projet.model.WorkerAvailability;
 import com.backend.Projet.repository.WorkerRepository;
 import com.backend.Projet.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -34,34 +42,52 @@ public class WorkerService {
                 .build();
     }
 
-    // أي مستخدم يسجل نفسه كعامل → يتحول دوره إلى WORKER
-    public WorkerResponseDto registerAsWorker(Worker workerData, User currentUser) {
+    @Transactional
+    public WorkerResponseDto registerAsWorker(WorkerRequestDto dto, User currentUser) {
         if (workerRepository.findByUserId(currentUser.getId()).isPresent()) {
-            throw new RuntimeException("You are already registered as a worker");
+            throw new BusinessException("You are already registered as a worker");
         }
 
         currentUser.setRole(Role.WORKER);
         userRepository.save(currentUser);
 
-        workerData.setUser(currentUser);
-        workerData.setAvailability(WorkerAvailability.AVAILABLE);
-        return toDto(workerRepository.save(workerData));
+        Worker worker = Worker.builder()
+                .name(dto.getName())
+                .phoneNumber(dto.getPhoneNumber())
+                .job(dto.getJob())
+                .address(dto.getAddress())
+                .salary(dto.getSalary())
+                .imageUrl(dto.getImageUrl())
+                .user(currentUser)
+                .availability(WorkerAvailability.AVAILABLE)
+                .build();
+
+        return toDto(workerRepository.save(worker));
     }
 
-    // إنشاء عامل من طرف ADMIN
-    public WorkerResponseDto createWorker(Worker worker, Long userId) {
+    @Transactional
+    public WorkerResponseDto createWorker(WorkerRequestDto dto, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (workerRepository.findByUserId(userId).isPresent()) {
-            throw new RuntimeException("This user is already registered as a worker");
+            throw new BusinessException("User is already registered as a worker");
         }
 
         user.setRole(Role.WORKER);
         userRepository.save(user);
 
-        worker.setUser(user);
-        worker.setAvailability(WorkerAvailability.AVAILABLE);
+        Worker worker = Worker.builder()
+                .name(dto.getName())
+                .phoneNumber(dto.getPhoneNumber())
+                .job(dto.getJob())
+                .address(dto.getAddress())
+                .salary(dto.getSalary())
+                .imageUrl(dto.getImageUrl())
+                .user(user)
+                .availability(WorkerAvailability.AVAILABLE)
+                .build();
+
         return toDto(workerRepository.save(worker));
     }
 
@@ -72,12 +98,19 @@ public class WorkerService {
                 .toList();
     }
 
+    public Page<WorkerResponseDto> getAllWorkersPaged(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return workerRepository.findAll(pageable)
+                .map(this::toDto);
+    }
+
     public WorkerResponseDto getWorkerById(Long id) {
         return toDto(workerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Worker not found")));
     }
 
-    public WorkerResponseDto updateWorker(Long id, Worker updatedWorker, User currentUser) {
+    @Transactional
+    public WorkerResponseDto updateWorker(Long id, WorkerRequestDto dto, User currentUser) {
         Worker worker = workerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
 
@@ -85,18 +118,19 @@ public class WorkerService {
         boolean isOwner = worker.getUser().getId().equals(currentUser.getId());
 
         if (!isAdmin && !isOwner) {
-            throw new RuntimeException("You are not allowed to update this worker");
+            throw new UnauthorizedException("You are not allowed to update this worker");
         }
 
-        worker.setName(updatedWorker.getName());
-        worker.setPhoneNumber(updatedWorker.getPhoneNumber());
-        worker.setJob(updatedWorker.getJob());
-        worker.setAddress(updatedWorker.getAddress());
-        worker.setSalary(updatedWorker.getSalary());
-        worker.setImageUrl(updatedWorker.getImageUrl());
+        worker.setName(dto.getName());
+        worker.setPhoneNumber(dto.getPhoneNumber());
+        worker.setJob(dto.getJob());
+        worker.setAddress(dto.getAddress());
+        worker.setSalary(dto.getSalary());
+        worker.setImageUrl(dto.getImageUrl());
         return toDto(workerRepository.save(worker));
     }
 
+    @Transactional
     public WorkerResponseDto updateAvailability(Long id, WorkerAvailability availability, User currentUser) {
         Worker worker = workerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
@@ -104,13 +138,14 @@ public class WorkerService {
         boolean isOwner = worker.getUser().getId().equals(currentUser.getId());
 
         if (!isOwner) {
-            throw new RuntimeException("You can only update your own availability");
+            throw new UnauthorizedException("You can only update your own availability");
         }
 
         worker.setAvailability(availability);
         return toDto(workerRepository.save(worker));
     }
 
+    @Transactional
     public void deleteWorker(Long id, User currentUser) {
         Worker worker = workerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
@@ -119,10 +154,9 @@ public class WorkerService {
         boolean isOwner = worker.getUser().getId().equals(currentUser.getId());
 
         if (!isAdmin && !isOwner) {
-            throw new RuntimeException("You are not allowed to delete this worker");
+            throw new UnauthorizedException("You are not allowed to delete this worker");
         }
 
-        // إعادة الدور إلى USER عند الحذف
         User workerUser = worker.getUser();
         workerUser.setRole(Role.USER);
         userRepository.save(workerUser);

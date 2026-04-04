@@ -20,7 +20,7 @@ import java.util.List;
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true, nullable = false)
@@ -46,7 +46,6 @@ public class User implements UserDetails {
 
     private boolean enabled;
 
-
     @Enumerated(EnumType.STRING)
     private Role role;
 
@@ -56,12 +55,16 @@ public class User implements UserDetails {
         this.password = password;
     }
 
+
+    public String getName() {
+        return this.username;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         if (role == null) return List.of();
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
-
 
     @Override
     public String getUsername() {

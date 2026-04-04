@@ -2,12 +2,14 @@ package com.backend.Projet.controller;
 
 import com.backend.Projet.dto.ChangePasswordDto;
 import com.backend.Projet.dto.UpdateProfileDto;
+import com.backend.Projet.dto.UserResponseDto;
 import com.backend.Projet.model.User;
 import com.backend.Projet.service.AuthenticationService;
 import com.backend.Projet.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,51 +26,53 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<User> authenticatedUser() {
-        User currentUser = getCurrentUser();
-        return ResponseEntity.ok(currentUser);
+    public ResponseEntity<UserResponseDto> authenticatedUser(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(UserResponseDto.builder()
+                .id(currentUser.getId())
+                .username(currentUser.getName())
+                .email(currentUser.getEmail())
+                .build());
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<User>> allUsers() {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserResponseDto>> allUsers() {
         return ResponseEntity.ok(userService.allUsers());
     }
 
-    // ← جديد
     @PutMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordDto input) {
+    public ResponseEntity<?> changePassword(
+            @Valid @RequestBody ChangePasswordDto input,
+            @AuthenticationPrincipal User currentUser) {
         try {
-            authenticationService.changePassword(getCurrentUser(), input);
+            authenticationService.changePassword(currentUser, input);
             return ResponseEntity.ok("Password changed successfully");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    // ← جديد
     @PutMapping("/update-profile")
-    public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileDto input) {
+    public ResponseEntity<?> updateProfile(
+            @Valid @RequestBody UpdateProfileDto input,
+            @AuthenticationPrincipal User currentUser) {
         try {
-            User updatedUser = authenticationService.updateProfile(getCurrentUser(), input);
+            UserResponseDto updatedUser = authenticationService.updateProfile(currentUser, input);
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    // ← جديد
     @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteAccount() {
+    public ResponseEntity<?> deleteAccount(
+            @AuthenticationPrincipal User currentUser) {
         try {
-            authenticationService.deleteAccount(getCurrentUser());
+            authenticationService.deleteAccount(currentUser);
             return ResponseEntity.ok("Account deleted successfully");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
-    }
-
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return (User) authentication.getPrincipal();
     }
 }

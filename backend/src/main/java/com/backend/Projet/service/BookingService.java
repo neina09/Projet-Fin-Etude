@@ -2,12 +2,15 @@ package com.backend.Projet.service;
 
 import com.backend.Projet.dto.BookingRequestDto;
 import com.backend.Projet.dto.BookingResponseDto;
+import com.backend.Projet.exception.BusinessException;
 import com.backend.Projet.exception.ResourceNotFoundException;
+import com.backend.Projet.exception.UnauthorizedException;
 import com.backend.Projet.model.*;
 import com.backend.Projet.repository.BookingRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,7 +25,7 @@ public class BookingService {
         return BookingResponseDto.builder()
                 .id(booking.getId())
                 .userId(booking.getUser().getId())
-                .userName(booking.getUser().getUsername())
+                .userName(booking.getUser().getName())
                 .workerId(booking.getWorker().getId())
                 .workerName(booking.getWorker().getName())
                 .workerJob(booking.getWorker().getJob())
@@ -35,17 +38,17 @@ public class BookingService {
                 .build();
     }
 
-    // المستخدم يحجز عاملاً
+    @Transactional
     public BookingResponseDto createBooking(BookingRequestDto input, User currentUser) {
         Worker worker = workerRepository.findById(input.getWorkerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
 
         if (worker.getAvailability() == WorkerAvailability.BUSY) {
-            throw new RuntimeException("Worker is not available");
+            throw new BusinessException("Worker is not available");
         }
 
         if (worker.getUser().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("You cannot book yourself");
+            throw new BusinessException("You cannot book yourself");
         }
 
         Booking booking = Booking.builder()
@@ -61,34 +64,31 @@ public class BookingService {
         return toDto(bookingRepository.save(booking));
     }
 
-    // المستخدم يرى حجوزاته
     public List<BookingResponseDto> getMyBookings(User currentUser) {
         return bookingRepository.findByUserId(currentUser.getId())
                 .stream().map(this::toDto).toList();
     }
 
-    // العامل يرى طلباته
     public List<BookingResponseDto> getMyRequests(User currentUser) {
         return bookingRepository.findByWorkerUserId(currentUser.getId())
                 .stream().map(this::toDto).toList();
     }
 
-    // العامل يقبل الطلب
+    @Transactional
     public BookingResponseDto acceptBooking(Long bookingId, User currentUser) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
         if (!booking.getWorker().getUser().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("Not authorized");
+            throw new UnauthorizedException("Not authorized");
         }
 
         if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new RuntimeException("Booking is not pending");
+            throw new BusinessException("Booking is not pending");
         }
 
         booking.setStatus(BookingStatus.ACCEPTED);
 
-        // العامل يصبح BUSY تلقائياً
         Worker worker = booking.getWorker();
         worker.setAvailability(WorkerAvailability.BUSY);
         workerRepository.save(worker);
@@ -96,39 +96,38 @@ public class BookingService {
         return toDto(bookingRepository.save(booking));
     }
 
-    // العامل يرفض الطلب
+    @Transactional
     public BookingResponseDto rejectBooking(Long bookingId, User currentUser) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
         if (!booking.getWorker().getUser().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("Not authorized");
+            throw new UnauthorizedException("Not authorized");
         }
 
         if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new RuntimeException("Booking is not pending");
+            throw new BusinessException("Booking is not pending");
         }
 
         booking.setStatus(BookingStatus.REJECTED);
         return toDto(bookingRepository.save(booking));
     }
 
-    // إتمام الحجز
+    @Transactional
     public BookingResponseDto completeBooking(Long bookingId, User currentUser) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
         if (!booking.getWorker().getUser().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("Not authorized");
+            throw new UnauthorizedException("Not authorized");
         }
 
         if (booking.getStatus() != BookingStatus.ACCEPTED) {
-            throw new RuntimeException("Booking is not accepted yet");
+            throw new BusinessException("Booking is not accepted yet");
         }
 
         booking.setStatus(BookingStatus.COMPLETED);
 
-        // العامل يصبح AVAILABLE مجدداً
         Worker worker = booking.getWorker();
         worker.setAvailability(WorkerAvailability.AVAILABLE);
         workerRepository.save(worker);
@@ -136,17 +135,17 @@ public class BookingService {
         return toDto(bookingRepository.save(booking));
     }
 
-    // المستخدم يلغي الطلب
+    @Transactional
     public BookingResponseDto cancelBooking(Long bookingId, User currentUser) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
         if (!booking.getUser().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("Not authorized");
+            throw new UnauthorizedException("Not authorized");
         }
 
         if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new RuntimeException("Can only cancel pending bookings");
+            throw new BusinessException("Can only cancel pending bookings");
         }
 
         booking.setStatus(BookingStatus.CANCELLED);

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom"
 import Navbar from "../components/Navbar"
 import Hero from "../components/Hero"
+import Problems from "../components/ProblemCard"
 import ServicesCards from "../components/ServicesCards"
 import FeaturedWorkers from "../components/FeaturedWorkers"
 import HowItWorks from "../components/HowItWorks"
@@ -16,6 +17,8 @@ function LandingPage() {
     <>
        <Navbar onLogin={() => navigate("/auth")} />
       <Hero />
+      <Problems />
+   
       <ServicesCards />
       <FeaturedWorkers /> 
       <HowItWorks />

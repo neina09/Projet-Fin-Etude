@@ -4,67 +4,64 @@ import com.backend.Projet.dto.BookingRequestDto;
 import com.backend.Projet.dto.BookingResponseDto;
 import com.backend.Projet.model.User;
 import com.backend.Projet.service.BookingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
-@CrossOrigin("*")
 public class BookingController {
 
     private final BookingService bookingService;
 
-    // المستخدم يحجز عاملاً
     @PostMapping
     public ResponseEntity<BookingResponseDto> createBooking(
-            @RequestBody BookingRequestDto input) {
-        return ResponseEntity.ok(bookingService.createBooking(input, getCurrentUser()));
+            @Valid @RequestBody BookingRequestDto input,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(bookingService.createBooking(input, currentUser));
     }
 
-    // المستخدم يرى حجوزاته
     @GetMapping("/my-bookings")
-    public ResponseEntity<List<BookingResponseDto>> getMyBookings() {
-        return ResponseEntity.ok(bookingService.getMyBookings(getCurrentUser()));
+    public ResponseEntity<List<BookingResponseDto>> getMyBookings(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(bookingService.getMyBookings(currentUser));
     }
 
-    // العامل يرى طلباته
     @GetMapping("/my-requests")
-    public ResponseEntity<List<BookingResponseDto>> getMyRequests() {
-        return ResponseEntity.ok(bookingService.getMyRequests(getCurrentUser()));
+    public ResponseEntity<List<BookingResponseDto>> getMyRequests(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(bookingService.getMyRequests(currentUser));
     }
 
-    // العامل يقبل
     @PatchMapping("/{id}/accept")
-    public ResponseEntity<BookingResponseDto> acceptBooking(@PathVariable Long id) {
-        return ResponseEntity.ok(bookingService.acceptBooking(id, getCurrentUser()));
+    public ResponseEntity<BookingResponseDto> acceptBooking(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(bookingService.acceptBooking(id, currentUser));
     }
 
-    // العامل يرفض
     @PatchMapping("/{id}/reject")
-    public ResponseEntity<BookingResponseDto> rejectBooking(@PathVariable Long id) {
-        return ResponseEntity.ok(bookingService.rejectBooking(id, getCurrentUser()));
+    public ResponseEntity<BookingResponseDto> rejectBooking(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(bookingService.rejectBooking(id, currentUser));
     }
 
-    // إتمام الحجز
     @PatchMapping("/{id}/complete")
-    public ResponseEntity<BookingResponseDto> completeBooking(@PathVariable Long id) {
-        return ResponseEntity.ok(bookingService.completeBooking(id, getCurrentUser()));
+    public ResponseEntity<BookingResponseDto> completeBooking(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(bookingService.completeBooking(id, currentUser));
     }
 
-    // المستخدم يلغي
     @PatchMapping("/{id}/cancel")
-    public ResponseEntity<BookingResponseDto> cancelBooking(@PathVariable Long id) {
-        return ResponseEntity.ok(bookingService.cancelBooking(id, getCurrentUser()));
-    }
-
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return (User) authentication.getPrincipal();
+    public ResponseEntity<BookingResponseDto> cancelBooking(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(bookingService.cancelBooking(id, currentUser));
     }
 }

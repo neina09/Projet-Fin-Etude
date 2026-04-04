@@ -46,6 +46,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET,  "/api/workers").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/workers/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/workers/register").authenticated()
+                        .requestMatchers(HttpMethod.GET,  "/api/ratings/worker/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/bookings/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/bookings").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/bookings/**").authenticated()
@@ -57,6 +58,7 @@ public class SecurityConfiguration {
                         // ── Tout le reste nécessite une authentification ────────
                         .anyRequest().authenticated()
                 )
+                
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
