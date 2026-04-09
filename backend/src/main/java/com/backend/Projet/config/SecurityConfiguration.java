@@ -51,6 +51,9 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/bookings").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/bookings/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/workers/admin/create/**").hasRole("ADMIN")
+                        
+                        // ── Tasks (GET public) ─────────────────────────────────
+                        .requestMatchers(HttpMethod.GET, "/api/tasks/open", "/api/tasks/open/**").permitAll()
 
                         // ── OPTIONS (CORS preflight) ───────────────────────────
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

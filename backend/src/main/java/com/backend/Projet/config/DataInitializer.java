@@ -17,10 +17,8 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-
-        // ✅ تحقق أولاً — إن كان موجود لا تنشئه مجدداً
         if (userRepository.findByEmail("admin@admin.com").isPresent()) {
-            return; // موجود مسبقاً — توقف هنا
+            return;
         }
 
         User admin = new User();
@@ -31,6 +29,6 @@ public class DataInitializer implements CommandLineRunner {
         admin.setEnabled(true);
 
         userRepository.save(admin);
-        System.out.println("✅ Admin created: admin@admin.com / admin123");
+        System.out.println("Admin created: admin@admin.com / admin123");
     }
 }

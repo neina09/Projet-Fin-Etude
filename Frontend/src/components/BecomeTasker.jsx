@@ -1,64 +1,56 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
+import workerBg from "../assets/worker-bg.jpg"
 
 function BecomeTasker() {
   const navigate = useNavigate()
 
   return (
-    <section dir="rtl" className="py-24 px-6 relative bg-gradient-to-br from-[#004384] via-[#003366] to-[#001f3f] text-white">
-      {/* Glow background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-72 h-72 bg-[#FFB909]/20 blur-3xl rounded-full"></div>
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-blue-500/20 blur-3xl rounded-full"></div>
-      </div>
-
-      <div className="relative max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-        {/* Right — text */}
-        <div>
-          <h2
-            className="text-4xl font-extrabold leading-tight mb-4"
-            style={{ fontFamily: "'Cairo', sans-serif" }}
-          >
-            كن عاملاً وابدأ الكسب 💼
-          </h2>
-          <p
-            className="text-gray-200 mb-6 max-w-md"
-            style={{ fontFamily: "'Cairo', sans-serif" }}
-          >
-            انضم إلى منصتنا وتواصل مع الأشخاص الذين يحتاجون إلى مهاراتك.
-            اعمل وفق جدولك الخاص وزد دخلك بسهولة.
-          </p>
-
-          {/* Features */}
-          <div className="space-y-3 mb-8">
-            {["ساعات عمل مرنة", "ابحث عن وظائف بسهولة", "ابنِ سمعتك ⭐"].map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <span className="text-[#FFB909]">✔</span>
-                <span style={{ fontFamily: "'Cairo', sans-serif" }}>{item}</span>
-              </div>
-            ))}
+    <section dir="rtl" className="py-12 md:py-14 bg-[#f8fafc]">
+      <div className="section-shell overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-[0_20px_60px_-30px_rgba(2,6,23,0.35)]">
+        <div className="grid md:grid-cols-2">
+          {/* Image */}
+          <div className="h-[460px] sm:h-[480px] md:h-[550px]">
+            <img
+              src={workerBg}
+              alt="عامل محترف"
+              className="w-full h-full object-cover"
+            />
           </div>
 
-          {/* ✅ يوجه إلى صفحة BecomeWorker */}
-          <button
-            onClick={() => navigate("/become-worker")}
-            className="bg-[#FFB909] text-[#004384] font-semibold px-6 py-3 rounded-xl
-              hover:bg-yellow-400 transition-all duration-300 shadow-lg hover:shadow-xl
-              hover:scale-105 active:scale-95"
-            style={{ fontFamily: "'Cairo', sans-serif" }}
-          >
-            كن عاملاً الآن
-          </button>
-        </div>
+          {/* Content */}
+          <div className="bg-[#003f88] text-white p-6 sm:p-8 md:p-10 flex flex-col justify-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black leading-tight mb-3">
+              كن عاملاً وابدأ الكسب
+            </h2>
 
-        {/* Left — image */}
-        <div className="relative group">
-          <img
-            src="https://images.unsplash.com/photo-1581092334651-ddf26d9a09d0?auto=format&fit=crop&w=800&q=80"
-            alt="عامل"
-            className="rounded-2xl shadow-2xl transform group-hover:scale-105 transition duration-500"
-          />
-          <div className="absolute -bottom-6 -left-6 w-40 h-40 bg-[#FFB909]/30 blur-3xl rounded-full"></div>
+            <p className="text-white/80 text-sm sm:text-base font-semibold mb-5 max-w-xl leading-relaxed">
+              انضم إلى منصتنا وتواصل مع الأشخاص الذين يحتاجون إلى مهاراتك.
+              اعمل وفق جدولك الخاص وزد دخلك بسهولة وبشكل مرن.
+            </p>
+
+            {/* Features */}
+            <div className="space-y-2.5 mb-6 text-sm sm:text-base font-bold">
+              {[
+                "ساعات عمل مرنة",
+                "ابحث عن وظائف بسهولة",
+                "ابنِ سمعتك ⭐"
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3">
+                  <span className="text-[#facc15] text-base">✓</span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Button */}
+            <button
+              onClick={() => navigate("/become-worker")}
+              className="w-fit h-11 px-6 rounded-2xl bg-[#facc15] text-[#0f2f5d] text-sm sm:text-base font-black hover:bg-yellow-300 transition-colors"
+            >
+              كن عاملاً الآن
+            </button>
+          </div>
         </div>
       </div>
     </section>

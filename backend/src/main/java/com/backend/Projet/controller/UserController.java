@@ -32,6 +32,7 @@ public class UserController {
                 .id(currentUser.getId())
                 .username(currentUser.getName())
                 .email(currentUser.getEmail())
+                .role(currentUser.getRole().name())
                 .build());
     }
 

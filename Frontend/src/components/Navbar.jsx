@@ -1,74 +1,37 @@
-import React, { useEffect, useState } from 'react'
-import logo from '../assets/logo.png'
+import React from "react"
+import logo from "../assets/logo.png"
 
 function Navbar({ onLogin }) {
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    setTimeout(() => setLoaded(true), 100)
-  }, [])
-
   return (
-    <div dir="rtl" className="flex items-center justify-between px-16 py-5 bg-[#FCFDFE] sticky top-0 z-50 shadow-sm border-b border-[#004384]/20">
-
-      {/* Logo */}
-      <div className={`flex items-center gap-4 transition-all duration-700 ${loaded ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
-        <div className="flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center">
-          <img
-            src={logo}
-            alt="logo"
-            className="w-16 h-16 object-contain hover:scale-110 transition-transform duration-300"
-          />
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-3xl font-black leading-none tracking-tight" style={{ fontFamily: 'Georgia, serif', color: '#004384' }}>
-            شغلني
-          </span>
-          <div className="flex items-center gap-1.5 mt-1">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#FFB909' }} />
-            <span className="text-xs font-bold uppercase opacity-50" style={{ color: '#004384', letterSpacing: '4px', fontFamily: "'Cairo', sans-serif" }}>
-              توظيف
-            </span>
-            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#FFB909' }} />
+    <header dir="rtl" className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/45 backdrop-blur-xl">
+      <div className="section-shell flex items-center justify-between py-4">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+            <img src={logo} alt="Shghlni" className="h-9 w-9 object-contain" />
+          </div>
+          <div>
+            <p className="text-xl font-black text-white leading-none">شغلني</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-200">Professional</p>
           </div>
         </div>
+
+        <nav className="hidden md:flex items-center gap-2 text-sm font-bold text-white/90">
+          <a href="#services" className="px-4 py-2 rounded-full hover:bg-white/10 transition-colors">الخدمات</a>
+          <a href="#workers" className="px-4 py-2 rounded-full hover:bg-white/10 transition-colors">كيف يعمل</a>
+          <a href="#marketplace" className="px-4 py-2 rounded-full hover:bg-white/10 transition-colors">انضم كعامل</a>
+          <a href="#testimonials" className="px-4 py-2 rounded-full hover:bg-white/10 transition-colors">المساعدة</a>
+        </nav>
+
+        <div className="flex items-center gap-2">
+          <button onClick={onLogin} className="hidden sm:inline-flex px-4 py-2 text-sm font-bold text-white rounded-full hover:bg-white/10 transition-colors">
+            تسجيل الدخول
+          </button>
+          <button onClick={onLogin} className="h-11 px-5 rounded-xl text-sm font-black bg-yellow-400 text-blue-900 hover:bg-yellow-300 transition-colors">
+            أنشئ حسابا
+          </button>
+        </div>
       </div>
-
-      {/* Nav Links */}
-      <ul className={`flex items-center gap-10 list-none m-0 p-0 transition-all duration-700 delay-200 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-        {[
-          { label: 'الخدمات',    href: '#' },
-          { label: 'كيف يعمل',  href: '#' },
-          { label: 'كن عاملاً', href: '#' },
-          { label: 'المساعدة',  href: '#' },
-        ].map((item) => (
-          <li key={item.label}>
-            <a href={item.href} className="text-sm font-medium no-underline text-[#004384] hover:text-[#FFB909] transition-colors duration-200" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              {item.label}
-            </a>
-          </li>
-        ))}
-      </ul>
-
-      {/* Auth Buttons */}
-      <div className={`flex items-center gap-3 transition-all duration-700 delay-300 ${loaded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
-        <button
-          onClick={onLogin}
-          className="text-sm font-semibold text-[#004384] border border-[#004384] px-5 py-2 rounded-full cursor-pointer hover:bg-[#004384] hover:text-[#FCFDFE] transition-all duration-200"
-          style={{ fontFamily: "'Cairo', sans-serif" }}
-        >
-          تسجيل الدخول
-        </button>
-        <button
-          onClick={onLogin}
-          className="text-sm font-semibold px-5 py-2 rounded-full border-none cursor-pointer bg-[#FFB909] text-[#004384] hover:bg-[#004384] hover:text-[#FCFDFE] transition-all duration-200"
-          style={{ fontFamily: "'Cairo', sans-serif" }}
-        >
-          إنشاء حساب
-        </button>
-      </div>
-
-    </div>
+    </header>
   )
 }
 

@@ -20,6 +20,7 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final WorkerRepository workerRepository;
+    private final NotificationService notificationService;
 
     private BookingResponseDto toDto(Booking booking) {
         return BookingResponseDto.builder()
@@ -61,7 +62,16 @@ public class BookingService {
                 .status(BookingStatus.PENDING)
                 .build();
 
-        return toDto(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+
+        // Notify Worker
+        notificationService.sendNotification(
+                worker.getUser(),
+                "You have a new booking request from " + currentUser.getName(),
+                NotificationType.BOOKING_REQUEST
+        );
+
+        return toDto(saved);
     }
 
     public List<BookingResponseDto> getMyBookings(User currentUser) {
@@ -93,7 +103,16 @@ public class BookingService {
         worker.setAvailability(WorkerAvailability.BUSY);
         workerRepository.save(worker);
 
-        return toDto(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+
+        // Notify User
+        notificationService.sendNotification(
+                booking.getUser(),
+                "Your booking with " + booking.getWorker().getName() + " has been accepted",
+                NotificationType.BOOKING_ACCEPTED
+        );
+
+        return toDto(saved);
     }
 
     @Transactional
@@ -110,7 +129,17 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.REJECTED);
-        return toDto(bookingRepository.save(booking));
+        
+        Booking saved = bookingRepository.save(booking);
+
+        // Notify User
+        notificationService.sendNotification(
+                booking.getUser(),
+                "Your booking with " + booking.getWorker().getName() + " was rejected",
+                NotificationType.BOOKING_REJECTED
+        );
+
+        return toDto(saved);
     }
 
     @Transactional

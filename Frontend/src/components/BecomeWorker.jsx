@@ -1,11 +1,11 @@
 import React, { useState } from "react"
-import { CheckCircle, Zap, Shield, Clock, TrendingUp, BadgeCheck } from "lucide-react"
+import { CheckCircle, Zap, Shield, Clock, TrendingUp, BadgeCheck, ArrowLeft, Briefcase, MapPin } from "lucide-react"
 
 const SPECIALTIES = ["سباك", "كهربائي", "دهان", "تنظيف"]
 const SPEC_ICON   = { "سباك": "🔧", "كهربائي": "⚡", "دهان": "🎨", "تنظيف": "✦" }
 
 export default function BecomeWorker() {
-  const [form, setForm]       = useState({ name: "", specialty: "", price: "", phone: "" })
+  const [form, setForm]       = useState({ name: "", specialty: "", price: "", phone: "", address: "" })
   const [done, setDone]       = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -20,238 +20,194 @@ export default function BecomeWorker() {
     setDone(true)
   }
 
-  /* ── شاشة النجاح ── */
+  /* ── شاشة النجاح (2026 Edition) ── */
   if (done) return (
-    <div dir="rtl" style={S.page}>
-      <div style={S.succWrap}>
-        <div style={S.succRing}>
-          <CheckCircle size={36} color="#1558F6" />
+    <div className="min-h-[85vh] flex items-center justify-center p-6 relative">
+      {/* Background glow */}
+      <div className="absolute w-[600px] h-[600px] bg-[#00F0FF]/10 rounded-full blur-[150px] pointer-events-none" />
+      
+      <div className="glass-squircle p-12 max-w-lg w-full text-center relative z-10 z-[1] bg-white/90">
+        <div className="w-24 h-24 bg-[#00F0FF]/10 text-[#00F0FF] rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner relative overflow-hidden">
+           <div className="absolute inset-0 bg-[#00F0FF]/5 rounded-full animate-ping" />
+           <CheckCircle size={48} className="relative z-10 text-[#00B0FF]" />
         </div>
-        <h2 style={S.succTitle}>تم إرسال طلبك!</h2>
-        <p style={S.succSub}>
-          سنراجع ملفك الشخصي ونتواصل معك خلال 24 ساعة. مرحباً بك في شبكة شغّلني.
+        <h2 className="text-3xl font-black text-[#1E293B] mb-4">تم تسجيل البيانات!</h2>
+        <p className="text-[#64748B] font-semibold leading-relaxed mb-10 text-sm">
+          أنت الآن بصدد الانضمام للجيل القادم من المحترفين. سنقوم بمعالجة ردارك الشخصي والتواصل معك عبر المنصة فوراً.
         </p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="btn-2026 w-full text-lg shadow-lg"
+        >
+          العودة لوحدة التحكم
+        </button>
       </div>
     </div>
   )
 
   /* ── النموذج ── */
   return (
-    <div dir="rtl" style={S.page}>
-      <div style={S.wrapper}>
-
-        {/* بانر علوي */}
-        <div style={S.hero}>
-          <div style={S.heroText}>
-            <h2 style={S.heroTitle}>ابدأ الكسب مع شغّلني</h2>
-            <p style={S.heroSub}>
-              انضم إلى مئات المحترفين الموثوقين. تواصل مع عملاء يبحثون عن مهاراتك —
-              وفق جدولك الخاص.
+    <div className="max-w-7xl mx-auto py-12 px-6 lg:px-10">
+      
+      {/* بانر علوي (Hero 2026) */}
+      <div className="relative overflow-hidden bg-[#070B19] text-white p-10 lg:p-16 mb-12 shadow-[0_30px_60px_-15px_rgba(112,0,255,0.3)] rounded-[3rem]">
+        
+        {/* Futuristic FX */}
+        <div className="absolute top-0 start-0 w-[800px] h-[800px] bg-[#7000FF]/30 rounded-full blur-[150px] pointer-events-none mix-blend-screen opacity-50" />
+        <div className="absolute bottom-0 end-0 w-[600px] h-[600px] bg-[#00F0FF]/25 rounded-full blur-[120px] pointer-events-none mix-blend-screen opacity-50" />
+        <div className="absolute inset-0 opacity-[0.1]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)", backgroundSize: "64px 64px" }} />
+        
+        <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <span className="inline-block px-5 py-2 bg-white/10 backdrop-blur-md rounded-full text-xs font-black tracking-widest mb-6 border border-[#00F0FF]/30 text-[#00F0FF] shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+              ✦ نظام الارتقاء المهني
+            </span>
+            <h1 className="text-4xl lg:text-6xl font-black leading-[1.1] mb-6 drop-shadow-md tracking-tight">
+              حوّل مهاراتك الفردية إلى <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00F0FF] to-[#7000FF]">عائد مالي مستدام</span>
+            </h1>
+            <p className="text-lg text-white/70 font-semibold leading-relaxed mb-10 max-w-lg">
+              شبكة المستقبل تبحث عنك. تواصل مع مئات العملاء الجاهزين باستخدام خوارزميات التوصيل الجغرافي الفورية.
             </p>
+            
+            <div className="flex flex-wrap gap-8">
+              {[
+                { em: "⚡", t: "أرباح مضاعفة 3×", s: "معدلات استثنائية دون وسطاء" },
+                { em: "🌐", t: "توصيل جغرافي دقيق", s: "خوارزميات تحدد الأقرب إليك" },
+                { em: "🔐", t: "عقود ذكية آمنة", s: "مستحقاتك المشفرة آمنة دائماً" },
+              ].map(({em, t, s}) => (
+                <div key={t} className="flex items-center gap-4 bg-white/5 p-3 pr-4 rounded-2xl border border-white/5 backdrop-blur-md transition-all hover:bg-white/10">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7000FF] to-[#00F0FF] flex items-center justify-center text-lg shadow-inner">{em}</div>
+                  <div>
+                    <div className="text-sm font-black">{t}</div>
+                    <div className="text-[10px] text-[#00F0FF] font-bold uppercase tracking-wider">{s}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+          
+          <div className="hidden lg:flex justify-end relative">
+             <div className="absolute w-[300px] h-[300px] bg-[#00F0FF]/20 rounded-full blur-3xl pointer-events-none" />
+             <div className="w-72 h-72 bg-white/10 backdrop-blur-2xl border-t border-s border-white/20 rounded-[3rem] shadow-[20px_20px_60px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center p-8 text-center transform -rotate-6 hover:rotate-0 transition-transform duration-500 hover:scale-105 z-10 relative">
+               <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent rounded-[3rem] opacity-50" />
+               <BadgeCheck size={80} className="text-[#00F0FF] mb-6 drop-shadow-[0_0_15px_#00F0FF]" />
+               <h3 className="font-black text-2xl mb-2 text-white shadow-black">شارة المحترف</h3>
+               <p className="text-[10px] text-white/50 font-black uppercase tracking-[0.2em]">هوية موثقة 100%</p>
+             </div>
+          </div>
+        </div>
+      </div>
 
-          <div style={S.heroItems}>
+      <div className="grid lg:grid-cols-12 gap-10">
+        
+        {/* المزايا */}
+        <div className="lg:col-span-5 flex flex-col justify-center">
+          <div className="mb-8">
+             <h3 className="text-3xl font-black text-[#1E293B] mb-2 tracking-tight">قوة التكنولوجيا بين يديك</h3>
+             <p className="text-[#64748B] font-bold">لماذا تعتبر منصتنا الوجهة الأولى للمحترفين؟</p>
+          </div>
+          <div className="space-y-5">
             {[
-              ["💰", "دخل أعلى بـ 3×",         "مقارنةً بالتوظيف التقليدي"],
-              ["📍", "عملاء قريبون منك",         "وظائف بالقرب من منطقتك"],
-              ["🔒", "دفع آمن ومضمون",           "نتولى المدفوعات بدلاً عنك"],
-            ].map(([em, t, s]) => (
-              <div style={S.heroItem} key={t}>
-                <span style={S.heroEm}>{em}</span>
-                <div>
-                  <div style={S.heroItemT}>{t}</div>
-                  <div style={S.heroItemS}>{s}</div>
+              { icon: Zap, h: "تنبيهات مهام فورية", p: "يرن هاتفك الذكي فور توفر مهمة متوافقة مع تخصصك." },
+              { icon: Shield, h: "دفعات رقمية سريعة", p: "محفظتك تزيد بانتظام بعد كل إغلاق ناجح لأي أمر عمل." },
+              { icon: Clock, h: "حرية التوقيت الكاملة", p: "شغّل حالة التوفر عند وجودك، وأوقفها وقت راحتك الشخصية." },
+              { icon: TrendingUp, h: "لوحة تحكم ذكية", p: "تتبع معدلات أدائك وإحصاءات الأرباح بشفافية مطلقة." },
+            ].map(({ icon: Icon, h, p }, i) => (
+              <div key={i} className="glass-squircle p-6 flex items-start gap-5 hover:bg-white/80">
+                <div className="w-14 h-14 rounded-[1.2rem] bg-gradient-to-br from-[#7000FF]/10 to-[#00F0FF]/10 text-[#7000FF] flex flex-col items-center justify-center flex-shrink-0 shadow-inner">
+                  <Icon size={24} />
+                </div>
+                <div className="mt-1">
+                  <h4 className="font-black text-[#1E293B] text-base mb-1">{h}</h4>
+                  <p className="text-xs font-semibold text-[#64748B] leading-relaxed">{p}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* عمودان */}
-        <div style={S.cols}>
+        {/* النموذج */}
+        <div className="lg:col-span-7">
+          <div className="glass-squircle p-8 sm:p-12 relative overflow-hidden bg-white/90">
+            {/* Soft backdrop decorations inside card */}
+            <div className="absolute top-0 end-0 w-64 h-64 bg-[#00F0FF]/5 rounded-full blur-[80px] pointer-events-none" />
+            <div className="absolute bottom-0 start-0 w-64 h-64 bg-[#7000FF]/5 rounded-full blur-[80px] pointer-events-none" />
 
-          {/* المزايا */}
-          <div style={S.perksCard}>
-            <div style={S.perksHead}>لماذا يختارنا المحترفون؟</div>
-            <div style={S.perksList}>
-              {[
-                [<Zap size={16}/>,        "مطابقة فورية للوظائف",   "تواصل مع عملاء يحتاجون تخصصك الآن"],
-                [<BadgeCheck size={16}/>, "شارة التحقق",             "الملف الموثوق يبني الثقة ويجلب عملاء أكثر"],
-                [<Clock size={16}/>,      "اعمل بشروطك",            "تحكم كامل في وقتك وعدد ساعاتك"],
-                [<TrendingUp size={16}/>, "طوّر مسيرتك",            "اجمع تقييمات، اكسب شارات، وارتقِ بملفك"],
-              ].map(([ic, h, p], i) => (
-                <div style={S.perk} key={i}>
-                  <div style={S.perkIcon}>{ic}</div>
-                  <div>
-                    <h4 style={S.perkH}>{h}</h4>
-                    <p style={S.perkP}>{p}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="mb-10 relative z-10">
+              <h3 className="text-3xl font-black text-[#1E293B] mb-2">تسجيل القيد السريع</h3>
+              <p className="text-sm font-bold text-[#64748B]">لا يستغرق الانضمام سوى ثوانٍ معدودة. أدخل التفاصيل واضغط انطلاق.</p>
             </div>
-          </div>
 
-          {/* النموذج */}
-          <div style={S.formCard}>
-            <div style={S.formHead}>أنشئ ملفك كعامل</div>
-            <form onSubmit={handleSubmit}>
-
-              {[
-                ["name",  "الاسم الكامل",       "text",   "مثال: أحمد سالم"],
-                ["price", "السعر بالساعة (MRU)", "number", "مثال: 15"],
-                ["phone", "رقم الهاتف",          "tel",    "+222 XX XX XX XX"],
-              ].map(([n, l, t, ph]) => (
-                <div style={S.fg} key={n}>
-                  <label style={S.fl}>{l}</label>
+            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[11px] font-black tracking-wider text-[#64748B] uppercase mb-2">اسمك بالكامل (كالمصرح به)</label>
                   <input
-                    name={n} type={t} placeholder={ph} required
-                    value={form[n]} onChange={set} style={S.fi}
+                    name="name" required value={form.name} onChange={set}
+                    placeholder="مثال: أحمد سالم"
+                    className="w-full bg-[#F4F7FD] border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:border-[#7000FF] focus:ring-4 focus:ring-[#7000FF]/10 transition-all shadow-inner"
                   />
                 </div>
-              ))}
-
-              <div style={S.fg}>
-                <label style={S.fl}>التخصص</label>
-                <select
-                  name="specialty" required
-                  value={form.specialty} onChange={set}
-                  style={S.fi}
-                >
-                  <option value="">اختر تخصصك…</option>
-                  {SPECIALTIES.map(s => (
-                    <option key={s} value={s}>{SPEC_ICON[s]}  {s}</option>
-                  ))}
-                </select>
+                <div>
+                  <label className="block text-[11px] font-black tracking-wider text-[#64748B] uppercase mb-2">المسار المهني الرئيسي</label>
+                  <select
+                    name="specialty" required value={form.specialty} onChange={set}
+                    className="w-full bg-[#F4F7FD] border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:border-[#7000FF] focus:ring-4 focus:ring-[#7000FF]/10 transition-all shadow-inner appearance-none cursor-pointer"
+                  >
+                    <option value="">حدد نطاق العمل…</option>
+                    {SPECIALTIES.map(s => (
+                       <option key={s} value={s}>{SPEC_ICON[s]} {s}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <button type="submit" style={S.btnSub} disabled={loading}>
-                {loading ? "جارٍ الإرسال…" : "إرسال الطلب ←"}
-              </button>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[11px] font-black tracking-wider text-[#64748B] uppercase mb-2">أجر العمل المطلوب (MRU/H)</label>
+                  <input
+                    name="price" type="number" required value={form.price} onChange={set}
+                    placeholder="التسعيرة التقديرية"
+                    className="w-full bg-[#F4F7FD] border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:border-[#7000FF] focus:ring-4 focus:ring-[#7000FF]/10 transition-all shadow-inner"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black tracking-wider text-[#64748B] uppercase mb-2">رقم هاتف الطوارئ والتواصل</label>
+                  <input
+                    name="phone" type="tel" required value={form.phone} onChange={set}
+                    placeholder="X XX XX XX" dir="ltr"
+                    className="w-full bg-[#F4F7FD] border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-bold text-end focus:outline-none focus:border-[#7000FF] focus:ring-4 focus:ring-[#7000FF]/10 transition-all shadow-inner"
+                  />
+                </div>
+              </div>
 
+              <div>
+                 <label className="block text-[11px] font-black tracking-wider text-[#64748B] uppercase mb-2">الموقع الجغرافي للنشاط</label>
+                 <div className="relative">
+                   <MapPin className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                   <input
+                     name="address" required value={form.address} onChange={set}
+                     placeholder="حدد نطاق السكن أو العمل"
+                     className="w-full bg-[#F4F7FD] border border-slate-200 rounded-2xl px-5 pe-12 py-4 text-sm font-bold focus:outline-none focus:border-[#7000FF] focus:ring-4 focus:ring-[#7000FF]/10 transition-all shadow-inner"
+                   />
+                 </div>
+              </div>
+
+              <button type="submit" disabled={loading} className="btn-2026 w-full mt-6 py-5 group shadow-xl">
+                {loading ? (
+                   <span className="animate-pulse">يتم إدخال البيانات في الخوادم...</span>
+                ) : (
+                   <div className="flex items-center gap-2">
+                     <span>إرسال الملف وتفعيل החساب</span>
+                     <ArrowLeft size={18} className="transform group-hover:-translate-x-1.5 transition-transform" />
+                   </div>
+                )}
+              </button>
             </form>
           </div>
-
         </div>
+
       </div>
     </div>
   )
-}
-
-/* ─── Styles ─────────────────────────────────────────────────────────────── */
-const FONT = "'Cairo', 'Noto Kufi Arabic', sans-serif"
-
-const S = {
-  page: {
-    fontFamily: FONT,
-    minHeight: "100vh",
-    background: "#F8FAFC",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "2rem 1rem",
-  },
-
-  /* success */
-  succWrap: {
-    background: "#fff",
-    border: "1px solid #E5E7EB",
-    borderRadius: 20,
-    padding: "3rem 2.5rem",
-    maxWidth: 440,
-    textAlign: "center",
-  },
-  succRing: {
-    width: 72, height: 72, borderRadius: "50%",
-    background: "#EFF6FF",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    margin: "0 auto 1.25rem",
-  },
-  succTitle: { fontSize: 22, fontWeight: 700, color: "#111827", margin: "0 0 10px" },
-  succSub:   { fontSize: 14, color: "#6B7280", lineHeight: 1.7, margin: 0 },
-
-  /* wrapper */
-  wrapper: { width: "100%", maxWidth: 940 },
-
-  /* hero banner */
-  hero: {
-    background: "linear-gradient(135deg, #1558F6 0%, #0e46d4 100%)",
-    borderRadius: 20,
-    padding: "2rem 2rem 1.75rem",
-    color: "#fff",
-    marginBottom: "1.5rem",
-  },
-  heroText:  { marginBottom: "1.25rem" },
-  heroTitle: { fontSize: 22, fontWeight: 700, margin: "0 0 6px" },
-  heroSub:   { fontSize: 14, opacity: 0.85, lineHeight: 1.7, margin: 0, maxWidth: 520 },
-  heroItems: { display: "flex", flexWrap: "wrap", gap: "1rem" },
-  heroItem:  { display: "flex", alignItems: "flex-start", gap: 10 },
-  heroEm:    { fontSize: 22, lineHeight: 1 },
-  heroItemT: { fontSize: 13, fontWeight: 700 },
-  heroItemS: { fontSize: 12, opacity: 0.75 },
-
-  /* two columns */
-  cols: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: "1.25rem",
-  },
-
-  /* perks card */
-  perksCard: {
-    background: "#fff",
-    border: "1px solid #E5E7EB",
-    borderRadius: 16,
-    padding: "1.5rem",
-  },
-  perksHead: { fontSize: 15, fontWeight: 700, color: "#111827", marginBottom: "1.1rem" },
-  perksList: { display: "flex", flexDirection: "column", gap: "1rem" },
-  perk:      { display: "flex", alignItems: "flex-start", gap: 12 },
-  perkIcon: {
-    width: 34, height: 34, borderRadius: 8,
-    background: "#EFF6FF", color: "#1558F6",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    flexShrink: 0,
-  },
-  perkH: { fontSize: 13, fontWeight: 700, color: "#111827", margin: "0 0 2px" },
-  perkP: { fontSize: 12, color: "#6B7280", margin: 0, lineHeight: 1.5 },
-
-  /* form card */
-  formCard: {
-    background: "#fff",
-    border: "1px solid #E5E7EB",
-    borderRadius: 16,
-    padding: "1.5rem",
-  },
-  formHead: { fontSize: 15, fontWeight: 700, color: "#111827", marginBottom: "1.1rem" },
-
-  fg: { marginBottom: "1rem" },
-  fl: { display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 5 },
-  fi: {
-    width: "100%",
-    padding: "9px 12px",
-    border: "1px solid #D1D5DB",
-    borderRadius: 10,
-    fontSize: 14,
-    fontFamily: FONT,
-    color: "#111827",
-    background: "#fff",
-    boxSizing: "border-box",
-    outline: "none",
-    direction: "rtl",
-  },
-
-  btnSub: {
-    width: "100%",
-    padding: "11px",
-    background: "#1558F6",
-    color: "#fff",
-    border: "none",
-    borderRadius: 10,
-    fontSize: 15,
-    fontWeight: 700,
-    fontFamily: FONT,
-    cursor: "pointer",
-    marginTop: "0.5rem",
-    transition: "background 0.18s",
-  },
 }

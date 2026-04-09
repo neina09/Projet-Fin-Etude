@@ -32,10 +32,6 @@ public class Offer {
     @Column(nullable = false, length = 500)
     private String message;
 
-    @NotNull(message = "Price is required")
-    @Min(value = 0, message = "Price must be positive")
-    @Column(nullable = false)
-    private Double price;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

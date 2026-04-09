@@ -14,9 +14,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TaskService {
 
-    private final TaskRepository   taskRepository;
-    private final OfferRepository  offerRepository;
-    private final WorkerRepository workerRepository;
+    private final TaskRepository      taskRepository;
+    private final OfferRepository     offerRepository;
+    private final WorkerRepository    workerRepository;
+    private final NotificationService notificationService;
 
     private TaskResponseDto toTaskDto(Task task) {
         return TaskResponseDto.builder()
@@ -46,7 +47,6 @@ public class TaskService {
                 .workerName(offer.getWorker().getName())
                 .workerJob(offer.getWorker().getJob())
                 .message(offer.getMessage())
-                .price(offer.getPrice())
                 .status(offer.getStatus())
                 .createdAt(offer.getCreatedAt())
                 .build();
@@ -88,11 +88,11 @@ public class TaskService {
                         .map(this::toTaskDto)
         );
     }
-    public TaskResponseDto getTaskById(Long id, User user) {
+
+    // FIX #1: يرى الجميع تفاصيل Task المفتوحة (مش مقيد بصاحب الـ Task فقط)
+    public TaskResponseDto getTaskById(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
-        if (!task.getUser().getId().equals(user.getId()))
-            throw new UnauthorizedException("Not authorized");
         return toTaskDto(task);
     }
 
@@ -153,20 +153,16 @@ public class TaskService {
         if (offer.getStatus() != OfferStatus.PENDING)
             throw new BusinessException("Offer is not pending");
 
-        // العرض المختار → SELECTED
         offer.setStatus(OfferStatus.SELECTED);
-        offerRepository.save(offer);
+        Offer savedOffer = offerRepository.save(offer);
 
-        // باقي العروض → REFUSED
-        offerRepository.findByTaskId(task.getId()).stream()
-                .filter(o -> !o.getId().equals(offerId))
-                .filter(o -> o.getStatus() == OfferStatus.PENDING)
-                .forEach(o -> {
-                    o.setStatus(OfferStatus.REFUSED);
-                    offerRepository.save(o);
-                });
+        notificationService.sendNotification(
+                offer.getWorker().getUser(),
+                "You have been selected for the task: " + task.getTitle(),
+                NotificationType.TASK_SELECTED
+        );
 
-        return toOfferDto(offer);
+        return toOfferDto(savedOffer);
     }
 
     // المستخدم يؤكد الإنجاز → COMPLETED
@@ -204,7 +200,6 @@ public class TaskService {
         if (task.getStatus() == TaskStatus.IN_PROGRESS)
             throw new BusinessException("Cannot cancel a task in progress");
 
-        // كل العروض المعلقة → CLOSED
         offerRepository.findByTaskId(id).stream()
                 .filter(o -> o.getStatus() == OfferStatus.PENDING
                         || o.getStatus() == OfferStatus.SELECTED)
@@ -217,7 +212,7 @@ public class TaskService {
         return toTaskDto(taskRepository.save(task));
     }
 
-    // العامل يقدم عرض
+    // FIX #2: العامل يقدم عرض — إزالة إنشاء Worker بمعلومات وهمية
     public OfferResponseDto submitOffer(
             Long taskId, OfferRequestDto dto, User workerUser) {
         Task task = taskRepository.findById(taskId)
@@ -228,9 +223,13 @@ public class TaskService {
         if (task.getUser().getId().equals(workerUser.getId()))
             throw new BusinessException("Cannot offer on your own task");
 
+        // FIX: لا ننشئ Worker تلقائياً — نلزم بإنشاء البروفايل أولاً
+        if (workerUser.getRole() != Role.WORKER)
+            throw new BusinessException("Only workers can submit offers");
+
         Worker worker = workerRepository.findByUserId(workerUser.getId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Worker profile not found — register as worker first"));
+                .orElseThrow(() -> new BusinessException(
+                        "Please complete your worker profile before submitting offers"));
 
         if (offerRepository.existsByTaskIdAndWorkerId(taskId, worker.getId()))
             throw new BusinessException("You already submitted an offer on this task");
@@ -239,10 +238,17 @@ public class TaskService {
                 .task(task)
                 .worker(worker)
                 .message(dto.getMessage())
-                .price(dto.getPrice())
                 .build();
 
-        return toOfferDto(offerRepository.save(offer));
+        Offer savedOffer = offerRepository.save(offer);
+
+        notificationService.sendNotification(
+                task.getUser(),
+                "You have a new offer on your task: " + task.getTitle(),
+                NotificationType.TASK_OFFER
+        );
+
+        return toOfferDto(savedOffer);
     }
 
     // العامل يرى عروضه
@@ -270,10 +276,16 @@ public class TaskService {
         task.setAssignedWorker(offer.getWorker());
         taskRepository.save(task);
 
+        notificationService.sendNotification(
+                task.getUser(),
+                "Worker " + offer.getWorker().getName() + " has accepted to start working on: " + task.getTitle(),
+                NotificationType.TASK_ACCEPTED
+        );
+
         return toOfferDto(offer);
     }
 
-    // العامل يرفض بعد أن اختاره المستخدم → Task يرجع OPEN
+    // FIX #3: العامل يرفض — إرجاع العروض المغلقة CLOSED → PENDING (ليس REFUSED)
     @Transactional
     public OfferResponseDto workerRefuse(Long offerId, User workerUser) {
         Offer offer = offerRepository.findById(offerId)
@@ -287,19 +299,26 @@ public class TaskService {
         offer.setStatus(OfferStatus.WORKER_REFUSED);
         offerRepository.save(offer);
 
-        // Task يرجع OPEN
         Task task = offer.getTask();
         task.setStatus(TaskStatus.OPEN);
         task.setAssignedWorker(null);
         taskRepository.save(task);
 
-        // العروض المرفوضة ترجع PENDING
+        // FIX: العروض المغلقة CLOSED ترجع PENDING (كانت خطأً تبحث عن REFUSED)
         offerRepository.findByTaskId(task.getId()).stream()
-                .filter(o -> o.getStatus() == OfferStatus.REFUSED)
+                .filter(o -> o.getStatus() == OfferStatus.CLOSED
+                        && !o.getId().equals(offerId))
                 .forEach(o -> {
                     o.setStatus(OfferStatus.PENDING);
                     offerRepository.save(o);
                 });
+
+        // إشعار صاحب الـ Task
+        notificationService.sendNotification(
+                task.getUser(),
+                "Worker " + offer.getWorker().getName() + " has refused the task: " + task.getTitle(),
+                NotificationType.TASK_REFUSED
+        );
 
         return toOfferDto(offer);
     }

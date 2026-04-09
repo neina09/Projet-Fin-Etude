@@ -37,6 +37,13 @@ public class TaskController {
                 taskService.searchOpenTasks(keyword, address, pageable));
     }
 
+    // FIX #1: getTaskById لا يحتاج User — يراه الجميع
+    @GetMapping("/{id}")
+    public ResponseEntity<TaskResponseDto> getTaskById(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(taskService.getTaskById(id));
+    }
+
     // ── USER actions ──
 
     @PostMapping
@@ -54,14 +61,6 @@ public class TaskController {
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(
                 taskService.getMyTasks(currentUser, pageable));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<TaskResponseDto> getTaskById(
-            @PathVariable Long id,
-            @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(
-                taskService.getTaskById(id, currentUser));
     }
 
     @PutMapping("/{id}")

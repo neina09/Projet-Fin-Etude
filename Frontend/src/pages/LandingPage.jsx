@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom"
 import Navbar from "../components/Navbar"
 import Hero from "../components/Hero"
-import Problems from "../components/ProblemCard"
 import ServicesCards from "../components/ServicesCards"
 import FeaturedWorkers from "../components/FeaturedWorkers"
 import HowItWorks from "../components/HowItWorks"
-import Footer from "../components/Footer"
 import BecomeTasker from "../components/BecomeTasker"
+import AboutUs from "../components/AboutUs"
+import Footer from "../components/Footer"
 import Testimonials from "../components/Testimonials"
 
 
@@ -15,15 +15,15 @@ function LandingPage() {
 
   return (
     <>
-       <Navbar onLogin={() => navigate("/auth")} />
+      <Navbar onLogin={() => navigate("/auth")} />
       <Hero />
-      <Problems />
-   
       <ServicesCards />
-      <FeaturedWorkers /> 
+      <FeaturedWorkers />
       <HowItWorks />
       <BecomeTasker />
-      <Testimonials/>
+      <AboutUs />
+      <Testimonials />
+   
       <Footer />
     </>
   )

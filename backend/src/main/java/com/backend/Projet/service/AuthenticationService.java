@@ -157,6 +157,7 @@ public class AuthenticationService {
                 .id(user.getId())
                 .username(user.getName())
                 .email(user.getEmail())
+                .role(user.getRole().name())
                 .build();
     }
 

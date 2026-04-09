@@ -13,7 +13,6 @@ public class OfferResponseDto {
     private String        workerName;
     private String        workerJob;
     private String        message;
-    private Double        price;
     private OfferStatus   status;
     private LocalDateTime createdAt;
 }

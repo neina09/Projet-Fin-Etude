@@ -40,7 +40,7 @@ function ResetPassword({ resetToken, setResetToken, newPassword, setNewPassword,
             onChange={(e) => setResetToken(e.target.value)}
             className="w-full bg-[#FCFDFE] border border-[#004384]/15 text-[#004384]
               rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-black
-              focus:outline-none focus:border-[#FFB909] focus:ring-2 focus:ring-[#FFB909]/20 transition-all"
+              focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all"
             style={{ direction: "ltr", fontFamily: "'Cairo', sans-serif" }}
             maxLength={6}
           />
@@ -60,8 +60,8 @@ function ResetPassword({ resetToken, setResetToken, newPassword, setNewPassword,
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="w-full bg-[#FCFDFE] border border-[#004384]/15 text-[#004384] placeholder-[#004384]/25
-                rounded-xl pr-10 pl-4 py-3 text-sm focus:outline-none focus:border-[#FFB909]
-                focus:ring-2 focus:ring-[#FFB909]/20 transition-all"
+                rounded-xl pr-10 pl-4 py-3 text-sm focus:outline-none focus:border-[#2563EB]
+                focus:ring-2 focus:ring-[#2563EB]/20 transition-all"
               style={{ fontFamily: "'Cairo', sans-serif" }}
             />
           </div>
@@ -69,9 +69,9 @@ function ResetPassword({ resetToken, setResetToken, newPassword, setNewPassword,
 
         {/* Submit */}
         <button onClick={handleResetPassword} disabled={loading}
-          className="w-full bg-[#FFB909] hover:bg-[#004384] disabled:opacity-40
-            text-[#004384] hover:text-white font-bold py-3 rounded-full text-sm
-            tracking-wide transition-all duration-300 shadow-[0_4px_20px_rgba(255,185,9,0.35)]
+          className="w-full bg-[#2563EB] hover:bg-[#004384] disabled:opacity-40
+            text-white font-bold py-3 rounded-full text-sm
+            tracking-wide transition-all duration-300 shadow-[0_4px_20px_rgba(37,99,235,0.35)]
             hover:shadow-[0_4px_20px_rgba(0,67,132,0.35)]"
           style={{ fontFamily: "'Cairo', sans-serif" }}>
           {loading ? "جارٍ التعيين..." : "إعادة تعيين كلمة المرور"}
@@ -79,8 +79,8 @@ function ResetPassword({ resetToken, setResetToken, newPassword, setNewPassword,
 
         {/* Resend */}
         <button onClick={onResend}
-          className="w-full bg-transparent border border-[#004384]/15 hover:border-[#FFB909]
-            text-[#004384]/50 hover:text-[#FFB909] py-3 rounded-full text-sm
+          className="w-full bg-transparent border border-[#004384]/15 hover:border-[#2563EB]
+            text-[#004384]/50 hover:text-[#2563EB] py-3 rounded-full text-sm
             font-semibold transition-all duration-300"
           style={{ fontFamily: "'Cairo', sans-serif" }}>
           إعادة إرسال الرمز

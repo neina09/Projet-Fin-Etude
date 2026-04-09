@@ -105,3 +105,33 @@ export const deleteAccount = async () => {
   if (!response.ok) throw new Error(await response.text())
   return response.text()
 }
+
+// ======= Tasks =======
+export const getOpenTasks = async () => {
+  const response = await fetch(`${BASE_URL}/tasks/open`, {
+    headers: { "Authorization": `Bearer ${getToken()}` }
+  })
+  if (!response.ok) throw new Error(await response.text())
+  return response.json()
+}
+
+export const getMyTasks = async () => {
+  const response = await fetch(`${BASE_URL}/tasks/my`, {
+    headers: { "Authorization": `Bearer ${getToken()}` }
+  })
+  if (!response.ok) throw new Error(await response.text())
+  return response.json()
+}
+
+export const createTask = async (taskData) => {
+  const response = await fetch(`${BASE_URL}/tasks`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${getToken()}`
+    },
+    body: JSON.stringify(taskData)
+  })
+  if (!response.ok) throw new Error(await response.text())
+  return response.json()
+}
