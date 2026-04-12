@@ -4,6 +4,7 @@ import com.backend.Projet.model.Role;
 import com.backend.Projet.model.User;
 import com.backend.Projet.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -15,20 +16,35 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.seed-admin:false}")
+    private boolean seedAdmin;
+
+    @Value("${app.seed-admin-phone:0660000000}")
+    private String adminPhone;
+
+    @Value("${app.seed-admin-username:admin}")
+    private String adminUsername;
+
+    @Value("${app.seed-admin-password:admin123}")
+    private String adminPassword;
+
     @Override
     public void run(String... args) {
-        if (userRepository.findByEmail("admin@admin.com").isPresent()) {
+        if (!seedAdmin) {
+            return;
+        }
+
+        if (userRepository.findByPhone(adminPhone).isPresent()) {
             return;
         }
 
         User admin = new User();
-        admin.setUsername("admin");
-        admin.setEmail("admin@admin.com");
-        admin.setPassword(passwordEncoder.encode("admin123"));
+        admin.setUsername(adminUsername);
+        admin.setPhone(adminPhone);
+        admin.setPassword(passwordEncoder.encode(adminPassword));
         admin.setRole(Role.ADMIN);
         admin.setEnabled(true);
 
         userRepository.save(admin);
-        System.out.println("Admin created: admin@admin.com / admin123");
     }
 }

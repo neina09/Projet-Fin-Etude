@@ -1,9 +1,13 @@
 package com.backend.Projet.service;
 
 import com.backend.Projet.dto.*;
+import com.backend.Projet.exception.BusinessException;
+import com.backend.Projet.exception.ResourceNotFoundException;
 import com.backend.Projet.model.Role;
 import com.backend.Projet.model.User;
 import com.backend.Projet.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,105 +21,113 @@ import java.util.UUID;
 
 @Service
 public class AuthenticationService {
+    private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final com.backend.Projet.mapper.UserMapper userMapper;
 
     public AuthenticationService(
             UserRepository userRepository,
             AuthenticationManager authenticationManager,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            com.backend.Projet.mapper.UserMapper userMapper
     ) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userMapper = userMapper;
     }
 
     @Transactional
     public UserResponseDto signup(RegisterUserDto input) {
-        if (userRepository.findByEmail(input.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already in use");
+        if (userRepository.findByPhone(input.getPhone()).isPresent()) {
+            throw new BusinessException("Phone already in use");
         }
-        User user = new User(input.getUsername(), input.getEmail(), passwordEncoder.encode(input.getPassword()));
+        User user = new User(input.getUsername(), input.getPhone(), passwordEncoder.encode(input.getPassword()));
         user.setRole(Role.USER);
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
-        sendVerificationEmail(user);
+        sendVerificationCode(user);
         User saved = userRepository.save(user);
-        return toDto(saved);
+        return userMapper.toDto(saved);
     }
 
     public User authenticate(LoginUserDto input) {
-        User user = userRepository.findByEmail(input.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByPhone(input.getPhone())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         if (!user.isEnabled()) {
-            throw new RuntimeException("Account not verified. Please verify your account.");
+            throw new BusinessException("Account not verified. Please verify your account.");
         }
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(input.getEmail(), input.getPassword())
+                new UsernamePasswordAuthenticationToken(input.getPhone(), input.getPassword())
         );
         return user;
     }
 
     @Transactional
     public void verifyUser(VerifyUserDto input) {
-        Optional<User> optionalUser = userRepository.findByEmail(input.getEmail());
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            if (user.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
-                throw new RuntimeException("Verification code has expired");
-            }
-            if (user.getVerificationCode().equals(input.getVerificationCode())) {
-                user.setEnabled(true);
-                user.setVerificationCode(null);
-                user.setVerificationCodeExpiresAt(null);
-                userRepository.save(user);
-            } else {
-                throw new RuntimeException("Invalid verification code");
-            }
+        User user = userRepository.findByPhone(input.getPhone())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (user.getVerificationCode() == null || user.getVerificationCodeExpiresAt() == null) {
+            throw new BusinessException("No verification code found for this account");
+        }
+
+        if (user.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BusinessException("Verification code has expired");
+        }
+        if (user.getVerificationCode().equals(input.getVerificationCode())) {
+            user.setEnabled(true);
+            user.setVerificationCode(null);
+            user.setVerificationCodeExpiresAt(null);
+            userRepository.save(user);
         } else {
-            throw new RuntimeException("User not found");
+            throw new BusinessException("Invalid verification code");
         }
     }
 
     @Transactional
-    public void resendVerificationCode(String email) {
-        Optional<User> optionalUser = userRepository.findByEmail(email);
+    public void resendVerificationCode(String phone) {
+        Optional<User> optionalUser = userRepository.findByPhone(phone);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             if (user.isEnabled()) {
-                throw new RuntimeException("Account is already verified");
+                throw new BusinessException("Account is already verified");
             }
             user.setVerificationCode(generateVerificationCode());
             user.setVerificationCodeExpiresAt(LocalDateTime.now().plusHours(1));
-            sendVerificationEmail(user);
+            sendVerificationCode(user);
             userRepository.save(user);
         } else {
-            throw new RuntimeException("User not found");
+            log.info("Verification code requested for unknown phone {}", phone);
         }
     }
 
     @Transactional
-    public void forgotPassword(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public void forgotPassword(String phone) {
+        Optional<User> optionalUser = userRepository.findByPhone(phone);
+        if (optionalUser.isEmpty()) {
+            log.info("Reset password requested for unknown phone {}", phone);
+            return;
+        }
+
+        User user = optionalUser.get();
         String token = UUID.randomUUID().toString();
         user.setResetPasswordToken(token);
         user.setResetPasswordExpiresAt(LocalDateTime.now().plusMinutes(15));
         userRepository.save(user);
-        // TODO: remplacer par un vrai envoi d'email via JavaMailSender
-        System.out.println("==================================");
-        System.out.println("RESET PASSWORD CODE: " + token);
-        System.out.println("==================================");
+        log.info("Reset password token for phone {}: {}", user.getPhone(), token);
     }
 
     @Transactional
     public void resetPassword(ResetPasswordDto input) {
         User user = userRepository.findByResetPasswordToken(input.getToken())
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
-        if (user.getResetPasswordExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token has expired");
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid or expired reset token"));
+        if (user.getResetPasswordExpiresAt() == null || user.getResetPasswordExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BusinessException("Reset token has expired");
         }
         user.setPassword(passwordEncoder.encode(input.getNewPassword()));
         user.setResetPasswordToken(null);
@@ -126,7 +138,7 @@ public class AuthenticationService {
     @Transactional
     public void changePassword(User currentUser, ChangePasswordDto input) {
         if (!passwordEncoder.matches(input.getCurrentPassword(), currentUser.getPassword())) {
-            throw new RuntimeException("Current password is incorrect");
+            throw new BusinessException("Current password is incorrect");
         }
         currentUser.setPassword(passwordEncoder.encode(input.getNewPassword()));
         userRepository.save(currentUser);
@@ -137,14 +149,15 @@ public class AuthenticationService {
         if (input.getUsername() != null && !input.getUsername().isBlank()) {
             currentUser.setUsername(input.getUsername());
         }
-        if (input.getEmail() != null && !input.getEmail().isBlank()) {
-            if (userRepository.findByEmail(input.getEmail()).isPresent()) {
-                throw new RuntimeException("Email already in use");
+        if (input.getPhone() != null && !input.getPhone().isBlank()) {
+            Optional<User> existingUser = userRepository.findByPhone(input.getPhone());
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(currentUser.getId())) {
+                throw new BusinessException("Phone already in use");
             }
-            currentUser.setEmail(input.getEmail());
+            currentUser.setPhone(input.getPhone());
         }
         User saved = userRepository.save(currentUser);
-        return toDto(saved);
+        return userMapper.toDto(saved);
     }
 
     @Transactional
@@ -152,20 +165,9 @@ public class AuthenticationService {
         userRepository.delete(currentUser);
     }
 
-    private UserResponseDto toDto(User user) {
-        return UserResponseDto.builder()
-                .id(user.getId())
-                .username(user.getName())
-                .email(user.getEmail())
-                .role(user.getRole().name())
-                .build();
-    }
 
-    private void sendVerificationEmail(User user) {
-        // TODO: remplacer par un vrai envoi d'email via JavaMailSender
-        System.out.println("==================================");
-        System.out.println("VERIFICATION CODE: " + user.getVerificationCode());
-        System.out.println("==================================");
+    private void sendVerificationCode(User user) {
+        log.info("Verification code for phone {}: {}", user.getPhone(), user.getVerificationCode());
     }
 
     private String generateVerificationCode() {

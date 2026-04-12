@@ -3,81 +3,92 @@ import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from "lucide-react"
 
 function Footer() {
   return (
-    <footer dir="rtl" className="mt-16 bg-slate-950 text-slate-300 pt-16 pb-8 px-6">
-      <div className="section-shell grid md:grid-cols-4 gap-10">
-
-        {/* Logo + description */}
-        <div>
-          <h2 className="text-2xl font-black text-white mb-3">
-            شغلني
-          </h2>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            نربط الناس بعمال محليين مهرة — بسرعة وسهولة وموثوقية.
+    <footer dir="rtl" className="bg-surface-900 text-surface-200 pt-20 pb-10 px-6 mt-24">
+      <div className="section-shell grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
+        {/* Brand Section */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-black text-white tracking-tight">شغلني</h2>
+          <p className="text-sm leading-relaxed text-surface-400 max-w-xs">
+            المنصة الرائدة لربط العملاء بأفضل الحرفيين والعمال المحليين المهرة في موريتانيا — بسرعة، أمان، وموثوقية عالية.
           </p>
-
-          {/* Socials */}
-          <div className="flex gap-4 mt-4">
-            <Facebook className="hover:text-blue-400 cursor-pointer transition-colors duration-200" />
-            <Twitter className="hover:text-blue-400 cursor-pointer transition-colors duration-200" />
-            <Instagram className="hover:text-blue-400 cursor-pointer transition-colors duration-200" />
+          <div className="flex gap-4">
+            {[Facebook, Twitter, Instagram].map((Icon, idx) => (
+              <a key={idx} href="#" className="h-9 w-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 hover:bg-primary hover:border-primary transition-all duration-300">
+                <Icon size={18} className="text-surface-300" />
+              </a>
+            ))}
           </div>
         </div>
 
-        {/* Links */}
+        {/* Links Section 1 */}
         <div>
-          <h3 className="text-white font-black mb-4">الشركة</h3>
-          <ul className="space-y-2 text-sm font-semibold">
-            <li className="hover:text-blue-300 cursor-pointer transition-colors duration-200">من نحن</li>
-            <li className="hover:text-blue-300 cursor-pointer transition-colors duration-200">شركاؤنا</li>
-            <li className="hover:text-blue-300 cursor-pointer transition-colors duration-200">الوظائف</li>
+          <h3 className="text-white font-bold mb-6 text-base">الشركة</h3>
+          <ul className="space-y-4 text-sm font-medium">
+            {["من نحن", "شركاؤنا", "الوظائف", "المدونة"].map(item => (
+              <li key={item}>
+                <a href="#" className="text-surface-400 hover:text-white transition-colors">{item}</a>
+              </li>
+            ))}
           </ul>
         </div>
 
-        {/* Services */}
+        {/* Links Section 2 */}
         <div>
-          <h3 className="text-white font-black mb-4">النظام</h3>
-          <ul className="space-y-2 text-sm font-semibold">
-            <li className="hover:text-blue-300 cursor-pointer transition-colors duration-200">إدارة الحجوزات</li>
-            <li className="hover:text-blue-300 cursor-pointer transition-colors duration-200">سوق المهام</li>
-            <li className="hover:text-blue-300 cursor-pointer transition-colors duration-200">الرسائل والإشعارات</li>
+          <h3 className="text-white font-bold mb-6 text-base">النظام</h3>
+          <ul className="space-y-4 text-sm font-medium">
+            {["إدارة الحجوزات", "سوق المهام", "الرسائل والإشعارات", "سياسة الخصوصية"].map(item => (
+              <li key={item}>
+                <a href="#" className="text-surface-400 hover:text-white transition-colors">{item}</a>
+              </li>
+            ))}
           </ul>
         </div>
 
-        {/* Contact */}
-        <div>
-          <h3 className="text-white font-black mb-4">تواصل معنا</h3>
-          <div className="space-y-2 text-sm font-semibold">
-            <p className="flex items-center gap-2"><Mail size={16} /><span>support@chghloni.com</span></p>
-            <p className="flex items-center gap-2"><Phone size={16} /><span>+222 44 44 44 44</span></p>
-            <p className="flex items-center gap-2"><MapPin size={16} /><span>نواكشوط، موريتانيا</span></p>
+        {/* Contact Section */}
+        <div className="space-y-6">
+          <h3 className="text-white font-bold mb-6 text-base">تواصل معنا</h3>
+          <div className="space-y-4 text-sm font-medium">
+            <p className="flex items-center gap-3 text-surface-400">
+              <Mail size={16} className="text-primary" /> 
+              <span>support@chghloni.com</span>
+            </p>
+            <p className="flex items-center gap-3 text-surface-400">
+              <Phone size={16} className="text-primary" /> 
+              <span>+222 44 44 44 44</span>
+            </p>
+            <p className="flex items-center gap-3 text-surface-400">
+              <MapPin size={16} className="text-primary" /> 
+              <span>نواكشوط، موريتانيا</span>
+            </p>
           </div>
 
           {/* Newsletter */}
-          <div className="mt-4">
-            <p className="text-sm mb-2 font-semibold">اشترك في النشرة البريدية</p>
-            <div className="flex flex-row-reverse">
+          <div className="pt-4 border-t border-white/10">
+            <p className="text-xs font-bold text-white mb-3 uppercase tracking-wider">النشرة البريدية</p>
+            <div className="flex">
               <input
                 type="email"
                 placeholder="بريدك الإلكتروني"
-                className="w-full px-3 py-2 rounded-r-lg bg-white/10 text-white text-sm outline-none placeholder:text-slate-500"
+                className="flex-1 bg-white/5 border border-white/10 rounded-r-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-primary transition-colors placeholder:text-surface-600"
               />
-              <button
-                className="bg-blue-600 text-white px-4 rounded-l-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200"
-              >
+              <button className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-l-lg text-sm font-bold transition-colors">
                 اشترك
               </button>
             </div>
           </div>
         </div>
-
       </div>
 
-      {/* Bottom */}
-      <div className="section-shell border-t border-white/10 mt-10 pt-6 text-center text-sm text-slate-500">
-        © {new Date().getFullYear()} شغلني. جميع الحقوق محفوظة.
+      {/* Bottom Footer */}
+      <div className="section-shell border-t border-white/5 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-surface-500">
+        <p>© {new Date().getFullYear()} شغلني. كافة الحقوق محفوظة.</p>
+        <div className="flex gap-6">
+          <a href="#" className="hover:text-white">الشروط والأحكام</a>
+          <a href="#" className="hover:text-white">كوكيز</a>
+        </div>
       </div>
     </footer>
   )
 }
 
-export default Footer
+export default Footer

@@ -20,8 +20,8 @@ public class UserService {
                 .map(user -> UserResponseDto.builder()
                         .id(user.getId())
                         .username(user.getName())
-                        .email(user.getEmail())
-                        .role(user.getRole().name())
+                        .phone(user.getPhone())
+                        .role(user.getRole() == null ? null : user.getRole().name())
                         .build())
                 .toList();
     }

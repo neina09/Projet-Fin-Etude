@@ -18,39 +18,9 @@ public class TaskService {
     private final OfferRepository     offerRepository;
     private final WorkerRepository    workerRepository;
     private final NotificationService notificationService;
+    private final com.backend.Projet.mapper.TaskMapper taskMapper;
+    private final com.backend.Projet.mapper.OfferMapper offerMapper;
 
-    private TaskResponseDto toTaskDto(Task task) {
-        return TaskResponseDto.builder()
-                .id(task.getId())
-                .title(task.getTitle())
-                .description(task.getDescription())
-                .address(task.getAddress())
-                .status(task.getStatus())
-                .userId(task.getUser().getId())
-                .userName(task.getUser().getName())
-                .assignedWorkerId(
-                        task.getAssignedWorker() != null
-                                ? task.getAssignedWorker().getId() : null)
-                .assignedWorkerName(
-                        task.getAssignedWorker() != null
-                                ? task.getAssignedWorker().getName() : null)
-                .createdAt(task.getCreatedAt())
-                .build();
-    }
-
-    private OfferResponseDto toOfferDto(Offer offer) {
-        return OfferResponseDto.builder()
-                .id(offer.getId())
-                .taskId(offer.getTask().getId())
-                .taskTitle(offer.getTask().getTitle())
-                .workerId(offer.getWorker().getId())
-                .workerName(offer.getWorker().getName())
-                .workerJob(offer.getWorker().getJob())
-                .message(offer.getMessage())
-                .status(offer.getStatus())
-                .createdAt(offer.getCreatedAt())
-                .build();
-    }
 
     public TaskResponseDto createTask(TaskRequestDto input, User user) {
         Task task = Task.builder()
@@ -60,14 +30,14 @@ public class TaskService {
                 .status(TaskStatus.OPEN)
                 .user(user)
                 .build();
-        return toTaskDto(taskRepository.save(task));
+        return taskMapper.toDto(taskRepository.save(task));
     }
 
     // مرئية للجميع بدون login
     public PageResponseDto<TaskResponseDto> getOpenTasks(Pageable pageable) {
         return PageResponseDto.from(
                 taskRepository.findByStatus(TaskStatus.OPEN, pageable)
-                        .map(this::toTaskDto)
+                        .map(taskMapper::toDto)
         );
     }
 
@@ -77,7 +47,7 @@ public class TaskService {
         return PageResponseDto.from(
                 taskRepository.searchOpenTasks(
                                 TaskStatus.OPEN, address, keyword, pageable)
-                        .map(this::toTaskDto)
+                        .map(taskMapper::toDto)
         );
     }
 
@@ -85,7 +55,7 @@ public class TaskService {
             User user, Pageable pageable) {
         return PageResponseDto.from(
                 taskRepository.findByUserId(user.getId(), pageable)
-                        .map(this::toTaskDto)
+                        .map(taskMapper::toDto)
         );
     }
 
@@ -93,7 +63,10 @@ public class TaskService {
     public TaskResponseDto getTaskById(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
-        return toTaskDto(task);
+        if (task.getStatus() != TaskStatus.OPEN) {
+            throw new ResourceNotFoundException("Task not found");
+        }
+        return taskMapper.toDto(task);
     }
 
     public TaskResponseDto updateTask(
@@ -109,7 +82,7 @@ public class TaskService {
         task.setTitle(input.getTitle());
         task.setDescription(input.getDescription());
         task.setAddress(input.getAddress());
-        return toTaskDto(taskRepository.save(task));
+        return taskMapper.toDto(taskRepository.save(task));
     }
 
     @Transactional
@@ -136,7 +109,7 @@ public class TaskService {
         if (!task.getUser().getId().equals(user.getId()))
             throw new UnauthorizedException("Not your task");
         return offerRepository.findByTaskId(taskId)
-                .stream().map(this::toOfferDto).toList();
+                .stream().map(offerMapper::toDto).toList();
     }
 
     // المستخدم يختار عرض → SELECTED
@@ -153,6 +126,15 @@ public class TaskService {
         if (offer.getStatus() != OfferStatus.PENDING)
             throw new BusinessException("Offer is not pending");
 
+        offerRepository.findByTaskId(task.getId()).stream()
+                .filter(existingOffer -> !existingOffer.getId().equals(offerId))
+                .filter(existingOffer -> existingOffer.getStatus() == OfferStatus.PENDING
+                        || existingOffer.getStatus() == OfferStatus.SELECTED)
+                .forEach(existingOffer -> {
+                    existingOffer.setStatus(OfferStatus.CLOSED);
+                    offerRepository.save(existingOffer);
+                });
+
         offer.setStatus(OfferStatus.SELECTED);
         Offer savedOffer = offerRepository.save(offer);
 
@@ -162,7 +144,7 @@ public class TaskService {
                 NotificationType.TASK_SELECTED
         );
 
-        return toOfferDto(savedOffer);
+        return offerMapper.toDto(savedOffer);
     }
 
     // المستخدم يؤكد الإنجاز → COMPLETED
@@ -184,7 +166,7 @@ public class TaskService {
                 });
 
         task.setStatus(TaskStatus.COMPLETED);
-        return toTaskDto(taskRepository.save(task));
+        return taskMapper.toDto(taskRepository.save(task));
     }
 
     // المستخدم يلغي Task
@@ -209,7 +191,7 @@ public class TaskService {
                 });
 
         task.setStatus(TaskStatus.CANCELLED);
-        return toTaskDto(taskRepository.save(task));
+        return taskMapper.toDto(taskRepository.save(task));
     }
 
     // FIX #2: العامل يقدم عرض — إزالة إنشاء Worker بمعلومات وهمية
@@ -248,13 +230,13 @@ public class TaskService {
                 NotificationType.TASK_OFFER
         );
 
-        return toOfferDto(savedOffer);
+        return offerMapper.toDto(savedOffer);
     }
 
     // العامل يرى عروضه
     public List<OfferResponseDto> getMyOffers(User workerUser) {
         return offerRepository.findByWorkerUserId(workerUser.getId())
-                .stream().map(this::toOfferDto).toList();
+                .stream().map(offerMapper::toDto).toList();
     }
 
     // العامل يقبل بعد أن اختاره المستخدم → IN_PROGRESS
@@ -268,10 +250,17 @@ public class TaskService {
         if (offer.getStatus() != OfferStatus.SELECTED)
             throw new BusinessException("You were not selected yet");
 
+        Task task = offer.getTask();
+        if (task.getStatus() != TaskStatus.OPEN) {
+            throw new BusinessException("Task is no longer available");
+        }
+        if (task.getAssignedWorker() != null) {
+            throw new BusinessException("Task already has an assigned worker");
+        }
+
         offer.setStatus(OfferStatus.IN_PROGRESS);
         offerRepository.save(offer);
 
-        Task task = offer.getTask();
         task.setStatus(TaskStatus.IN_PROGRESS);
         task.setAssignedWorker(offer.getWorker());
         taskRepository.save(task);
@@ -282,7 +271,7 @@ public class TaskService {
                 NotificationType.TASK_ACCEPTED
         );
 
-        return toOfferDto(offer);
+        return offerMapper.toDto(offer);
     }
 
     // FIX #3: العامل يرفض — إرجاع العروض المغلقة CLOSED → PENDING (ليس REFUSED)
@@ -320,6 +309,6 @@ public class TaskService {
                 NotificationType.TASK_REFUSED
         );
 
-        return toOfferDto(offer);
+        return offerMapper.toDto(offer);
     }
 }

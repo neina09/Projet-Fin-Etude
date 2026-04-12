@@ -19,24 +19,21 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final AuthenticationService authenticationService;
+    private final com.backend.Projet.mapper.UserMapper userMapper;
 
-    public UserController(UserService userService, AuthenticationService authenticationService) {
+    public UserController(UserService userService, AuthenticationService authenticationService, com.backend.Projet.mapper.UserMapper userMapper) {
         this.userService = userService;
         this.authenticationService = authenticationService;
+        this.userMapper = userMapper;
     }
 
     @GetMapping("/me")
     public ResponseEntity<UserResponseDto> authenticatedUser(
             @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(UserResponseDto.builder()
-                .id(currentUser.getId())
-                .username(currentUser.getName())
-                .email(currentUser.getEmail())
-                .role(currentUser.getRole().name())
-                .build());
+        return ResponseEntity.ok(userMapper.toDto(currentUser));
     }
 
-    @GetMapping("/")
+    @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponseDto>> allUsers() {
         return ResponseEntity.ok(userService.allUsers());
@@ -46,34 +43,22 @@ public class UserController {
     public ResponseEntity<?> changePassword(
             @Valid @RequestBody ChangePasswordDto input,
             @AuthenticationPrincipal User currentUser) {
-        try {
-            authenticationService.changePassword(currentUser, input);
-            return ResponseEntity.ok("Password changed successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        authenticationService.changePassword(currentUser, input);
+        return ResponseEntity.ok("Password changed successfully");
     }
 
     @PutMapping("/update-profile")
     public ResponseEntity<?> updateProfile(
             @Valid @RequestBody UpdateProfileDto input,
             @AuthenticationPrincipal User currentUser) {
-        try {
-            UserResponseDto updatedUser = authenticationService.updateProfile(currentUser, input);
-            return ResponseEntity.ok(updatedUser);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        UserResponseDto updatedUser = authenticationService.updateProfile(currentUser, input);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/delete")
     public ResponseEntity<?> deleteAccount(
             @AuthenticationPrincipal User currentUser) {
-        try {
-            authenticationService.deleteAccount(currentUser);
-            return ResponseEntity.ok("Account deleted successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        authenticationService.deleteAccount(currentUser);
+        return ResponseEntity.ok("Account deleted successfully");
     }
 }

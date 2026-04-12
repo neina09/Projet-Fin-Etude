@@ -22,20 +22,8 @@ public class RatingService {
     private final RatingRepository ratingRepository;
     private final BookingRepository bookingRepository;
     private final WorkerRepository workerRepository;
+    private final com.backend.Projet.mapper.RatingMapper ratingMapper;
 
-    private RatingResponseDto toDto(Rating rating) {
-        return RatingResponseDto.builder()
-                .id(rating.getId())
-                .workerId(rating.getWorker().getId())
-                .workerName(rating.getWorker().getName())
-                .userId(rating.getUser().getId())
-                .userName(rating.getUser().getName())
-                .bookingId(rating.getBooking().getId())
-                .stars(rating.getStars())
-                .comment(rating.getComment())
-                .createdAt(rating.getCreatedAt())
-                .build();
-    }
 
     @Transactional
     public RatingResponseDto addRating(Long bookingId, RatingRequestDto input, User currentUser) {
@@ -71,11 +59,11 @@ public class RatingService {
         worker.setAverageRating(avg != null ? avg : 0.0);
         workerRepository.save(worker);
 
-        return toDto(saved);
+        return ratingMapper.toDto(saved);
     }
 
     public List<RatingResponseDto> getWorkerRatings(Long workerId) {
         return ratingRepository.findByWorkerId(workerId)
-                .stream().map(this::toDto).toList();
+                .stream().map(ratingMapper::toDto).toList();
     }
 }

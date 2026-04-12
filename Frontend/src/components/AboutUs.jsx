@@ -1,68 +1,67 @@
 import { Phone, CheckCircle, Clock, Users, MapPin, CreditCard } from "lucide-react"
 
 const stats = [
-  { val: "+8K", label: "عامل موثّق" },
-  { val: "+40K", label: "طلب منجز" },
-  { val: "4.8", label: "متوسط التقييم" },
+  { val: "+8K", label: "محترف موثّق" },
+  { val: "+40K", label: "مهمة منجزة" },
+  { val: "4.8/5", label: "متوسط التقييم" },
 ]
 
 const features = [
-  { icon: Phone, color: "blue", title: "طلب سريع في دقيقتين", text: "اختر الخدمة وحدد موعدك المناسب، والعامل يصلك مباشرة." },
-  { icon: CheckCircle, color: "blue", title: "عمال موثّقون ومقيّمون", text: "كل عامل مسجّل بهوية وله سجل تقييمات حقيقي من العملاء." },
-  { icon: Clock, color: "yellow", title: "تسعيرة واضحة مسبقاً", text: "لا مفاجآت في الفاتورة — تعرف السعر قبل تأكيد الطلب." },
-  { icon: Users, color: "blue", title: "دعم العمال والعملاء", text: "المنصة تخدم الطرفين: فرص عمل دائمة وخدمة موثوقة." },
-  { icon: MapPin, color: "blue", title: "خدمة في منطقتك", text: "ربط تلقائي بأقرب عامل متاح بحسب موقعك الجغرافي." },
-  { icon: CreditCard, color: "yellow", title: "دفع آمن ومرن", text: "نقداً أو إلكترونياً — الدفع يتم فقط بعد إتمام الخدمة." },
+  { icon: Phone, title: "طلب سريع ومريح", text: "بضع نقرات فقط تفصلك عن حجز الفني المناسب لمنزلك أو مكتبك." },
+  { icon: CheckCircle, title: "جودة واحترافية", text: "كل عامل في منصتنا يخضع لعملية تدقيق شاملة لضمان التميز." },
+  { icon: Clock, title: "شفافية في الأسعار", text: "لا توجد تكاليف مخفية. ستعرف التكلفة التقديرية قبل تأكيد الحجز." },
+  { icon: Users, title: "دعم متبادل", text: "نهتم بتبسيط حياة العملاء مع توفير فرص دخل مجزية لشركائنا العمال." },
+  { icon: MapPin, title: "تغطية جغرافية واسعة", text: "نربطك تلقائياً بأقرب محترف متاح في منطقتك الجغرافية الحالية." },
+  { icon: CreditCard, title: "خيارات دفع مرنة", text: "ادفع نقداً أو إلكترونياً. أمنك المالي أولويتنا وراحتك هي هدفنا." },
 ]
-
-const colorMap = {
-  blue: "bg-blue-50 text-blue-600",
-  yellow: "bg-yellow-50 text-yellow-600",
-}
 
 export default function AboutUs() {
   return (
-    <section id="about" dir="rtl" className="py-16 bg-white">
+    <section id="about" dir="rtl" className="py-24 bg-white">
       <div className="section-shell">
-        <div className="border border-slate-200 rounded-2xl p-6 md:p-8">
-
-          <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">من نحن</p>
-          <h2 className="text-2xl md:text-3xl font-black text-slate-900 leading-snug mb-3">
-            نربطك بأفضل <span className="text-blue-600">عمال الخدمات المنزلية</span> بضغطة واحدة
-          </h2>
-          <p className="text-slate-500 text-sm leading-loose mb-6">
-            منصة رقمية تجمع الكهربائيين، السباكين، عمال النظافة، وسائر الحرفيين المهرة في مكان واحد.
-            اطلب الخدمة، راجع التقييمات، وأكّد موعدك في دقائق — بدون وسيط.
-          </p>
-
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mb-8">
-            {stats.map(({ val, label }) => (
-              <div key={label} className="bg-slate-50 rounded-xl p-3 text-center">
-                <p className="text-xl font-black text-blue-600">{val}</p>
-                <p className="text-xs text-slate-500 mt-1">{label}</p>
+        <div className="saas-card p-8 md:p-12 lg:p-16 border-surface-200">
+          <div className="flex flex-col lg:flex-row gap-16 items-start">
+            
+            {/* Main Content */}
+            <div className="lg:w-1/2 space-y-8">
+              <div className="space-y-4 text-right">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">Mission & Vision</p>
+                <h2 className="text-3xl md:text-5xl font-black text-surface-900 leading-tight">
+                  نحن نعيد تعريف <br />
+                  <span className="text-primary italic">الخدمات المنزلية</span> في موريتانيا
+                </h2>
+                <p className="text-surface-500 text-lg font-medium leading-relaxed max-w-xl">
+                  منصة شغلني هي حلقة الوصل الرقمية الأكثر أماناً وموثوقية، حيث نجمع نخبة الحرفيين والعمال مع أصحاب المنازل والشركات في بيئة عمل احترافية وسلسة.
+                </p>
               </div>
-            ))}
-          </div>
 
-          {/* Feature cards */}
-          <div className="grid sm:grid-cols-2 gap-3">
-            {features.map((feature) => {
-              const FeatureIcon = feature.icon
-              return (
-                <div key={feature.title} className="border border-slate-200 rounded-xl p-4 flex gap-3 items-start hover:border-blue-300 transition-colors">
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${colorMap[feature.color]}`}>
-                    <FeatureIcon size={16} />
+              {/* Stats Grid */}
+              <div className="grid grid-cols-3 gap-6 pt-8 border-t border-surface-100">
+                {stats.map(({ val, label }) => (
+                  <div key={label} className="space-y-1 text-right">
+                    <p className="text-2xl md:text-4xl font-black text-surface-900">{val}</p>
+                    <p className="text-[10px] md:text-xs font-bold text-surface-400 uppercase tracking-widest">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Features Grid */}
+            <div className="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-8">
+              {features.map((feature) => (
+                <div key={feature.title} className="space-y-4 group">
+                  <div className="h-10 w-10 rounded-xl bg-primary-soft text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                    <feature.icon size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-900 mb-1">{feature.title}</p>
-                    <p className="text-xs text-slate-500 leading-relaxed">{feature.text}</p>
+                    <h3 className="text-base font-bold text-surface-900 mb-2">{feature.title}</h3>
+                    <p className="text-sm font-medium text-surface-400 leading-relaxed">{feature.text}</p>
                   </div>
                 </div>
-              )
-            })}
-          </div>
+              ))}
+            </div>
 
+          </div>
         </div>
       </div>
     </section>

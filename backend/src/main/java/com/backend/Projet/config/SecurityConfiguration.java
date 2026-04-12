@@ -41,6 +41,7 @@ public class SecurityConfiguration {
 
                         // ── Auth (public) ──────────────────────────────────────
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
                         // ── Workers (GET public, reste authentifié) ────────────
                         .requestMatchers(HttpMethod.GET,  "/api/workers").permitAll()

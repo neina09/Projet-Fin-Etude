@@ -1,0 +1,134 @@
+package com.backend.Projet.service;
+
+import com.backend.Projet.exception.BusinessException;
+import com.backend.Projet.dto.BookingResponseDto;
+import com.backend.Projet.mapper.BookingMapper;
+import com.backend.Projet.model.Booking;
+import com.backend.Projet.model.BookingStatus;
+import com.backend.Projet.model.NotificationType;
+import com.backend.Projet.model.User;
+import com.backend.Projet.model.Worker;
+import com.backend.Projet.model.WorkerAvailability;
+import com.backend.Projet.repository.BookingRepository;
+import com.backend.Projet.repository.WorkerRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class BookingServiceTest {
+
+    @Mock
+    private BookingRepository bookingRepository;
+
+    @Mock
+    private WorkerRepository workerRepository;
+
+    @Mock
+    private NotificationService notificationService;
+
+    private BookingService bookingService;
+
+    @BeforeEach
+    void setUp() {
+        bookingService = new BookingService(
+                bookingRepository,
+                workerRepository,
+                notificationService,
+                new BookingMapper()
+        );
+    }
+
+    @Test
+    void acceptBookingShouldMarkWorkerBusyAndNotifyUser() {
+        User bookingUser = new User();
+        bookingUser.setId(1L);
+        bookingUser.setUsername("customer");
+
+        User workerAccount = new User();
+        workerAccount.setId(2L);
+        workerAccount.setUsername("worker-account");
+
+        Worker worker = Worker.builder()
+                .id(3L)
+                .name("Hamza")
+                .job("Electrician")
+                .phoneNumber("0611223344")
+                .address("Casablanca")
+                .salary(400)
+                .availability(WorkerAvailability.AVAILABLE)
+                .user(workerAccount)
+                .build();
+
+        Booking booking = Booking.builder()
+                .id(5L)
+                .user(bookingUser)
+                .worker(worker)
+                .status(BookingStatus.PENDING)
+                .description("Install lights")
+                .address("Casablanca")
+                .bookingDate(LocalDateTime.now().plusDays(1))
+                .price(250.0)
+                .build();
+
+        when(bookingRepository.findById(5L)).thenReturn(Optional.of(booking));
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BookingResponseDto response = bookingService.acceptBooking(5L, workerAccount);
+
+        assertEquals(BookingStatus.ACCEPTED, response.getStatus());
+        assertEquals(WorkerAvailability.BUSY, worker.getAvailability());
+        verify(workerRepository).save(worker);
+        verify(notificationService).sendNotification(
+                eq(bookingUser),
+                contains("accepted"),
+                eq(NotificationType.BOOKING_ACCEPTED)
+        );
+    }
+
+    @Test
+    void acceptBookingShouldRejectBusyWorker() {
+        User bookingUser = new User();
+        bookingUser.setId(1L);
+
+        User workerAccount = new User();
+        workerAccount.setId(2L);
+
+        Worker worker = Worker.builder()
+                .id(3L)
+                .name("Hamza")
+                .availability(WorkerAvailability.BUSY)
+                .user(workerAccount)
+                .build();
+
+        Booking booking = Booking.builder()
+                .id(5L)
+                .user(bookingUser)
+                .worker(worker)
+                .status(BookingStatus.PENDING)
+                .description("Install lights")
+                .address("Casablanca")
+                .bookingDate(LocalDateTime.now().plusDays(1))
+                .price(250.0)
+                .build();
+
+        when(bookingRepository.findById(5L)).thenReturn(Optional.of(booking));
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> bookingService.acceptBooking(5L, workerAccount));
+
+        assertEquals("Worker is not available", exception.getMessage());
+        verify(bookingRepository, never()).save(any(Booking.class));
+    }
+}

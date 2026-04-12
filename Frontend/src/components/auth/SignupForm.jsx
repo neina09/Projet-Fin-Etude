@@ -3,71 +3,78 @@ import { User, Mail, Lock } from "lucide-react"
 
 function SignupForm({ handleChange, handleSubmit, onSwitch, loading, error, success }) {
   return (
-    <div className="w-full max-w-md px-6" dir="rtl">
-
-      <h2 className="text-3xl font-black text-[#004384] mb-1" style={{ fontFamily: "'Cairo', sans-serif" }}>
-        انضم إلى شغلني
-      </h2>
-      <p className="text-sm text-[#004384]/40 mb-8" style={{ fontFamily: "'Cairo', sans-serif" }}>
-        أنشئ حسابك المجاني في ثوانٍ
-      </p>
+    <div className="w-full max-w-sm mx-auto p-1 animate-fade-in" dir="rtl">
+      <div className="text-center mb-10">
+        <h2 className="text-3xl font-black text-surface-900 mb-3 tracking-tight">
+          انضم إلى شغلني
+        </h2>
+        <p className="text-sm font-medium text-surface-500">
+          ابدأ رحلتك اليوم وأنشئ حسابك في أقل من دقيقة
+        </p>
+      </div>
 
       {error && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-500 text-sm px-4 py-3 rounded-xl mb-5"
-          style={{ fontFamily: "'Cairo', sans-serif" }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />{error}
+        <div className="flex items-center gap-3 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl mb-6 shadow-sm">
+          <div className="w-2 h-2 rounded-full bg-red-400 shrink-0 animate-pulse" />
+          {error}
         </div>
       )}
+      
       {success && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-600 text-sm px-4 py-3 rounded-xl mb-5"
-          style={{ fontFamily: "'Cairo', sans-serif" }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />{success}
+        <div className="flex items-center gap-3 bg-primary-soft border border-primary/10 text-primary text-sm px-4 py-3 rounded-xl mb-6 shadow-sm">
+          <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
+          {success}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {[
           { label: "الاسم الكامل",        name: "name",            type: "text",     placeholder: "اسمك الكامل",           Icon: User },
-          { label: "البريد الإلكتروني",   name: "email",           type: "email",    placeholder: "example@mail.com",      Icon: Mail },
+          { label: "البريد الإلكتروني",   name: "email",           type: "email",    placeholder: "name@company.com",      Icon: Mail },
           { label: "كلمة المرور",         name: "password",        type: "password", placeholder: "6 أحرف على الأقل",      Icon: Lock },
           { label: "تأكيد كلمة المرور",   name: "confirmPassword", type: "password", placeholder: "أعد كتابة كلمة المرور", Icon: Lock },
         ].map((field) => (
-          <div key={field.name}>
-            <label
-              className="text-[10px] font-bold uppercase tracking-[4px] text-[#004384]/50 mb-2 block"
-              style={{ fontFamily: "'Cairo', sans-serif" }}
-            >
+          <div key={field.name} className="space-y-2">
+            <label className="text-xs font-bold text-surface-700 mr-1 block">
               {field.label}
             </label>
-            <div className="relative">
-              <field.Icon className="absolute right-3 top-1/2 -translate-y-1/2 text-[#004384]/25" size={16} />
+            <div className="relative group">
+              <field.Icon className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 group-focus-within:text-primary transition-colors" size={18} />
               <input
-                type={field.type} name={field.name} placeholder={field.placeholder} onChange={handleChange}
-                className="w-full bg-[#FCFDFE] border border-[#004384]/15 text-[#004384] placeholder-[#004384]/25
-                  rounded-xl pr-10 pl-4 py-3 text-sm focus:outline-none focus:border-[#2563EB]
-                  focus:ring-2 focus:ring-[#2563EB]/20 transition-all"
-                style={{ fontFamily: "'Cairo', sans-serif" }}
+                type={field.type} 
+                name={field.name} 
+                placeholder={field.placeholder} 
+                onChange={handleChange}
+                className="saas-input pr-10 hover:border-surface-300"
                 required
               />
             </div>
           </div>
         ))}
 
-        <button type="submit" disabled={loading}
-          className="w-full bg-[#2563EB] hover:bg-[#004384] disabled:opacity-40
-            text-white font-bold py-3 rounded-full text-sm
-            tracking-wide transition-all duration-300 shadow-[0_4px_20px_rgba(37,99,235,0.35)]
-            hover:shadow-[0_4px_20px_rgba(0,67,132,0.35)]"
-          style={{ fontFamily: "'Cairo', sans-serif" }}>
-          {loading ? "جارٍ إنشاء الحساب..." : "إنشاء حساب"}
+        <button 
+          type="submit" 
+          disabled={loading}
+          className="w-full btn-saas btn-primary h-12 shadow-md shadow-primary/20 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 mt-4"
+        >
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              جاري الإنشاء...
+            </span>
+          ) : "إنشاء حساب مجاني"}
         </button>
 
-        <p className="text-center text-sm text-[#004384]/40 pt-1"
-          style={{ fontFamily: "'Cairo', sans-serif" }}>
+        <p className="text-center text-sm font-medium text-surface-500 pt-6">
           لديك حساب بالفعل؟{" "}
-          <button type="button" onClick={onSwitch}
-            className="text-[#004384] font-bold hover:text-[#2563EB] transition-colors"
-            style={{ fontFamily: "'Cairo', sans-serif" }}>
+          <button 
+            type="button" 
+            onClick={onSwitch}
+            className="text-primary font-bold hover:underline"
+          >
             سجّل الدخول
           </button>
         </p>

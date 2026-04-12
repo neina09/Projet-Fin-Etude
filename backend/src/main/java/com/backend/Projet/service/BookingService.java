@@ -21,23 +21,8 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final WorkerRepository workerRepository;
     private final NotificationService notificationService;
+    private final com.backend.Projet.mapper.BookingMapper bookingMapper;
 
-    private BookingResponseDto toDto(Booking booking) {
-        return BookingResponseDto.builder()
-                .id(booking.getId())
-                .userId(booking.getUser().getId())
-                .userName(booking.getUser().getName())
-                .workerId(booking.getWorker().getId())
-                .workerName(booking.getWorker().getName())
-                .workerJob(booking.getWorker().getJob())
-                .status(booking.getStatus())
-                .description(booking.getDescription())
-                .address(booking.getAddress())
-                .bookingDate(booking.getBookingDate())
-                .price(booking.getPrice())
-                .createdAt(booking.getCreatedAt())
-                .build();
-    }
 
     @Transactional
     public BookingResponseDto createBooking(BookingRequestDto input, User currentUser) {
@@ -71,17 +56,17 @@ public class BookingService {
                 NotificationType.BOOKING_REQUEST
         );
 
-        return toDto(saved);
+        return bookingMapper.toDto(saved);
     }
 
     public List<BookingResponseDto> getMyBookings(User currentUser) {
         return bookingRepository.findByUserId(currentUser.getId())
-                .stream().map(this::toDto).toList();
+                .stream().map(bookingMapper::toDto).toList();
     }
 
     public List<BookingResponseDto> getMyRequests(User currentUser) {
         return bookingRepository.findByWorkerUserId(currentUser.getId())
-                .stream().map(this::toDto).toList();
+                .stream().map(bookingMapper::toDto).toList();
     }
 
     @Transactional
@@ -97,9 +82,13 @@ public class BookingService {
             throw new BusinessException("Booking is not pending");
         }
 
+        Worker worker = booking.getWorker();
+        if (worker.getAvailability() != WorkerAvailability.AVAILABLE) {
+            throw new BusinessException("Worker is not available");
+        }
+
         booking.setStatus(BookingStatus.ACCEPTED);
 
-        Worker worker = booking.getWorker();
         worker.setAvailability(WorkerAvailability.BUSY);
         workerRepository.save(worker);
 
@@ -112,7 +101,7 @@ public class BookingService {
                 NotificationType.BOOKING_ACCEPTED
         );
 
-        return toDto(saved);
+        return bookingMapper.toDto(saved);
     }
 
     @Transactional
@@ -139,7 +128,7 @@ public class BookingService {
                 NotificationType.BOOKING_REJECTED
         );
 
-        return toDto(saved);
+        return bookingMapper.toDto(saved);
     }
 
     @Transactional
@@ -161,7 +150,7 @@ public class BookingService {
         worker.setAvailability(WorkerAvailability.AVAILABLE);
         workerRepository.save(worker);
 
-        return toDto(bookingRepository.save(booking));
+        return bookingMapper.toDto(bookingRepository.save(booking));
     }
 
     @Transactional
@@ -178,6 +167,6 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
-        return toDto(bookingRepository.save(booking));
+        return bookingMapper.toDto(bookingRepository.save(booking));
     }
 }

@@ -19,18 +19,8 @@ public class ChatService {
     private final UserRepository         userRepository;
     private final BookingRepository      bookingRepository;
     private final OfferRepository        offerRepository;
+    private final com.backend.Projet.mapper.ChatMapper chatMapper;
 
-    private ChatResponseDto toDto(ChatMessage message) {
-        return ChatResponseDto.builder()
-                .id(message.getId())
-                .senderId(message.getSender().getId())
-                .senderName(message.getSender().getName())
-                .recipientId(message.getRecipient().getId())
-                .recipientName(message.getRecipient().getName())
-                .content(message.getContent())
-                .timestamp(message.getTimestamp())
-                .build();
-    }
 
     @Transactional
     public ChatResponseDto sendMessage(ChatRequestDto input, User sender) {
@@ -53,7 +43,7 @@ public class ChatService {
                 .content(input.getContent())
                 .build();
 
-        return toDto(chatMessageRepository.save(message));
+        return chatMapper.toDto(chatMessageRepository.save(message));
     }
 
     public List<ChatResponseDto> getConversation(Long otherUserId, User currentUser) {
@@ -62,7 +52,7 @@ public class ChatService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return chatMessageRepository.findConversation(currentUser.getId(), otherUserId)
-                .stream().map(this::toDto).toList();
+                .stream().map(chatMapper::toDto).toList();
     }
 
     // FIX: checkChatPermission — كان غير متماثل (asymmetric)، الآن يتحقق في الاتجاهين بشكل صحيح

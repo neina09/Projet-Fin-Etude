@@ -2,7 +2,7 @@ package com.backend.Projet.controller;
 
 import com.backend.Projet.dto.*;
 import com.backend.Projet.model.User;
-import com.backend.Projet.responses.LoginResponse;
+import com.backend.Projet.dto.LoginResponseDto;
 import com.backend.Projet.service.AuthenticationService;
 import com.backend.Projet.service.JwtService;
 import jakarta.validation.Valid;
@@ -28,50 +28,34 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> authenticate(@Valid @RequestBody LoginUserDto loginUserDto) {
+    public ResponseEntity<LoginResponseDto> authenticate(@Valid @RequestBody LoginUserDto loginUserDto) {
         User authenticatedUser = authenticationService.authenticate(loginUserDto);
         String jwtToken = jwtService.generateToken(authenticatedUser);
-        LoginResponse loginResponse = new LoginResponse(jwtToken, jwtService.getExpirationTime());
+        LoginResponseDto loginResponse = new LoginResponseDto(jwtToken, jwtService.getExpirationTime());
         return ResponseEntity.ok(loginResponse);
     }
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyUser(@Valid @RequestBody VerifyUserDto verifyUserDto) {
-        try {
-            authenticationService.verifyUser(verifyUserDto);
-            return ResponseEntity.ok("Account verified successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        authenticationService.verifyUser(verifyUserDto);
+        return ResponseEntity.ok("Account verified successfully");
     }
 
     @PostMapping("/resend")
-    public ResponseEntity<?> resendVerificationCode(@RequestParam String email) {
-        try {
-            authenticationService.resendVerificationCode(email);
-            return ResponseEntity.ok("Verification code sent");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> resendVerificationCode(@RequestParam String phone) {
+        authenticationService.resendVerificationCode(phone);
+        return ResponseEntity.ok("Verification code sent");
     }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordDto input) {
-        try {
-            authenticationService.forgotPassword(input.getEmail());
-            return ResponseEntity.ok("Reset code sent");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        authenticationService.forgotPassword(input.getPhone());
+        return ResponseEntity.ok("Reset code sent");
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordDto input) {
-        try {
-            authenticationService.resetPassword(input);
-            return ResponseEntity.ok("Password reset successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        authenticationService.resetPassword(input);
+        return ResponseEntity.ok("Password reset successfully");
     }
 }

@@ -17,16 +17,7 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
-
-    private NotificationResponseDto toDto(Notification notification) {
-        return NotificationResponseDto.builder()
-                .id(notification.getId())
-                .message(notification.getMessage())
-                .type(notification.getType())
-                .isRead(notification.isRead())
-                .createdAt(notification.getCreatedAt())
-                .build();
-    }
+    private final com.backend.Projet.mapper.NotificationMapper notificationMapper;
 
     @Transactional
     public void sendNotification(User target, String msg, NotificationType type) {
@@ -40,7 +31,7 @@ public class NotificationService {
 
     public List<NotificationResponseDto> getMyNotifications(User currentUser) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId())
-                .stream().map(this::toDto).toList();
+                .stream().map(notificationMapper::toDto).toList();
     }
 
     @Transactional

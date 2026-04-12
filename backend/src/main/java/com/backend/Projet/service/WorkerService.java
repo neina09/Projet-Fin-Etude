@@ -27,20 +27,8 @@ public class WorkerService {
 
     private final WorkerRepository workerRepository;
     private final UserRepository userRepository;
+    private final com.backend.Projet.mapper.WorkerMapper workerMapper;
 
-    private WorkerResponseDto toDto(Worker worker) {
-        return WorkerResponseDto.builder()
-                .id(worker.getId())
-                .name(worker.getName())
-                .job(worker.getJob())
-                .address(worker.getAddress())
-                .salary(worker.getSalary())
-                .imageUrl(worker.getImageUrl())
-                .phoneNumber(worker.getPhoneNumber())
-                .availability(worker.getAvailability())
-                .averageRating(worker.getAverageRating())
-                .build();
-    }
 
     @Transactional
     public WorkerResponseDto registerAsWorker(WorkerRequestDto dto, User currentUser) {
@@ -62,7 +50,7 @@ public class WorkerService {
                 .availability(WorkerAvailability.AVAILABLE)
                 .build();
 
-        return toDto(workerRepository.save(worker));
+        return workerMapper.toDto(workerRepository.save(worker));
     }
 
     @Transactional
@@ -88,24 +76,24 @@ public class WorkerService {
                 .availability(WorkerAvailability.AVAILABLE)
                 .build();
 
-        return toDto(workerRepository.save(worker));
+        return workerMapper.toDto(workerRepository.save(worker));
     }
 
     public List<WorkerResponseDto> getAllWorkers() {
         return workerRepository.findAll()
                 .stream()
-                .map(this::toDto)
+                .map(workerMapper::toDto)
                 .toList();
     }
 
     public Page<WorkerResponseDto> getAllWorkersPaged(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         return workerRepository.findAll(pageable)
-                .map(this::toDto);
+                .map(workerMapper::toDto);
     }
 
     public WorkerResponseDto getWorkerById(Long id) {
-        return toDto(workerRepository.findById(id)
+        return workerMapper.toDto(workerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Worker not found")));
     }
 
@@ -127,7 +115,7 @@ public class WorkerService {
         worker.setAddress(dto.getAddress());
         worker.setSalary(dto.getSalary());
         worker.setImageUrl(dto.getImageUrl());
-        return toDto(workerRepository.save(worker));
+        return workerMapper.toDto(workerRepository.save(worker));
     }
 
     @Transactional
@@ -142,7 +130,7 @@ public class WorkerService {
         }
 
         worker.setAvailability(availability);
-        return toDto(workerRepository.save(worker));
+        return workerMapper.toDto(workerRepository.save(worker));
     }
 
     @Transactional
@@ -166,16 +154,16 @@ public class WorkerService {
 
     public List<WorkerResponseDto> getWorkersByAddress(String address) {
         return workerRepository.findByAddress(address)
-                .stream().map(this::toDto).toList();
+                .stream().map(workerMapper::toDto).toList();
     }
 
     public List<WorkerResponseDto> getWorkersByJob(String job) {
         return workerRepository.findByJob(job)
-                .stream().map(this::toDto).toList();
+                .stream().map(workerMapper::toDto).toList();
     }
 
     public List<WorkerResponseDto> getAvailableWorkers() {
         return workerRepository.findByAvailability(WorkerAvailability.AVAILABLE)
-                .stream().map(this::toDto).toList();
+                .stream().map(workerMapper::toDto).toList();
     }
 }

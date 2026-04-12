@@ -1,11 +1,11 @@
 import React, { useState } from "react"
-import { Star, MapPin, Heart, Wrench, User, ShieldCheck } from "lucide-react"
+import { Star, MapPin, Heart, Wrench, User, ShieldCheck, ChevronLeft } from "lucide-react"
 
 const SPEC_ICON = {
   Plumber: "🔧",
   Electrician: "⚡",
   Painter: "🎨",
-  Cleaner: "✦",
+  Cleaner: "🧹",
 }
 
 const SPEC_TRANSLATE = {
@@ -17,12 +17,12 @@ const SPEC_TRANSLATE = {
 
 function Stars({ rating }) {
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
         <Star
           key={i}
           size={14}
-          className={i <= Math.round(rating) ? "text-[#FFB909] fill-[#FFB909] drop-shadow-[0_0_5px_#FFB909]" : "text-slate-300"}
+          className={i <= Math.round(rating) ? "text-yellow-500 fill-current" : "text-surface-200"}
         />
       ))}
     </div>
@@ -42,97 +42,95 @@ export default function WorkerCard({ worker, onHire }) {
   const location = worker.address || worker.location || "";
 
   return (
-    <div className="glass-squircle !p-0 group flex flex-col h-full border-white/40 hover:border-[#7000FF] bg-white/60 relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none" />
-      
+    <article className="saas-card group overflow-hidden border-surface-200 flex flex-col h-full bg-white hover:border-primary/20 transition-all duration-300">
       {/* ── Photo Section ── */}
-      <div className="relative h-56 overflow-hidden p-4 pb-0 z-10">
-        <div className="w-full h-full relative rounded-t-[1.5rem] rounded-b-xl overflow-hidden bg-[#F4F7FD] shadow-inner">
-          <img
-            src={img}
-            alt={name}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-            onError={e => {
-              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'W')}&size=400&background=F4F7FD&color=7000FF&font-size=0.35&bold=true`
-            }}
-          />
-          {/* Glass Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#070B19]/80 via-[#070B19]/10 to-transparent" />
-          
-          {/* Status badge */}
-          <div className="absolute top-3 end-3 flex flex-col gap-2 z-10">
-            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-xl border border-white/20 shadow-lg ${
-                available
-                ? "bg-[#00F0FF]/90 text-[#070B19]"
-                : "bg-[#1E293B]/80 text-white"
-              }`}>
-              {available ? "متاح للعمل" : "في مهمة"}
-            </span>
-          </div>
-
-          <button 
-            onClick={(e) => { e.stopPropagation(); setSaved(!saved) }}
-            className={`absolute top-3 start-3 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/20 transition-all duration-300 z-10 ${
-              saved ? "bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.5)]" : "bg-[#070B19]/30 text-white hover:bg-[#070B19]/50"
-            }`}
-          >
-            <Heart size={18} className={saved ? "fill-white" : ""} />
-          </button>
-
-          {/* Elite Verification Badge */}
-          {rating >= 4.5 && (
-            <div className="absolute bottom-4 end-4 bg-white backdrop-blur-xl px-4 py-1.5 rounded-full shadow-[0_0_20px_rgba(112,0,255,0.3)] flex items-center gap-2 z-10">
-              <ShieldCheck size={16} className="text-[#7000FF]" />
-              <span className="text-[10px] font-black text-[#1E293B] uppercase tracking-widest">موثق 2026</span>
-            </div>
-          )}
+      <div className="relative aspect-video overflow-hidden">
+        <img
+          src={img}
+          alt={name}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={e => {
+            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'W')}&size=400&background=F4F7FD&color=7000FF&font-size=0.35&bold=true`
+          }}
+        />
+        
+        {/* Status badge */}
+        <div className="absolute top-3 right-3 z-10">
+          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight shadow-sm border ${
+              available
+              ? "bg-emerald-500 border-emerald-600 text-white"
+              : "bg-surface-800 border-surface-900 text-white"
+            }`}>
+            {available ? "متاح للعمل" : "في مهمة"}
+          </span>
         </div>
+
+        {/* Favorite Button */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); setSaved(!saved) }}
+          className={`absolute top-3 left-3 w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 transition-all duration-300 z-10 ${
+            saved ? "bg-red-500 text-white border-red-600" : "bg-white/40 text-surface-900 hover:bg-white"
+          }`}
+        >
+          <Heart size={16} className={saved ? "fill-white" : ""} />
+        </button>
+
+        {/* Verification Overlay */}
+        {rating >= 4.5 && (
+          <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-lg shadow-sm flex items-center gap-1.5 z-10 border border-surface-100">
+            <ShieldCheck size={14} className="text-primary" />
+            <span className="text-[10px] font-bold text-surface-900">موثوق</span>
+          </div>
+        )}
       </div>
 
       {/* ── Content Body ── */}
-      <div className="p-6 flex flex-col flex-1 z-10 relative">
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <h3 className="text-xl font-black text-[#1E293B] tracking-tight leading-none mb-2.5">
+      <div className="p-5 flex flex-col flex-1">
+        <div className="flex items-start justify-between mb-4">
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-surface-900 leading-none">
                {name}
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
                <Stars rating={rating} />
-               <span className="text-xs font-bold text-[#64748B]">({reviews} مراجعة)</span>
+               <span className="text-[11px] font-bold text-surface-400">({reviews})</span>
             </div>
           </div>
-          <div className="text-end">
-             <div className="text-[#7000FF] font-black text-2xl leading-none tracking-tighter drop-shadow-[0_0_8px_rgba(112,0,255,0.2)]">{price}</div>
-             <div className="text-[10px] font-black text-[#64748B] uppercase tracking-widest mt-1">MRU/ساعة</div>
+          <div className="text-left">
+             <div className="text-surface-900 font-black text-xl leading-none">{price}</div>
+             <div className="text-[10px] font-bold text-surface-400 uppercase tracking-wider mt-1">MRU/ساعة</div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2.5 mb-6">
-          <span className="inline-flex items-center gap-1.5 bg-[#4B00D1]/10 text-[#4B00D1] px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#4B00D1]/20">
-            {SPEC_ICON[specialty] || "🛠️"} {SPEC_TRANSLATE[specialty] || specialty}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <span className="inline-flex items-center gap-1.5 bg-primary-soft text-primary px-3 py-1 rounded-lg text-[11px] font-bold border border-primary/5">
+            <span className="text-sm leading-none">{SPEC_ICON[specialty] || "🛠️"}</span>
+            {SPEC_TRANSLATE[specialty] || specialty}
           </span>
-          <span className="inline-flex items-center gap-1.5 bg-white/80 text-[#64748B] px-3.5 py-1.5 rounded-full text-xs font-bold border border-white">
-            <MapPin size={14} className="text-[#00B0FF]" />
-            {location || "المدينة غير محددة"}
+          <span className="inline-flex items-center gap-1.5 bg-surface-50 text-surface-500 px-3 py-1 rounded-lg text-[11px] font-bold border border-surface-100">
+            <MapPin size={12} className="text-surface-300" />
+            {location || "غير محدد"}
           </span>
         </div>
 
-        <div className="mt-auto pt-6 border-t border-[#1E293B]/5 flex items-center gap-3">
+        <div className="mt-auto pt-5 border-t border-surface-100 flex items-center gap-2">
             <button 
               onClick={() => onHire?.(worker)}
               disabled={!available}
-              className={`flex-1 h-12 rounded-[1rem] font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 ${
-                available ? "btn-2026 text-[#070B19]" : "bg-[#1E293B]/5 text-[#64748B] cursor-not-allowed border outline-none"
+              className={`flex-1 btn-saas h-11 text-xs font-bold transition-all duration-300 ${
+                available 
+                ? "btn-primary shadow-sm hover:shadow-md active:scale-95" 
+                : "bg-surface-100 text-surface-400 cursor-not-allowed border-surface-200"
               }`}
             >
-              <Wrench size={18} />
-              {available ? "تفويض المهمة" : "غير متوفر"}
+              <Wrench size={16} />
+              {available ? "توظيف الآن" : "غير متوفر"}
             </button>
-            <button className="w-12 h-12 bg-white border border-[#1E293B]/10 text-[#64748B] hover:text-[#7000FF] hover:border-[#7000FF] hover:shadow-[0_0_15px_rgba(112,0,255,0.2)] rounded-[1rem] flex items-center justify-center transition-all bg-white">
-              <User size={20} />
+            <button className="w-11 h-11 btn-saas btn-secondary border-surface-200 text-surface-500 hover:text-primary active:scale-95">
+              <User size={18} />
             </button>
         </div>
       </div>
-    </div>
+    </article>
   )
 }
