@@ -1,6 +1,7 @@
 package com.backend.Projet.dto;
 
 import com.backend.Projet.model.WorkerAvailability;
+import com.backend.Projet.model.WorkerVerificationStatus;
 import lombok.*;
 
 @Data
@@ -12,7 +13,10 @@ public class WorkerResponseDto {
     private String address;
     private int salary;
     private String imageUrl;
+    private String identityDocumentUrl;
     private String phoneNumber;
     private WorkerAvailability availability;
     private double averageRating;
+    private WorkerVerificationStatus verificationStatus;
+    private boolean verified;
 }

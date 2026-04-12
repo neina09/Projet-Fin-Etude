@@ -26,6 +26,9 @@ public class Worker {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "identity_document_url")
+    private String identityDocumentUrl;
+
     @NotBlank(message = "Job is required")
     @Column(nullable = false)
     @JsonProperty("job")
@@ -58,4 +61,15 @@ public class Worker {
     @Column(name = "average_rating")
     @Builder.Default
     private double averageRating = 0.0;
+
+    @Column(name = "national_id_number", unique = true)
+    private String nationalIdNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status", nullable = false)
+    @Builder.Default
+    private WorkerVerificationStatus verificationStatus = WorkerVerificationStatus.PENDING;
+
+    @Column(name = "verification_notes", length = 500)
+    private String verificationNotes;
 }

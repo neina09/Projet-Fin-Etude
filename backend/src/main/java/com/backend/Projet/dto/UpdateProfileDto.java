@@ -11,6 +11,6 @@ public class UpdateProfileDto {
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     private String username;
 
-    @Pattern(regexp = "^[0-9]{8,15}$", message = "Phone must contain 8 to 15 digits")
+    @Pattern(regexp = "^(\\+222|222)?[2-4][0-9]{7}$", message = "Phone must be a valid Mauritanian number")
     private String phone;
 }

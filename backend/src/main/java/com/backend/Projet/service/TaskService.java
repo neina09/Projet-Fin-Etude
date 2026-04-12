@@ -212,6 +212,9 @@ public class TaskService {
         Worker worker = workerRepository.findByUserId(workerUser.getId())
                 .orElseThrow(() -> new BusinessException(
                         "Please complete your worker profile before submitting offers"));
+        if (worker.getVerificationStatus() != WorkerVerificationStatus.VERIFIED) {
+            throw new BusinessException("Only verified workers can submit offers");
+        }
 
         if (offerRepository.existsByTaskIdAndWorkerId(taskId, worker.getId()))
             throw new BusinessException("You already submitted an offer on this task");

@@ -15,6 +15,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     Page<Task> findByUserId(Long userId, Pageable pageable);
     Page<Task> findByStatus(TaskStatus status, Pageable pageable);
     List<Task> findByUserId(Long userId);
+    long countByStatus(TaskStatus status);
 
     @Query("""
         SELECT t FROM Task t

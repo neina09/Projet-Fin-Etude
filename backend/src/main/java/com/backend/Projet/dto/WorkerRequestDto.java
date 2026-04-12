@@ -9,7 +9,7 @@ import lombok.*;
 public class WorkerRequestDto {
 
     @NotBlank(message = "Phone number is required")
-    @Pattern(regexp = "^[0-9]{8,15}$", message = "Phone number must contain 8 to 15 digits")
+    @Pattern(regexp = "^(\\+222|222)?[2-4][0-9]{7}$", message = "Phone number must be a valid Mauritanian number")
     private String phoneNumber;
 
     @Size(max = 2048, message = "Image URL must not exceed 2048 characters")
@@ -29,4 +29,8 @@ public class WorkerRequestDto {
 
     @Min(value = 0, message = "Salary must be positive")
     private int salary;
+
+    @NotBlank(message = "National ID number is required")
+    @Size(min = 6, max = 30, message = "National ID number must be between 6 and 30 characters")
+    private String nationalIdNumber;
 }

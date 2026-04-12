@@ -3,6 +3,7 @@ package com.backend.Projet.controller;
 import com.backend.Projet.exception.GlobalExceptionHandler;
 import com.backend.Projet.model.User;
 import com.backend.Projet.service.AuthenticationService;
+import com.backend.Projet.service.FileStorageService;
 import com.backend.Projet.service.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +35,13 @@ class AuthenticationControllerTest {
     @MockitoBean
     private AuthenticationService authenticationService;
 
+    @MockitoBean
+    private FileStorageService fileStorageService;
+
     @Test
     void loginShouldReturnTokenPayload() throws Exception {
         User user = new User();
-        user.setPhone("0612345678");
+        user.setPhone("22123456");
 
         when(authenticationService.authenticate(org.mockito.ArgumentMatchers.any())).thenReturn(user);
         when(jwtService.generateToken(user)).thenReturn("jwt-token");
@@ -47,7 +51,7 @@ class AuthenticationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "phone": "0612345678",
+                                  "phone": "+22222123456",
                                   "password": "secret123"
                                 }
                                 """))

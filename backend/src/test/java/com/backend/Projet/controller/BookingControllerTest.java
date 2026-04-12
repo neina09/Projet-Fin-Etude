@@ -3,6 +3,7 @@ package com.backend.Projet.controller;
 import com.backend.Projet.config.JwtAuthenticationFilter;
 import com.backend.Projet.exception.GlobalExceptionHandler;
 import com.backend.Projet.service.BookingService;
+import com.backend.Projet.service.FileStorageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -31,6 +32,9 @@ class BookingControllerTest {
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private FileStorageService fileStorageService;
 
     @Test
     void createBookingShouldRejectPastDateAndNonPositivePrice() throws Exception {

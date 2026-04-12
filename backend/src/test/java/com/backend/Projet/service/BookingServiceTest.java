@@ -9,6 +9,7 @@ import com.backend.Projet.model.NotificationType;
 import com.backend.Projet.model.User;
 import com.backend.Projet.model.Worker;
 import com.backend.Projet.model.WorkerAvailability;
+import com.backend.Projet.model.WorkerVerificationStatus;
 import com.backend.Projet.repository.BookingRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,6 +69,7 @@ class BookingServiceTest {
                 .address("Casablanca")
                 .salary(400)
                 .availability(WorkerAvailability.AVAILABLE)
+                .verificationStatus(WorkerVerificationStatus.VERIFIED)
                 .user(workerAccount)
                 .build();
 
@@ -109,6 +111,7 @@ class BookingServiceTest {
                 .id(3L)
                 .name("Hamza")
                 .availability(WorkerAvailability.BUSY)
+                .verificationStatus(WorkerVerificationStatus.VERIFIED)
                 .user(workerAccount)
                 .build();
 

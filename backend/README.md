@@ -97,7 +97,7 @@ Use these auth requests:
 ```json
 {
   "username": "youssef",
-  "phone": "0612345678",
+  "phone": "+22222123456",
   "password": "123456"
 }
 ```
@@ -108,7 +108,7 @@ Take the verification code from the backend logs, then send:
 
 ```json
 {
-  "phone": "0612345678",
+  "phone": "+22222123456",
   "verificationCode": "123456"
 }
 ```
@@ -117,7 +117,7 @@ Take the verification code from the backend logs, then send:
 
 ```json
 {
-  "phone": "0612345678",
+  "phone": "+22222123456",
   "password": "123456"
 }
 ```

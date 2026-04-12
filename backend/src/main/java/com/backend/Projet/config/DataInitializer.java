@@ -19,7 +19,7 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${app.seed-admin:false}")
     private boolean seedAdmin;
 
-    @Value("${app.seed-admin-phone:0660000000}")
+    @Value("${app.seed-admin-phone:22100000}")
     private String adminPhone;
 
     @Value("${app.seed-admin-username:admin}")

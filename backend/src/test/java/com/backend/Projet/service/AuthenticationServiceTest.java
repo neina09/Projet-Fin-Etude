@@ -38,6 +38,9 @@ class AuthenticationServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private SmsService smsService;
+
     private AuthenticationService authenticationService;
 
     @BeforeEach
@@ -46,7 +49,8 @@ class AuthenticationServiceTest {
                 userRepository,
                 authenticationManager,
                 passwordEncoder,
-                new UserMapper()
+                new UserMapper(),
+                smsService
         );
     }
 
@@ -54,10 +58,10 @@ class AuthenticationServiceTest {
     void signupShouldCreateDisabledUserUsingPhone() {
         RegisterUserDto dto = new RegisterUserDto();
         dto.setUsername("youssef");
-        dto.setPhone("0612345678");
+        dto.setPhone("+22222123456");
         dto.setPassword("secret123");
 
-        when(userRepository.findByPhone(dto.getPhone())).thenReturn(Optional.empty());
+        when(userRepository.findByPhone("22123456")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(dto.getPassword())).thenReturn("hashed-password");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
@@ -67,49 +71,50 @@ class AuthenticationServiceTest {
 
         UserResponseDto response = authenticationService.signup(dto);
 
-        assertEquals("0612345678", response.getPhone());
+        assertEquals("22123456", response.getPhone());
         assertEquals("youssef", response.getUsername());
         assertEquals("USER", response.getRole());
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(captor.capture());
         User savedUser = captor.getValue();
-        assertEquals("0612345678", savedUser.getPhone());
+        assertEquals("22123456", savedUser.getPhone());
         assertFalse(savedUser.isEnabled());
         assertNotNull(savedUser.getVerificationCode());
         assertNotNull(savedUser.getVerificationCodeExpiresAt());
+        verify(smsService).sendVerificationCode(eq("22123456"), anyString());
     }
 
     @Test
     void authenticateShouldUsePhoneCredentials() {
         LoginUserDto dto = new LoginUserDto();
-        dto.setPhone("0612345678");
+        dto.setPhone("+22222123456");
         dto.setPassword("secret123");
 
         User user = new User();
         user.setId(1L);
-        user.setPhone("0612345678");
+        user.setPhone("22123456");
         user.setPassword("hashed");
         user.setEnabled(true);
 
-        when(userRepository.findByPhone(dto.getPhone())).thenReturn(Optional.of(user));
+        when(userRepository.findByPhone("22123456")).thenReturn(Optional.of(user));
 
         User authenticated = authenticationService.authenticate(dto);
 
         assertSame(user, authenticated);
         verify(authenticationManager).authenticate(
-                new UsernamePasswordAuthenticationToken("0612345678", "secret123")
+                new UsernamePasswordAuthenticationToken("22123456", "secret123")
         );
     }
 
     @Test
     void verifyUserShouldEnableAccountAndClearVerificationData() {
         VerifyUserDto dto = new VerifyUserDto();
-        dto.setPhone("0612345678");
+        dto.setPhone("22123456");
         dto.setVerificationCode("123456");
 
         User user = new User();
-        user.setPhone("0612345678");
+        user.setPhone("22123456");
         user.setVerificationCode("123456");
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(5));
         user.setEnabled(false);
@@ -126,9 +131,9 @@ class AuthenticationServiceTest {
 
     @Test
     void forgotPasswordShouldIgnoreUnknownPhone() {
-        when(userRepository.findByPhone("0999999999")).thenReturn(Optional.empty());
+        when(userRepository.findByPhone("22111111")).thenReturn(Optional.empty());
 
-        assertDoesNotThrow(() -> authenticationService.forgotPassword("0999999999"));
+        assertDoesNotThrow(() -> authenticationService.forgotPassword("22111111"));
         verify(userRepository, never()).save(any(User.class));
     }
 

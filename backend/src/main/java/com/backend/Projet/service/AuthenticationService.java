@@ -6,6 +6,7 @@ import com.backend.Projet.exception.ResourceNotFoundException;
 import com.backend.Projet.model.Role;
 import com.backend.Projet.model.User;
 import com.backend.Projet.repository.UserRepository;
+import com.backend.Projet.util.MauritaniaPhoneUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,25 +28,29 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final com.backend.Projet.mapper.UserMapper userMapper;
+    private final SmsService smsService;
 
     public AuthenticationService(
             UserRepository userRepository,
             AuthenticationManager authenticationManager,
             PasswordEncoder passwordEncoder,
-            com.backend.Projet.mapper.UserMapper userMapper
+            com.backend.Projet.mapper.UserMapper userMapper,
+            SmsService smsService
     ) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
+        this.smsService = smsService;
     }
 
     @Transactional
     public UserResponseDto signup(RegisterUserDto input) {
-        if (userRepository.findByPhone(input.getPhone()).isPresent()) {
+        String normalizedPhone = MauritaniaPhoneUtils.normalize(input.getPhone());
+        if (userRepository.findByPhone(normalizedPhone).isPresent()) {
             throw new BusinessException("Phone already in use");
         }
-        User user = new User(input.getUsername(), input.getPhone(), passwordEncoder.encode(input.getPassword()));
+        User user = new User(input.getUsername(), normalizedPhone, passwordEncoder.encode(input.getPassword()));
         user.setRole(Role.USER);
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
@@ -56,20 +61,22 @@ public class AuthenticationService {
     }
 
     public User authenticate(LoginUserDto input) {
-        User user = userRepository.findByPhone(input.getPhone())
+        String normalizedPhone = MauritaniaPhoneUtils.normalize(input.getPhone());
+        User user = userRepository.findByPhone(normalizedPhone)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         if (!user.isEnabled()) {
             throw new BusinessException("Account not verified. Please verify your account.");
         }
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(input.getPhone(), input.getPassword())
+                new UsernamePasswordAuthenticationToken(normalizedPhone, input.getPassword())
         );
         return user;
     }
 
     @Transactional
     public void verifyUser(VerifyUserDto input) {
-        User user = userRepository.findByPhone(input.getPhone())
+        String normalizedPhone = MauritaniaPhoneUtils.normalize(input.getPhone());
+        User user = userRepository.findByPhone(normalizedPhone)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (user.getVerificationCode() == null || user.getVerificationCodeExpiresAt() == null) {
@@ -91,7 +98,8 @@ public class AuthenticationService {
 
     @Transactional
     public void resendVerificationCode(String phone) {
-        Optional<User> optionalUser = userRepository.findByPhone(phone);
+        String normalizedPhone = MauritaniaPhoneUtils.normalize(phone);
+        Optional<User> optionalUser = userRepository.findByPhone(normalizedPhone);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             if (user.isEnabled()) {
@@ -102,15 +110,16 @@ public class AuthenticationService {
             sendVerificationCode(user);
             userRepository.save(user);
         } else {
-            log.info("Verification code requested for unknown phone {}", phone);
+            log.info("Verification code requested for unknown phone {}", normalizedPhone);
         }
     }
 
     @Transactional
     public void forgotPassword(String phone) {
-        Optional<User> optionalUser = userRepository.findByPhone(phone);
+        String normalizedPhone = MauritaniaPhoneUtils.normalize(phone);
+        Optional<User> optionalUser = userRepository.findByPhone(normalizedPhone);
         if (optionalUser.isEmpty()) {
-            log.info("Reset password requested for unknown phone {}", phone);
+            log.info("Reset password requested for unknown phone {}", normalizedPhone);
             return;
         }
 
@@ -119,7 +128,7 @@ public class AuthenticationService {
         user.setResetPasswordToken(token);
         user.setResetPasswordExpiresAt(LocalDateTime.now().plusMinutes(15));
         userRepository.save(user);
-        log.info("Reset password token for phone {}: {}", user.getPhone(), token);
+        smsService.sendPasswordResetToken(user.getPhone(), token);
     }
 
     @Transactional
@@ -150,11 +159,12 @@ public class AuthenticationService {
             currentUser.setUsername(input.getUsername());
         }
         if (input.getPhone() != null && !input.getPhone().isBlank()) {
-            Optional<User> existingUser = userRepository.findByPhone(input.getPhone());
+            String normalizedPhone = MauritaniaPhoneUtils.normalize(input.getPhone());
+            Optional<User> existingUser = userRepository.findByPhone(normalizedPhone);
             if (existingUser.isPresent() && !existingUser.get().getId().equals(currentUser.getId())) {
                 throw new BusinessException("Phone already in use");
             }
-            currentUser.setPhone(input.getPhone());
+            currentUser.setPhone(normalizedPhone);
         }
         User saved = userRepository.save(currentUser);
         return userMapper.toDto(saved);
@@ -167,7 +177,7 @@ public class AuthenticationService {
 
 
     private void sendVerificationCode(User user) {
-        log.info("Verification code for phone {}: {}", user.getPhone(), user.getVerificationCode());
+        smsService.sendVerificationCode(user.getPhone(), user.getVerificationCode());
     }
 
     private String generateVerificationCode() {

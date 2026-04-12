@@ -9,10 +9,12 @@ import com.backend.Projet.service.WorkerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +52,30 @@ public class WorkerController {
         return ResponseEntity.ok(workerService.createWorker(dto, userId));
     }
 
+    @GetMapping("/admin/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<WorkerResponseDto>> getPendingWorkers() {
+        return ResponseEntity.ok(workerService.getWorkersPendingVerification());
+    }
+
+    @PatchMapping("/admin/{id}/verify")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<WorkerResponseDto> verifyWorker(
+            @PathVariable Long id,
+            @RequestParam(required = false) String notes,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(workerService.verifyWorker(id, currentUser, notes));
+    }
+
+    @PatchMapping("/admin/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<WorkerResponseDto> rejectWorker(
+            @PathVariable Long id,
+            @RequestParam(required = false) String notes,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(workerService.rejectWorker(id, currentUser, notes));
+    }
+
     @GetMapping
     public ResponseEntity<List<WorkerResponseDto>> getAllWorkers() {
         return ResponseEntity.ok(workerService.getAllWorkers());
@@ -72,6 +98,13 @@ public class WorkerController {
         return ResponseEntity.ok(workerService.getWorkerById(id));
     }
 
+    @GetMapping("/{id}/manage")
+    public ResponseEntity<WorkerResponseDto> getWorkerForOwnerOrAdmin(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(workerService.getWorkerForOwnerOrAdmin(id, currentUser));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<WorkerResponseDto> updateWorker(
             @PathVariable Long id,
@@ -86,6 +119,22 @@ public class WorkerController {
             @RequestParam WorkerAvailability availability,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(workerService.updateAvailability(id, availability, currentUser));
+    }
+
+    @PostMapping(value = "/{id}/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<WorkerResponseDto> uploadWorkerImage(
+            @PathVariable Long id,
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(workerService.uploadWorkerImage(id, file, currentUser));
+    }
+
+    @PostMapping(value = "/{id}/upload-identity-document", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<WorkerResponseDto> uploadIdentityDocument(
+            @PathVariable Long id,
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(workerService.uploadIdentityDocument(id, file, currentUser));
     }
 
     @DeleteMapping("/{id}")

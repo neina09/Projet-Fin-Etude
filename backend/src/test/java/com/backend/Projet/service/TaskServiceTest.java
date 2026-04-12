@@ -13,6 +13,7 @@ import com.backend.Projet.model.Task;
 import com.backend.Projet.model.TaskStatus;
 import com.backend.Projet.model.User;
 import com.backend.Projet.model.Worker;
+import com.backend.Projet.model.WorkerVerificationStatus;
 import com.backend.Projet.repository.OfferRepository;
 import com.backend.Projet.repository.TaskRepository;
 import com.backend.Projet.repository.WorkerRepository;
@@ -86,6 +87,7 @@ class TaskServiceTest {
                 .address("Sale")
                 .salary(300)
                 .user(workerUser)
+                .verificationStatus(WorkerVerificationStatus.VERIFIED)
                 .build();
 
         OfferRequestDto dto = new OfferRequestDto();
@@ -141,6 +143,7 @@ class TaskServiceTest {
                 .address("Sale")
                 .salary(300)
                 .user(workerUser)
+                .verificationStatus(WorkerVerificationStatus.VERIFIED)
                 .build();
 
         OfferRequestDto dto = new OfferRequestDto();

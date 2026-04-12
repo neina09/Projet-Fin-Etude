@@ -9,7 +9,7 @@ import lombok.Setter;
 public class LoginUserDto {
 
     @NotBlank(message = "Phone is required")
-    @Pattern(regexp = "^[0-9]{8,15}$", message = "Phone must contain 8 to 15 digits")
+    @Pattern(regexp = "^(\\+222|222)?[2-4][0-9]{7}$", message = "Phone must be a valid Mauritanian number")
     private String phone;
 
     @NotBlank(message = "Password is required")

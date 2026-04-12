@@ -28,6 +28,9 @@ public class BookingService {
     public BookingResponseDto createBooking(BookingRequestDto input, User currentUser) {
         Worker worker = workerRepository.findById(input.getWorkerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
+        if (worker.getVerificationStatus() != WorkerVerificationStatus.VERIFIED) {
+            throw new BusinessException("Worker is not verified yet");
+        }
 
         if (worker.getAvailability() == WorkerAvailability.BUSY) {
             throw new BusinessException("Worker is not available");
