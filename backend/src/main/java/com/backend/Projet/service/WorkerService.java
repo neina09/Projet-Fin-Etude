@@ -126,6 +126,12 @@ public class WorkerService {
         return workerMapper.toDto(worker);
     }
 
+    public WorkerResponseDto getMyWorkerProfile(User currentUser) {
+        Worker worker = workerRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Worker profile not found for this user"));
+        return workerMapper.toDto(worker);
+    }
+
     @Transactional
     public WorkerResponseDto updateWorker(Long id, WorkerRequestDto dto, User currentUser) {
         Worker worker = workerRepository.findById(id)

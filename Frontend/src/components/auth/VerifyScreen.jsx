@@ -1,66 +1,88 @@
 import React from "react"
-import { User, Mail, Lock } from "lucide-react"
+import { ArrowRight, ShieldCheck } from "lucide-react"
 
-function SignupForm({ handleChange, handleSubmit, onSwitch, loading, error, success }) {
+function StatusMessage({ error, success }) {
+  if (error) {
+    return (
+      <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 shadow-sm">
+        <div className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-red-400" />
+        {error}
+      </div>
+    )
+  }
+
+  if (success) {
+    return (
+      <div className="mb-6 flex items-center gap-3 rounded-xl border border-primary/10 bg-primary-soft px-4 py-3 text-sm font-bold text-primary shadow-sm">
+        <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+        {success}
+      </div>
+    )
+  }
+
+  return null
+}
+
+export default function VerifyScreen({
+  phone,
+  verificationCode,
+  setVerificationCode,
+  handleVerify,
+  handleResend,
+  loading,
+  error,
+  success
+}) {
   return (
-    <div className="w-full max-w-md px-6">
-
-      <h2 className="text-3xl font-black text-[#004384] mb-1" style={{ fontFamily: 'Georgia, serif' }}>
-        Join chghloni
-      </h2>
-      <p className="text-sm text-[#004384]/40 mb-8">Create your free account in seconds</p>
-
-      {error && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-500 text-sm px-4 py-3 rounded-xl mb-5">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />{error}
+    <div className="mx-auto w-full max-w-sm p-1 animate-fade-in" dir="rtl">
+      <div className="mb-10 text-center">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[2rem] border border-primary/10 bg-primary-soft text-primary shadow-sm">
+          <ShieldCheck size={32} />
         </div>
-      )}
-      {success && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-600 text-sm px-4 py-3 rounded-xl mb-5">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />{success}
+        <h2 className="mb-3 font-alexandria text-3xl font-black tracking-tight text-surface-900">تفعيل الحساب</h2>
+        <p className="text-sm font-medium leading-relaxed text-surface-500">
+          أرسلنا رمز التفعيل إلى الرقم:
+          <br />
+          <span className="font-bold text-primary" dir="ltr">{phone}</span>
+        </p>
+      </div>
+
+      <StatusMessage error={error} success={success} />
+
+      <div className="space-y-6">
+        <div className="space-y-3 text-center">
+          <label className="block text-xs font-black uppercase tracking-[0.3em] text-surface-400">رمز التفعيل</label>
+          <input
+            type="text"
+            placeholder="000000"
+            value={verificationCode}
+            onChange={(e) => setVerificationCode(e.target.value)}
+            maxLength={6}
+            className="w-full rounded-2xl border-2 border-surface-100 bg-white px-4 py-4 text-center text-3xl font-black tracking-[0.5em] text-surface-900 shadow-sm transition-all focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/5"
+            style={{ direction: "ltr" }}
+          />
         </div>
-      )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {[
-          { label: "Full Name",        name: "name",            type: "text",     placeholder: "Your full name",       Icon: User },
-          { label: "Email",            name: "email",           type: "email",    placeholder: "you@example.com",      Icon: Mail },
-          { label: "Password",         name: "password",        type: "password", placeholder: "Min. 6 characters",   Icon: Lock },
-          { label: "Confirm Password", name: "confirmPassword", type: "password", placeholder: "Repeat your password", Icon: Lock },
-        ].map((field) => (
-          <div key={field.name}>
-            <label className="text-[10px] font-bold uppercase tracking-[4px] text-[#004384]/50 mb-2 block">{field.label}</label>
-            <div className="relative">
-              <field.Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-[#004384]/25" size={16} />
-              <input
-                type={field.type} name={field.name} placeholder={field.placeholder} onChange={handleChange}
-                className="w-full bg-[#FCFDFE] border border-[#004384]/15 text-[#004384] placeholder-[#004384]/25
-                  rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-[#2563EB]
-                  focus:ring-2 focus:ring-[#2563EB]/20 transition-all"
-                required
-              />
-            </div>
-          </div>
-        ))}
-
-        <button type="submit" disabled={loading}
-          className="w-full bg-[#2563EB] hover:bg-[#004384] disabled:opacity-40
-            text-white font-bold py-3 rounded-full text-sm
-            tracking-wide transition-all duration-300 shadow-[0_4px_20px_rgba(37,99,235,0.35)]
-            hover:shadow-[0_4px_20px_rgba(0,67,132,0.35)]">
-          {loading ? "Creating account..." : "Sign Up"}
+        <button
+          onClick={handleVerify}
+          disabled={loading || verificationCode.length < 6}
+          className="btn-saas btn-primary h-14 w-full text-base shadow-lg shadow-primary/20 disabled:opacity-50"
+        >
+          {loading ? "جاري التفعيل..." : "تفعيل الحساب الآن"}
         </button>
 
-        <p className="text-center text-sm text-[#004384]/40 pt-1">
-          Already have an account?{" "}
-          <button type="button" onClick={onSwitch}
-            className="text-[#004384] font-bold hover:text-[#2563EB] transition-colors">
-            Log in
+        <div className="pt-4 text-center">
+          <p className="mb-4 text-sm font-medium text-surface-400">لم يصلك الرمز؟</p>
+          <button
+            onClick={handleResend}
+            disabled={loading}
+            className="mx-auto flex items-center gap-2 rounded-xl border border-surface-200 bg-surface-50 px-6 py-2.5 text-xs font-black text-surface-900 transition-all hover:border-surface-300 hover:bg-surface-100"
+          >
+            إعادة إرسال الرمز
+            <ArrowRight size={14} className="rotate-180" />
           </button>
-        </p>
-      </form>
+        </div>
+      </div>
     </div>
   )
 }
-
-export default SignupForm

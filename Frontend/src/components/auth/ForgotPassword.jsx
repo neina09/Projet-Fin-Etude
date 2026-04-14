@@ -1,68 +1,80 @@
 import React from "react"
-import { Mail, ArrowRight } from "lucide-react"
+import { ArrowRight, Phone } from "lucide-react"
 
-function ForgotPassword({ forgotEmail, setForgotEmail, handleForgotPassword, onBack, loading, error, success }) {
+function StatusMessage({ error, success }) {
+  if (error) {
+    return (
+      <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 shadow-sm">
+        <div className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-red-400" />
+        {error}
+      </div>
+    )
+  }
+
+  if (success) {
+    return (
+      <div className="mb-6 flex items-center gap-3 rounded-xl border border-primary/10 bg-primary-soft px-4 py-3 text-sm font-bold text-primary shadow-sm">
+        <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+        {success}
+      </div>
+    )
+  }
+
+  return null
+}
+
+export default function ForgotPassword({
+  forgotPhone,
+  setForgotPhone,
+  handleForgotPassword,
+  onBack,
+  loading,
+  error,
+  success
+}) {
   return (
-    <div className="w-full max-w-md px-6" dir="rtl">
-
-      <button onClick={onBack}
-        className="flex items-center gap-2 text-[#004384]/40 hover:text-[#004384] text-sm mb-8 transition-colors font-medium"
-        style={{ fontFamily: "'Cairo', sans-serif" }}>
-        <ArrowRight size={14} /> العودة لتسجيل الدخول
+    <div className="mx-auto w-full max-w-sm p-1 animate-fade-in" dir="rtl">
+      <button
+        onClick={onBack}
+        className="group mb-8 flex items-center gap-2 text-xs font-black text-surface-400 transition-colors hover:text-primary"
+      >
+        <ArrowRight size={14} className="transition-transform group-hover:-translate-x-1" />
+        العودة لتسجيل الدخول
       </button>
 
-      <h2 className="text-3xl font-black text-[#004384] mb-1" style={{ fontFamily: "'Cairo', sans-serif" }}>
-        نسيت كلمة المرور؟
-      </h2>
-      <p className="text-sm text-[#004384]/40 mb-8" style={{ fontFamily: "'Cairo', sans-serif" }}>
-        أدخل بريدك الإلكتروني وسنرسل لك رمز إعادة التعيين
-      </p>
+      <div className="mb-10 text-center">
+        <h2 className="mb-3 font-alexandria text-3xl font-black tracking-tight text-surface-900">استعادة كلمة المرور</h2>
+        <p className="text-sm font-medium leading-relaxed text-surface-500">
+          أدخل رقم هاتفك وسنرسل لك رمزاً لإعادة تعيين كلمة المرور.
+        </p>
+      </div>
 
-      {error && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-500 text-sm px-4 py-3 rounded-xl mb-5"
-          style={{ fontFamily: "'Cairo', sans-serif" }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />{error}
-        </div>
-      )}
-      {success && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-600 text-sm px-4 py-3 rounded-xl mb-5"
-          style={{ fontFamily: "'Cairo', sans-serif" }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />{success}
-        </div>
-      )}
+      <StatusMessage error={error} success={success} />
 
-      <div className="space-y-4">
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-[4px] text-[#004384]/50 mb-2 block"
-            style={{ fontFamily: "'Cairo', sans-serif" }}>
-            البريد الإلكتروني
-          </label>
-          <div className="relative">
-            <Mail className="absolute right-3 top-1/2 -translate-y-1/2 text-[#004384]/25" size={16} />
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <label className="mr-1 block text-xs font-bold text-surface-700">رقم الهاتف</label>
+          <div className="group relative">
+            <Phone className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 transition-colors group-focus-within:text-primary" size={18} />
             <input
-              type="email"
-              placeholder="example@mail.com"
-              value={forgotEmail}
-              onChange={(e) => setForgotEmail(e.target.value)}
-              className="w-full bg-[#FCFDFE] border border-[#004384]/15 text-[#004384] placeholder-[#004384]/25
-                rounded-xl pr-10 pl-4 py-3 text-sm focus:outline-none focus:border-[#2563EB]
-                focus:ring-2 focus:ring-[#2563EB]/20 transition-all"
-              style={{ fontFamily: "'Cairo', sans-serif" }}
+              type="tel"
+              placeholder="00000000"
+              value={forgotPhone}
+              onChange={(e) => setForgotPhone(e.target.value)}
+              className="saas-input h-12 pr-10 hover:border-surface-300"
+              required
             />
           </div>
         </div>
 
-        <button onClick={handleForgotPassword} disabled={loading}
-          className="w-full bg-[#2563EB] hover:bg-[#004384] disabled:opacity-40
-            text-white font-bold py-3 rounded-full text-sm
-            tracking-wide transition-all duration-300 shadow-[0_4px_20px_rgba(37,99,235,0.35)]
-            hover:shadow-[0_4px_20px_rgba(0,67,132,0.35)]"
-          style={{ fontFamily: "'Cairo', sans-serif" }}>
-          {loading ? "جارٍ الإرسال..." : "إرسال رمز الاستعادة"}
+        <button
+          onClick={handleForgotPassword}
+          disabled={loading || !forgotPhone}
+          className="btn-saas btn-primary h-12 w-full font-bold shadow-lg shadow-primary/20 disabled:opacity-50"
+        >
+          {loading ? "جاري الإرسال..." : "إرسال رمز الاستعادة"}
         </button>
       </div>
     </div>
   )
 }
-
-export default ForgotPassword

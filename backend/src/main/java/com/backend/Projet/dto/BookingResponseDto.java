@@ -12,6 +12,7 @@ public class BookingResponseDto {
     private Long userId;
     private String userName;
     private Long workerId;
+    private Long workerUserId;
     private String workerName;
     private String workerJob;
     private BookingStatus status;

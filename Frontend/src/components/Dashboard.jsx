@@ -1,298 +1,391 @@
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useEffect, useMemo, useState } from "react"
+import { AnimatePresence } from "framer-motion"
+import { ArrowUpRight, Briefcase, ClipboardList, Eye, FileText } from "lucide-react"
+import { useLocation, useNavigate } from "react-router-dom"
 import {
-  LogOut, Briefcase, Eye, FileText,
-  TrendingUp, ArrowUpRight, Wrench, Search, LayoutDashboard, Users, ClipboardList
-} from "lucide-react"
-import { getMe } from "../api"
-import logo from "../assets/logo.png"
-import WorkerCard  from "./WorkerCard"
-import BecomeWorker from "./BecomeWorker"
+  getMe,
+  getMyBookingRequests,
+  getMyBookings,
+  getMyOffers,
+  getMyTasks,
+  getWorkers
+} from "../api"
+import Sidebar from "./Sidebar"
+import DashboardHeader from "./DashboardHeader"
+import WorkersSection from "./WorkersSection"
 import ProblemBoard from "./ProblemBoard"
-import WorkerRequestModal from "./WorkerRequestModal"
+import BecomeWorker from "./BecomeWorker"
+import ChatSystem from "./ChatSystem"
+import AdminDashboard from "./AdminDashboard"
+import TaskStatsCharts from "./TaskStatsCharts"
+import ProfileSettings from "./ProfileSettings"
 
-/* ─────────────────────────────────────────
-   MOCK DATA
-───────────────────────────────────────── */
-const MOCK_WORKERS = [
-  { id:1, name:"أحمد سالم",    specialty:"Plumber",     rating:4.8, reviews:124, price:15, available:true,  jobs:87,  location:"نواكشوط", img:"https://randomuser.me/api/portraits/men/32.jpg",   top:true  },
-  { id:2, name:"فاطمة انجاي",  specialty:"Electrician", rating:4.6, reviews:89,  price:20, available:true,  jobs:61,  location:"نواكشوط", img:"https://randomuser.me/api/portraits/women/44.jpg", top:false },
-  { id:3, name:"عمر كوليبالي", specialty:"Painter",     rating:4.9, reviews:201, price:12, available:false, jobs:143, location:"روصو",      img:"https://randomuser.me/api/portraits/men/75.jpg",   top:true  },
-  { id:4, name:"مريم با",      specialty:"Cleaner",     rating:4.5, reviews:67,  price:10, available:true,  jobs:39,  location:"كيفه",       img:"https://randomuser.me/api/portraits/women/68.jpg", top:false },
-  { id:5, name:"إبراهيم ديوب",  specialty:"Plumber",     rating:4.7, reviews:98,  price:18, available:true,  jobs:72,  location:"نواكشوط", img:"https://randomuser.me/api/portraits/men/54.jpg",   top:false },
-  { id:6, name:"عائشة كيتا",    specialty:"Painter",     rating:4.3, reviews:44,  price:11, available:false, jobs:28,  location:"الزويرات",   img:"https://randomuser.me/api/portraits/women/29.jpg", top:false },
-]
-
-const SPECIALTIES = ["الكل", "Plumber", "Electrician", "Painter", "Cleaner"]
-const SPEC_ICON   = { "الكل":"◈", Plumber:"🔧", Electrician:"⚡", Painter:"🎨", Cleaner:"🧹" }
-const SPEC_TRANSLATE = { "الكل":"الكل", Plumber:"سباك", Electrician:"كهربائي", Painter:"دهان", Cleaner:"تنظيف" }
-
-/* ─────────────── Workers Section ─────────────── */
-function WorkersSection() {
-  const [search, setSearch] = useState("")
-  const [filter, setFilter] = useState("الكل")
-  const [selectedWorker, setSelectedWorker] = useState(null)
-
-  const filtered = useMemo(() =>
-    MOCK_WORKERS.filter(w =>
-      (w.name.toLowerCase().includes(search.toLowerCase()) ||
-       w.specialty.toLowerCase().includes(search.toLowerCase())) &&
-      (filter === "الكل" || w.specialty === filter)
-    ), [search, filter])
-
-  const handleHireSubmit = (bookingData) => {
-    console.log("Booking submitted:", bookingData)
-    alert(`تم إرسال طلبك إلى ${selectedWorker.name} بنجاح!`)
-    setSelectedWorker(null)
-  }
-
-  return (
-    <div className="max-w-7xl mx-auto py-12 px-6 lg:px-10">
-      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h2 className="text-3xl font-black text-surface-900 tracking-tight mb-2">تصفح المحترفين</h2>
-          <p className="text-sm font-medium text-surface-500">{filtered.length} عمال متاحون حالياً بالقرب منك</p>
-        </div>
-        <div className="w-full md:w-96">
-           <div className="relative group">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-surface-400 group-focus-within:text-primary transition-colors" size={18} />
-              <input 
-                type="text" 
-                placeholder="ابحث عن اسم، مهنة، أو مهارة..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="saas-input pr-11 h-12 border-surface-200"
-              />
-           </div>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-3 mb-12">
-        {SPECIALTIES.map(s => (
-          <button 
-            key={s} 
-            onClick={() => setFilter(s)} 
-            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border ${
-              filter === s 
-              ? "bg-primary border-primary text-white shadow-md shadow-primary/20" 
-              : "bg-white border-surface-200 text-surface-600 hover:border-primary/30 hover:text-primary"
-            }`}
-          >
-            <span className="ml-2 opacity-70">{SPEC_ICON[s]}</span>
-            {SPEC_TRANSLATE[s] || s}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filtered.length
-          ? filtered.map(w => (
-              <WorkerCard 
-                key={w.id} 
-                worker={w} 
-                onHire={() => setSelectedWorker(w)} 
-              />
-            ))
-          : (
-            <div className="col-span-full py-28 text-center saas-card bg-surface-50 border-dashed border-surface-200">
-              <div className="text-6xl mb-6 grayscale opacity-50">🛰️</div>
-              <h3 className="text-xl font-bold text-surface-900 mb-2">لا توجد نتائج</h3>
-              <p className="text-sm font-medium text-surface-500">جرب البحث بكلمات مختلفة أو تغيير الفئة.</p>
-            </div>
-          )
-        }
-      </div>
-
-      {selectedWorker && (
-        <WorkerRequestModal 
-          worker={selectedWorker} 
-          onClose={() => setSelectedWorker(null)}
-          onSubmit={handleHireSubmit}
-        />
-      )}
-    </div>
-  )
+const DASHBOARD_ROUTES = {
+  dashboard: "/dashboard",
+  workers: "/dashboard/workers",
+  tasks: "/dashboard/tasks",
+  becomeWorker: "/dashboard/become-worker",
+  chat: "/dashboard/chat",
+  profile: "/dashboard/profile",
+  admin: "/dashboard/admin"
 }
 
-/* ─────────────── MAIN DASHBOARD ─────────────── */
+const PAGE_TITLES = {
+  dashboard: "الرئيسية",
+  workers: "العمال",
+  tasks: "المهام",
+  becomeWorker: "التسجيل كعامل",
+  chat: "الرسائل",
+  profile: "الملف الشخصي",
+  admin: "لوحة الإدارة"
+}
+
+const ROLE_LABELS = {
+  ADMIN: "مدير",
+  WORKER: "عامل",
+  USER: "عميل"
+}
+
 export default function Dashboard({ onLogout }) {
-  const [user, setUser]   = useState(null)
-  const [page, setPage]   = useState("dashboard")
+  const [user, setUser] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [workers, setWorkers] = useState([])
+  const [myTasks, setMyTasks] = useState([])
+  const [myBookings, setMyBookings] = useState([])
+  const [myRequests, setMyRequests] = useState([])
+  const [myOffers, setMyOffers] = useState([])
+  const navigate = useNavigate()
+  const location = useLocation()
 
-  useEffect(() => { getMe().then(setUser).catch(onLogout) }, [onLogout])
+  const isAdmin = user?.role === "ADMIN"
+  const isWorker = user?.role === "WORKER"
 
-  const onlineCount = MOCK_WORKERS.filter(w => w.available).length
+  const page = useMemo(() => {
+    const normalized = location.pathname.replace(/\/+$/, "")
+    const entry = Object.entries(DASHBOARD_ROUTES).find(([, path]) => path === normalized)
+    return entry?.[0] || "dashboard"
+  }, [location.pathname])
+
+  const setPage = (nextPage) => {
+    const path = DASHBOARD_ROUTES[nextPage] || DASHBOARD_ROUTES.dashboard
+    navigate(path)
+    setSidebarOpen(false)
+  }
+
+  const loadUser = async () => {
+    const currentUser = await getMe()
+    setUser(currentUser)
+    return currentUser
+  }
+
+  const loadDashboardData = async () => {
+    const [workersResult, tasksResult, bookingsResult, requestsResult, offersResult] = await Promise.allSettled([
+      getWorkers(),
+      getMyTasks(),
+      getMyBookings(),
+      getMyBookingRequests(),
+      getMyOffers()
+    ])
+
+    if (workersResult.status === "fulfilled") {
+      setWorkers(Array.isArray(workersResult.value) ? workersResult.value : [])
+    }
+
+    if (tasksResult.status === "fulfilled") {
+      const tasks = tasksResult.value?.content || tasksResult.value || []
+      setMyTasks(Array.isArray(tasks) ? tasks : [])
+    }
+
+    if (bookingsResult.status === "fulfilled") {
+      setMyBookings(Array.isArray(bookingsResult.value) ? bookingsResult.value : [])
+    }
+
+    if (requestsResult.status === "fulfilled") {
+      setMyRequests(Array.isArray(requestsResult.value) ? requestsResult.value : [])
+    }
+
+    if (offersResult.status === "fulfilled") {
+      setMyOffers(Array.isArray(offersResult.value) ? offersResult.value : [])
+    }
+  }
+
+  useEffect(() => {
+    let active = true
+
+    const run = async () => {
+      try {
+        if (active) {
+          await loadUser()
+        }
+      } catch {
+        onLogout()
+      }
+    }
+
+    run()
+    return () => {
+      active = false
+    }
+  }, [onLogout])
+
+  useEffect(() => {
+    if (!user) return
+
+    let active = true
+    const run = async () => {
+      if (active) {
+        await loadDashboardData()
+      }
+    }
+
+    run()
+    return () => {
+      active = false
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (isAdmin && page === "dashboard") {
+      navigate(DASHBOARD_ROUTES.admin, { replace: true })
+    }
+  }, [isAdmin, navigate, page])
+
+  useEffect(() => {
+    if ((isAdmin || isWorker) && page === "becomeWorker") {
+      navigate(isAdmin ? DASHBOARD_ROUTES.admin : DASHBOARD_ROUTES.dashboard, { replace: true })
+    }
+  }, [isAdmin, isWorker, navigate, page])
+
+  const dashboardCards = useMemo(() => {
+    if (isWorker) {
+      const pendingRequests = myRequests.filter((booking) => String(booking.status || "").toUpperCase() === "PENDING").length
+      const activeJobs = myRequests.filter((booking) => String(booking.status || "").toUpperCase() === "ACCEPTED").length
+      const completedJobs = myRequests.filter((booking) => String(booking.status || "").toUpperCase() === "COMPLETED").length
+
+      return [
+        { icon: Briefcase, color: "text-primary", bg: "bg-primary-soft", num: String(activeJobs), lbl: "أعمال جارية", trend: `${pendingRequests} طلبات جديدة` },
+        { icon: ClipboardList, color: "text-indigo-600", bg: "bg-indigo-50", num: String(myOffers.length), lbl: "عروضي على المهام", trend: `${myOffers.length} عرض` },
+        { icon: FileText, color: "text-emerald-600", bg: "bg-emerald-50", num: String(completedJobs), lbl: "أعمال مكتملة", trend: `${completedJobs} منجز` }
+      ]
+    }
+
+    const activeTasksCount = myTasks.filter((task) => {
+      const status = String(task.status || "").toUpperCase()
+      return status === "OPEN" || status === "IN_PROGRESS" || status === "ASSIGNED"
+    }).length
+
+    const completedTasksCount = myTasks.filter(
+      (task) => String(task.status || "").toUpperCase() === "COMPLETED"
+    ).length
+
+    return [
+      { icon: Briefcase, color: "text-primary", bg: "bg-primary-soft", num: String(activeTasksCount), lbl: "مهام نشطة", trend: `${activeTasksCount} الآن` },
+      { icon: FileText, color: "text-indigo-600", bg: "bg-indigo-50", num: String(completedTasksCount), lbl: "مهام مكتملة", trend: `${completedTasksCount} منجز` },
+      { icon: Eye, color: "text-amber-600", bg: "bg-amber-50", num: String(myBookings.length), lbl: "حجوزاتي", trend: `${myBookings.length} حجز` }
+    ]
+  }, [isWorker, myBookings.length, myOffers.length, myRequests, myTasks])
+
+  const averageRating = workers.length
+    ? (workers.reduce((sum, worker) => sum + (worker.averageRating || 0), 0) / workers.length).toFixed(1)
+    : "0.0"
 
   return (
-    <div className="min-h-screen relative bg-surface-50/50" dir="rtl">
+    <div className="flex min-h-screen bg-surface-50" dir="rtl">
+      <Sidebar
+        page={page}
+        onNavigate={setPage}
+        user={user}
+        onLogout={onLogout}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
-      {/* ── Navbar ── */}
-      <nav className="h-16 flex items-center justify-between px-8 sticky top-0 z-50 bg-white/80 border-b border-surface-200 backdrop-blur-md">
-        <div className="flex items-center gap-10">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setPage("dashboard")}>
-            <div className="w-8 h-8 flex items-center justify-center">
-               <img src={logo} alt="logo" className="w-full h-full object-contain" />
-            </div>
-            <span className="text-xl font-black text-surface-900 tracking-tight">شغلني</span>
-          </div>
-          
-          <div className="w-px h-6 bg-surface-200 hidden md:block" />
-          
-          <div className="hidden lg:flex items-center gap-2">
-            {[
-              { id: "dashboard", lbl: "الرئيسية", icon: LayoutDashboard },
-              { id: "workers", lbl: "المحترفون", icon: Users },
-              { id: "tasks", lbl: "سوق المهام", icon: ClipboardList },
-              { id: "becomeWorker", lbl: "التوظيف", icon: Briefcase }
-            ].map(({id, lbl, icon: Icon}) => (
-              <button 
-                key={id} 
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
-                  page === id 
-                  ? "bg-primary-soft text-primary" 
-                  : "text-surface-500 hover:text-surface-900 hover:bg-surface-100"
-                }`} 
-                onClick={() => setPage(id)}
-              >
-                <Icon size={16} />
-                {lbl}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="flex-1 transition-all duration-500 lg:mr-72">
+        <DashboardHeader
+          user={user}
+          title={PAGE_TITLES[page] || "لوحة التحكم"}
+          onToggleSidebar={() => setSidebarOpen(true)}
+        />
 
-        <div className="flex items-center gap-4">
-          <button 
-            className="hidden md:flex h-9 px-4 rounded-lg text-xs font-black bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20 items-center gap-2 active:scale-95" 
-            onClick={() => setPage("becomeWorker")}
-          >
-             <Wrench size={14}/> كن عاملاً
-          </button>
-          
-          <div className="w-px h-6 bg-surface-200 hidden md:block" />
-
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex flex-col items-end leading-none">
-               <span className="text-xs font-bold text-surface-900">{user?.username || "المستخدم"}</span>
-               <span className="text-[10px] font-bold text-surface-400 mt-0.5">عميل متميز</span>
-            </div>
-            <button className="h-9 w-9 rounded-lg bg-surface-100 flex items-center justify-center text-surface-500 hover:text-red-600 hover:bg-red-50 transition-all border border-surface-200" onClick={onLogout}>
-              <LogOut size={16} />
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* ── Main Content Area ── */}
-      <main className="w-full relative z-10 transition-all duration-500 pb-20">
-        {page === "dashboard" && (
-          <div className="max-w-7xl mx-auto py-10 px-6 lg:px-10">
-            
-            {/* Elegant Welcome Banner */}
-            <div className="relative bg-white overflow-hidden p-8 lg:p-12 mb-8 rounded-[2rem] border border-surface-200 shadow-xl shadow-surface-900/[0.03]">
-              {/* Background Accents */}
-              <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-40">
-                <div className="absolute -top-[10%] -right-[5%] w-[30%] h-[50%] bg-primary/5 rounded-full blur-3xl" />
-                <div className="absolute -bottom-[10%] -left-[5%] w-[40%] h-[40%] bg-indigo-50/50 rounded-full blur-3xl" />
-              </div>
-
-              <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
-                <div className="flex-1 text-center lg:text-right">
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-soft text-[10px] font-black uppercase tracking-wider text-primary mb-6">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                    لوحة التحكم
-                  </span>
-                  <h2 className="text-4xl md:text-5xl font-black mb-4 leading-[1.15] text-surface-900 tracking-tight">مرحباً {user?.username || "بك"} 👋</h2>
-                  <p className="text-surface-500 font-medium mb-8 max-w-xl leading-relaxed text-base mx-auto lg:mx-0">
-                    استكشف نخبة المحترفين، انشر مهامك، وتابع سير أعمالك من مكان واحد بكل سهولة واحترافية.
-                  </p>
-                  
-                  <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
-                    <button className="btn-saas btn-primary h-12 px-8 text-sm" onClick={() => setPage("workers")}>
-                       استكشاف المحترفين
-                    </button>
-                    <button className="btn-saas btn-secondary h-12 px-8 text-sm border-surface-200" onClick={() => setPage("tasks")}>
-                       إدارة المهام النشطة
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4 w-full lg:w-auto">
-                   <div className="flex-1 min-w-[140px] bg-surface-50 border border-surface-200 rounded-2xl p-6 text-center group hover:border-primary/20 transition-all">
-                      <div className="text-4xl font-black mb-1 text-surface-900 group-hover:text-primary transition-colors">{onlineCount}</div>
-                      <div className="text-[10px] text-surface-400 font-bold uppercase tracking-widest">محترف نشط الآن</div>
-                   </div>
-                   <div className="flex-1 min-w-[140px] bg-surface-50 border border-surface-200 rounded-2xl p-6 text-center group hover:border-primary/20 transition-all">
-                      <div className="text-4xl font-black mb-1 text-surface-900 group-hover:text-primary transition-colors">4.8</div>
-                      <div className="text-[10px] text-surface-400 font-bold uppercase tracking-widest">متوسط رضا العملاء</div>
-                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Feature stats cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {[
-                { icon: Briefcase, color: "text-primary", bg: "bg-primary-soft", num: "0", lbl: "مهام قيد التنفيذ", trend: "+0%" },
-                { icon: FileText, color: "text-indigo-600", bg: "bg-indigo-50", num: "0", lbl: "العقود النشطة", trend: "+0%" },
-                { icon: Eye, color: "text-amber-600", bg: "bg-amber-50", num: "0", lbl: "مشاهدات الملف", trend: "+0%" },
-              ].map((s, i) => (
-                <div className="saas-card p-6 bg-white border-surface-200 hover:border-primary/10 transition-all" key={i}>
-                  <div className="flex justify-between items-center mb-6">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${s.bg} ${s.color}`}>
-                       <s.icon size={22} />
+        <main className="p-0">
+          <AnimatePresence mode="wait">
+            <div
+              key={page}
+              className="animate-fade-in"
+            >
+              {page === "dashboard" && !isAdmin && (
+                <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+                  <div className="relative mb-10 overflow-hidden rounded-[2.5rem] border border-surface-200 bg-white p-8 shadow-xl shadow-surface-900/[0.03] lg:p-12">
+                    <div className="pointer-events-none absolute inset-0 opacity-40">
+                      <div className="absolute -top-[10%] -right-[5%] h-[50%] w-[30%] rounded-full bg-primary/5 blur-3xl" />
+                      <div className="absolute -bottom-[10%] -left-[5%] h-[40%] w-[40%] rounded-full bg-indigo-50/50 blur-3xl" />
                     </div>
-                    <div className="px-2 py-1 rounded-lg bg-surface-50 text-surface-400 text-[10px] font-bold tracking-tight border border-surface-100">
-                       {s.trend}
+
+                    <div className="relative z-10 flex flex-col items-center justify-between gap-12 lg:flex-row">
+                      <div className="flex-1 text-center lg:text-right">
+                        <span className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-soft px-3 py-1 text-[11px] font-black tracking-wider text-primary">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                          مزامنة مع الخادم
+                        </span>
+                        <h2 className="mb-4 font-alexandria text-4xl font-black leading-[1.15] tracking-tight text-surface-900 md:text-5xl">
+                          مرحباً {user?.username || "بك"}
+                        </h2>
+                        <p className="mx-auto mb-8 max-w-xl text-base font-bold leading-relaxed text-surface-500 lg:mx-0">
+                          نوع الحساب الحالي: {ROLE_LABELS[user?.role] || "مستخدم"}. من هنا تستطيع التنقل بين العمال،
+                          المهام، الرسائل، والإشعارات بدون الخروج من لوحة التحكم أو العودة إلى الصفحة العامة.
+                        </p>
+
+                        <div className="flex flex-wrap items-center justify-center gap-4 lg:justify-start">
+                          <button
+                            className="btn-saas btn-primary h-12 px-8 text-sm shadow-lg shadow-primary/20"
+                            onClick={() => setPage(isWorker ? "tasks" : "workers")}
+                          >
+                            {isWorker ? "استعراض المهام" : "استكشاف العمال"}
+                          </button>
+                          <button
+                            className="btn-saas btn-secondary h-12 border-surface-200 px-8 text-sm"
+                            onClick={() => setPage("profile")}
+                          >
+                            الملف الشخصي
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex w-full flex-col items-center gap-4 sm:flex-row lg:w-auto">
+                        <div className="min-w-[160px] flex-1 rounded-3xl border border-surface-200 bg-surface-50 p-8 text-center transition-all hover:border-primary/20">
+                          <div className="mb-1 font-alexandria text-4xl font-black text-surface-900">
+                            {isWorker ? myRequests.length : workers.length}
+                          </div>
+                          <div className="text-[10px] font-black uppercase tracking-widest text-surface-400">
+                            {isWorker ? "طلبات العمل" : "عمال متاحون"}
+                          </div>
+                        </div>
+                        <div className="min-w-[160px] flex-1 rounded-3xl border border-surface-200 bg-surface-50 p-8 text-center transition-all hover:border-primary/20">
+                          <div className="mb-1 font-alexandria text-4xl font-black text-surface-900">
+                            {isWorker ? myOffers.length : averageRating}
+                          </div>
+                          <div className="text-[10px] font-black uppercase tracking-widest text-surface-400">
+                            {isWorker ? "عروض مرسلة" : "متوسط تقييم العمال"}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-3xl font-black text-surface-900 mb-1">{s.num}</div>
-                  <div className="text-xs font-bold text-surface-400 uppercase tracking-wider">{s.lbl}</div>
+
+                  <TaskStatsCharts tasks={isWorker ? myRequests : myTasks} />
+
+                  <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+                    {dashboardCards.map((stat, index) => (
+                      <div key={index} className="saas-card border-surface-200 bg-white p-8 transition-all hover:border-primary/20">
+                        <div className="mb-8 flex items-center justify-between">
+                          <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border border-black/[0.03] shadow-sm ${stat.bg} ${stat.color}`}>
+                            <stat.icon size={26} />
+                          </div>
+                          <div className="rounded-xl border border-surface-100 bg-surface-50 px-3 py-1.5 text-[10px] font-black tracking-tight text-surface-400">
+                            {stat.trend}
+                          </div>
+                        </div>
+                        <div className="mb-1 font-alexandria text-4xl font-black text-surface-900">{stat.num}</div>
+                        <div className="font-alexandria text-xs font-bold uppercase tracking-[0.15em] text-surface-400">{stat.lbl}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                    <div
+                      className="saas-card group flex cursor-pointer items-center gap-8 rounded-[2.5rem] border-surface-200 bg-white p-10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                      onClick={() => setPage(isWorker ? "tasks" : "workers")}
+                    >
+                      <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-surface-50 text-4xl transition-all duration-500 group-hover:bg-primary-soft">
+                        {isWorker ? "📝" : "🛠"}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="mb-2 font-alexandria text-xl font-black text-surface-900">
+                          {isWorker ? "عروضي على المهام" : "العمال"}
+                        </h3>
+                        <p className="text-sm font-bold leading-relaxed text-surface-500">
+                          {isWorker
+                            ? "تابع المهام المفتوحة، أرسل عرضك، وراقب حالة كل عرض من نفس المساحة."
+                            : "تصفح قائمة العمال، شاهد تقييماتهم، وابدأ الحجز المباشر من داخل المنصة."}
+                        </p>
+                      </div>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-surface-200 text-surface-400 transition-all group-hover:border-primary group-hover:bg-primary group-hover:text-white">
+                        <ArrowUpRight size={22} />
+                      </div>
+                    </div>
+
+                    <div
+                      className="saas-card group flex cursor-pointer items-center gap-8 rounded-[2.5rem] border-surface-200 bg-white p-10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                      onClick={() => setPage(isAdmin ? "admin" : isWorker ? "chat" : "profile")}
+                    >
+                      <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-surface-50 text-4xl transition-all duration-500 group-hover:bg-indigo-50">
+                        {isWorker ? "💬" : "👤"}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="mb-2 font-alexandria text-xl font-black text-surface-900">
+                          {isWorker ? "الرسائل والإشعارات" : "الملف الشخصي"}
+                        </h3>
+                        <p className="text-sm font-bold leading-relaxed text-surface-500">
+                          {isWorker
+                            ? "انتقل فوراً إلى المحادثات، وتابع الطلبات والإشعارات دون فقدان مكانك الحالي."
+                            : "حدّث بياناتك، قيّم العمال بعد اكتمال الحجز، وراجع سجل طلباتك بسهولة."}
+                        </p>
+                      </div>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-surface-200 text-surface-400 transition-all group-hover:border-indigo-600 group-hover:bg-indigo-600 group-hover:text-white">
+                        <ArrowUpRight size={22} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ))}
+              )}
+
+              {page === "workers" && <WorkersSection currentUser={user} />}
+              {page === "tasks" && <ProblemBoard currentUser={user} />}
+              {page === "becomeWorker" && !isAdmin && !isWorker && (
+                <BecomeWorker
+                  onSuccess={async () => {
+                    await loadUser()
+                    await loadDashboardData()
+                    setPage("dashboard")
+                  }}
+                />
+              )}
+              {page === "chat" && (
+                <div className="p-4 sm:p-8">
+                  <ChatSystem currentUser={user} />
+                </div>
+              )}
+              {page === "profile" && (
+                <ProfileSettings
+                  user={user}
+                  onUpdate={(updatedUser) => setUser(updatedUser)}
+                  onRefresh={loadDashboardData}
+                  onBecomeWorker={() => setPage("becomeWorker")}
+                  onLogout={onLogout}
+                />
+              )}
+              {page === "admin" && <AdminDashboard />}
+
+              {page === "becomeWorker" && (isAdmin || isWorker) && (
+                <div className="mx-auto max-w-3xl px-6 py-16">
+                  <div className="saas-card rounded-[2rem] border-surface-200 bg-white p-10 text-center">
+                    <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-50 text-4xl">
+                      ⛔
+                    </div>
+                    <h2 className="mb-3 font-alexandria text-3xl font-black text-surface-900">
+                      هذا القسم غير متاح
+                    </h2>
+                    <p className="mx-auto max-w-xl text-sm font-bold leading-relaxed text-surface-500">
+                      المدير لا يمكنه التسجيل كعامل، والعامل لديه ملف مهني جاهز بالفعل. يمكنك متابعة
+                      مهامك أو فتح الملف الشخصي من القائمة الجانبية.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Navigation shortcuts */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div 
-                className="saas-card p-8 flex items-center gap-6 cursor-pointer group bg-white border-surface-200 hover:shadow-lg transition-all" 
-                onClick={() => setPage("workers")}
-              >
-                <div className="w-16 h-16 rounded-2xl bg-surface-50 flex items-center justify-center text-3xl group-hover:bg-primary-soft transition-all duration-300">
-                  🛸
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-surface-900 mb-1.5">نظام البحث الذكي</h3>
-                  <p className="text-sm font-medium text-surface-500 leading-relaxed">جد أفضل الكفاءات المتوفرة حالياً في منطقتك وتصفح تقييماتهم الحقيقية.</p>
-                </div>
-                <div className="w-10 h-10 rounded-full border border-surface-200 flex items-center justify-center text-surface-400 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
-                  <ArrowUpRight size={18} />
-                </div>
-              </div>
-
-              <div 
-                className="saas-card p-8 flex items-center gap-6 cursor-pointer group bg-white border-surface-200 hover:shadow-lg transition-all" 
-                onClick={() => setPage("becomeWorker")}
-              >
-                <div className="w-16 h-16 rounded-2xl bg-surface-50 flex items-center justify-center text-3xl group-hover:bg-indigo-50 transition-all duration-300">
-                  💼
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-surface-900 mb-1.5">انضم كشريك محترف</h3>
-                  <p className="text-sm font-medium text-surface-500 leading-relaxed">هل تمتلك مهارة؟ ابدأ باستقبال طلبات العمل اليوم وزد دخلك عبر منصتنا.</p>
-                </div>
-                <div className="w-10 h-10 rounded-full border border-surface-200 flex items-center justify-center text-surface-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">
-                  <ArrowUpRight size={18} />
-                </div>
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {page === "workers" && <WorkersSection />}
-        {page === "tasks" && <ProblemBoard currentUser={user} />}
-        {page === "becomeWorker" && <BecomeWorker />}
-      </main>
+          </AnimatePresence>
+        </main>
+      </div>
     </div>
   )
 }

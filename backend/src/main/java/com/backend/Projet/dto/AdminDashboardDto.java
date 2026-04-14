@@ -13,6 +13,7 @@ public class AdminDashboardDto {
     private long totalWorkers;
     private long verifiedWorkers;
     private long pendingWorkers;
+    private long pendingTasks;
     private long openTasks;
     private long inProgressTasks;
     private long completedTasks;
@@ -21,4 +22,5 @@ public class AdminDashboardDto {
     private long completedBookings;
     private long totalNotifications;
     private List<WorkerResponseDto> latestPendingWorkers;
+    private List<TaskResponseDto> latestPendingTasks;
 }

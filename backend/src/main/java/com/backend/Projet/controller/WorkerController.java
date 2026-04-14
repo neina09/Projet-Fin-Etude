@@ -98,6 +98,11 @@ public class WorkerController {
         return ResponseEntity.ok(workerService.getWorkerById(id));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<WorkerResponseDto> getMyWorkerProfile(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(workerService.getMyWorkerProfile(currentUser));
+    }
+
     @GetMapping("/{id}/manage")
     public ResponseEntity<WorkerResponseDto> getWorkerForOwnerOrAdmin(
             @PathVariable Long id,

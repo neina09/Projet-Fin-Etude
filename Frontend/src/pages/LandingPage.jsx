@@ -23,7 +23,6 @@ function LandingPage() {
       <BecomeTasker />
       <AboutUs />
       <Testimonials />
-   
       <Footer />
     </>
   )

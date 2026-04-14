@@ -17,23 +17,32 @@ public class TaskService {
     private final TaskRepository      taskRepository;
     private final OfferRepository     offerRepository;
     private final WorkerRepository    workerRepository;
+    private final UserRepository      userRepository;
     private final NotificationService notificationService;
     private final com.backend.Projet.mapper.TaskMapper taskMapper;
     private final com.backend.Projet.mapper.OfferMapper offerMapper;
 
-
+    @Transactional
     public TaskResponseDto createTask(TaskRequestDto input, User user) {
+        User managedUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         Task task = Task.builder()
                 .title(input.getTitle())
                 .description(input.getDescription())
                 .address(input.getAddress())
-                .status(TaskStatus.OPEN)
-                .user(user)
+                .profession(input.getProfession())
+                .latitude(input.getLatitude())
+                .longitude(input.getLongitude())
+                .status(TaskStatus.PENDING_REVIEW)
+                .user(managedUser)
                 .build();
-        return taskMapper.toDto(taskRepository.save(task));
+
+        return toTaskDto(taskRepository.save(task));
     }
 
     // مرئية للجميع بدون login
+    @Transactional(readOnly = true)
     public PageResponseDto<TaskResponseDto> getOpenTasks(Pageable pageable) {
         return PageResponseDto.from(
                 taskRepository.findByStatus(TaskStatus.OPEN, pageable)
@@ -42,15 +51,17 @@ public class TaskService {
     }
 
     // بحث في Tasks المفتوحة
+    @Transactional(readOnly = true)
     public PageResponseDto<TaskResponseDto> searchOpenTasks(
-            String keyword, String address, Pageable pageable) {
+            String keyword, String address, String profession, Pageable pageable) {
         return PageResponseDto.from(
                 taskRepository.searchOpenTasks(
-                                TaskStatus.OPEN, address, keyword, pageable)
+                                TaskStatus.OPEN, address, profession, keyword, pageable)
                         .map(taskMapper::toDto)
         );
     }
 
+    @Transactional(readOnly = true)
     public PageResponseDto<TaskResponseDto> getMyTasks(
             User user, Pageable pageable) {
         return PageResponseDto.from(
@@ -60,6 +71,7 @@ public class TaskService {
     }
 
     // FIX #1: يرى الجميع تفاصيل Task المفتوحة (مش مقيد بصاحب الـ Task فقط)
+    @Transactional(readOnly = true)
     public TaskResponseDto getTaskById(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
@@ -69,6 +81,7 @@ public class TaskService {
         return taskMapper.toDto(task);
     }
 
+    @Transactional
     public TaskResponseDto updateTask(
             Long id, TaskRequestDto input, User user) {
         Task task = taskRepository.findById(id)
@@ -82,7 +95,13 @@ public class TaskService {
         task.setTitle(input.getTitle());
         task.setDescription(input.getDescription());
         task.setAddress(input.getAddress());
-        return taskMapper.toDto(taskRepository.save(task));
+        task.setProfession(input.getProfession());
+        task.setLatitude(input.getLatitude());   // ← أضف
+        task.setLongitude(input.getLongitude());
+        if (task.getStatus() == TaskStatus.OPEN) {
+            task.setStatus(TaskStatus.PENDING_REVIEW);
+        }
+        return toTaskDto(taskRepository.save(task));
     }
 
     @Transactional
@@ -103,6 +122,7 @@ public class TaskService {
     }
 
     // المستخدم يرى العروض على task معينة
+    @Transactional(readOnly = true)
     public List<OfferResponseDto> getOffersForTask(Long taskId, User user) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
@@ -125,6 +145,9 @@ public class TaskService {
             throw new BusinessException("Task is not open");
         if (offer.getStatus() != OfferStatus.PENDING)
             throw new BusinessException("Offer is not pending");
+        if (offer.getWorker().getAvailability() != null
+                && offer.getWorker().getAvailability() != WorkerAvailability.AVAILABLE)
+            throw new BusinessException("Worker is currently busy and cannot be selected");
 
         offerRepository.findByTaskId(task.getId()).stream()
                 .filter(existingOffer -> !existingOffer.getId().equals(offerId))
@@ -166,7 +189,7 @@ public class TaskService {
                 });
 
         task.setStatus(TaskStatus.COMPLETED);
-        return taskMapper.toDto(taskRepository.save(task));
+        return toTaskDto(taskRepository.save(task));
     }
 
     // المستخدم يلغي Task
@@ -179,6 +202,10 @@ public class TaskService {
         if (task.getStatus() == TaskStatus.CLOSED
                 || task.getStatus() == TaskStatus.CANCELLED)
             throw new BusinessException("Task is already closed or cancelled");
+        if (task.getStatus() == TaskStatus.PENDING_REVIEW) {
+            task.setStatus(TaskStatus.CANCELLED);
+            return toTaskDto(taskRepository.save(task));
+        }
         if (task.getStatus() == TaskStatus.IN_PROGRESS)
             throw new BusinessException("Cannot cancel a task in progress");
 
@@ -191,10 +218,61 @@ public class TaskService {
                 });
 
         task.setStatus(TaskStatus.CANCELLED);
-        return taskMapper.toDto(taskRepository.save(task));
+        return toTaskDto(taskRepository.save(task));
+    }
+
+    @Transactional
+    public TaskResponseDto approveTask(Long taskId, User currentUser) {
+        if (currentUser.getRole() != Role.ADMIN) {
+            throw new UnauthorizedException("Only admins can approve tasks");
+        }
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        if (task.getStatus() != TaskStatus.PENDING_REVIEW) {
+            throw new BusinessException("Task is not pending review");
+        }
+
+        task.setStatus(TaskStatus.OPEN);
+        Task savedTask = taskRepository.save(task);
+
+        notificationService.sendNotification(
+                task.getUser(),
+                "Your task has been approved and is now visible on the platform: " + task.getTitle(),
+                NotificationType.TASK_ACCEPTED
+        );
+
+        return toTaskDto(savedTask);
+    }
+
+    @Transactional
+    public TaskResponseDto rejectTask(Long taskId, User currentUser) {
+        if (currentUser.getRole() != Role.ADMIN) {
+            throw new UnauthorizedException("Only admins can reject tasks");
+        }
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        if (task.getStatus() != TaskStatus.PENDING_REVIEW) {
+            throw new BusinessException("Task is not pending review");
+        }
+
+        task.setStatus(TaskStatus.CANCELLED);
+        Task savedTask = taskRepository.save(task);
+
+        notificationService.sendNotification(
+                task.getUser(),
+                "Your task was rejected by the admin. Please update it and submit it again.",
+                NotificationType.TASK_REFUSED
+        );
+
+        return toTaskDto(savedTask);
     }
 
     // FIX #2: العامل يقدم عرض — إزالة إنشاء Worker بمعلومات وهمية
+    @Transactional
     public OfferResponseDto submitOffer(
             Long taskId, OfferRequestDto dto, User workerUser) {
         Task task = taskRepository.findById(taskId)
@@ -214,6 +292,10 @@ public class TaskService {
                         "Please complete your worker profile before submitting offers"));
         if (worker.getVerificationStatus() != WorkerVerificationStatus.VERIFIED) {
             throw new BusinessException("Only verified workers can submit offers");
+        }
+        if (worker.getAvailability() != null
+                && worker.getAvailability() != WorkerAvailability.AVAILABLE) {
+            throw new BusinessException("You must be AVAILABLE to submit an offer. Please update your status in profile settings.");
         }
 
         if (offerRepository.existsByTaskIdAndWorkerId(taskId, worker.getId()))
@@ -237,6 +319,7 @@ public class TaskService {
     }
 
     // العامل يرى عروضه
+    @Transactional(readOnly = true)
     public List<OfferResponseDto> getMyOffers(User workerUser) {
         return offerRepository.findByWorkerUserId(workerUser.getId())
                 .stream().map(offerMapper::toDto).toList();
@@ -313,5 +396,11 @@ public class TaskService {
         );
 
         return offerMapper.toDto(offer);
+    }
+
+    private TaskResponseDto toTaskDto(Task task) {
+        Task hydratedTask = taskRepository.findById(task.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        return taskMapper.toDto(hydratedTask);
     }
 }

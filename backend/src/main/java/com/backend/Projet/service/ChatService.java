@@ -43,9 +43,10 @@ public class ChatService {
                 .content(input.getContent())
                 .build();
 
-        return chatMapper.toDto(chatMessageRepository.save(message));
+        return chatMapper.toDto(chatMessageRepository.saveAndFlush(message));
     }
 
+    @Transactional(readOnly = true)
     public List<ChatResponseDto> getConversation(Long otherUserId, User currentUser) {
         // تأكد أن المستخدم الآخر موجود
         userRepository.findById(otherUserId)

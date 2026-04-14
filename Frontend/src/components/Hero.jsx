@@ -6,92 +6,90 @@ function Hero() {
   const navigate = useNavigate()
 
   return (
-    <section dir="rtl" className="relative pt-20 pb-24 overflow-hidden bg-white">
-      {/* Background Ornaments */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="absolute -top-[20%] -right-[10%] w-[60%] h-[60%] bg-primary/5 rounded-full blur-3xl opacity-60" />
-        <div className="absolute -bottom-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-100/40 rounded-full blur-3xl" />
+    <section dir="rtl" className="relative overflow-hidden bg-white pb-24 pt-20">
+      <div className="pointer-events-none absolute left-0 top-0 h-full w-full overflow-hidden">
+        <div className="absolute -right-[10%] -top-[20%] h-[60%] w-[60%] rounded-full bg-primary/5 blur-3xl opacity-60" />
+        <div className="absolute -bottom-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-100/40 blur-3xl" />
       </div>
 
       <div className="section-shell relative z-10 flex flex-col items-center text-center">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-soft border border-primary/10 text-[11px] font-black text-primary mb-8 animate-fade-in">
-          <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse" />
-          <span className="uppercase tracking-[0.1em]">أكثر من 10,000 مستخدم يثقون في شغلني</span>
+        <div className="mb-8 inline-flex animate-fade-in items-center gap-2 rounded-full border border-primary/10 bg-primary-soft px-3 py-1.5 text-[11px] font-black text-primary">
+          <span className="flex h-2 w-2 animate-pulse rounded-full bg-primary" />
+          <span className="tracking-[0.08em]">تجربة واضحة للحجز، المهام، والمحادثات</span>
         </div>
 
-        {/* Main Heading */}
         <div className="max-w-4xl space-y-6">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-surface-900 leading-[1.1] tracking-tight animate-fade-in [animation-delay:200ms]">
-          اكتشف الا عمال محليني <br />
-            <span className="gradient-text">كل زاوية من منزلك</span>
+          <h1 className="animate-fade-in text-3xl font-black leading-[1.1] tracking-tight text-surface-900 [animation-delay:200ms] md:text-4xl lg:text-5xl">
+            اعثر على العامل المناسب
+            <br />
+            <span className="gradient-text">وأدر كل الطلبات من مكان واحد</span>
           </h1>
-          
-          <p className="text-lg md:text-xl text-surface-500 font-medium max-w-2xl mx-auto leading-relaxed animate-fade-in [animation-delay:400ms]">
-            المنصة الأكبر في موريتانيا لربط العمال المهرة بأصحاب المشاريع. نضمن لك الجودة، الأمان والسرعة في كل مهمة.
+
+          <p className="mx-auto max-w-2xl animate-fade-in text-lg font-medium leading-relaxed text-surface-500 [animation-delay:400ms] md:text-xl">
+            منصة تجمع بين العملاء والعمال في تجربة واحدة: نشر مهمة، استقبال عروض، حجز مباشر،
+            ومحادثة مستمرة بدون الخروج من لوحة التحكم.
           </p>
         </div>
 
-        {/* Actions */}
-        <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in [animation-delay:600ms]">
-          <button 
+        <div className="mt-12 flex animate-fade-in flex-col items-center justify-center gap-4 [animation-delay:600ms] sm:flex-row">
+          <button
             onClick={() => navigate("/auth")}
-            className="btn-saas btn-primary h-14 px-8 text-base shadow-lg shadow-primary/20 w-full sm:w-auto active:scale-95"
+            className="btn-saas btn-primary h-14 w-full px-8 text-base shadow-lg shadow-primary/20 active:scale-95 sm:w-auto"
           >
-            ابدأ الآن مجاناً
+            ابدأ الآن
             <ChevronRight size={18} className="rotate-180" />
           </button>
-          <button className="btn-saas btn-secondary h-14 px-8 text-base w-full sm:w-auto">
+          <button className="btn-saas btn-secondary h-14 w-full px-8 text-base sm:w-auto">
             <Play size={18} className="fill-surface-700" />
-            شاهد كيف يعمل
+            تعرّف على طريقة العمل
           </button>
         </div>
 
-        {/* Social Proof */}
-        <div className="mt-16 flex items-center justify-center gap-6 animate-fade-in [animation-delay:800ms]">
+        <div className="mt-16 flex animate-fade-in items-center justify-center gap-6 [animation-delay:800ms]">
           <div className="flex -space-x-4 space-x-reverse">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-slate-100 overflow-hidden ring-1 ring-surface-200">
-                <img src={`https://randomuser.me/api/portraits/thumb/men/${i+20}.jpg`} alt="User" />
+            {["أ", "ف", "م", "س"].map((initial) => (
+              <div key={initial} className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-sm font-black text-surface-700 ring-1 ring-surface-200">
+                {initial}
               </div>
             ))}
-            <div className="h-10 w-10 rounded-full border-2 border-white bg-primary text-white text-[10px] font-bold flex items-center justify-center ring-1 ring-surface-200">
-              +5k
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-primary text-[10px] font-bold text-white ring-1 ring-surface-200">
+              24/7
             </div>
           </div>
           <div className="h-10 w-px bg-surface-200" />
           <div className="flex flex-col items-start gap-1">
             <div className="flex items-center gap-1 text-yellow-500">
-              {[1, 2, 3, 4, 5].map((i) => <Star key={i} size={14} className="fill-current" />)}
-              <span className="text-surface-900 font-black text-sm mr-1">4.9/5</span>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star key={i} size={14} className="fill-current" />
+              ))}
+              <span className="mr-1 text-sm font-black text-surface-900">تجربة موحدة</span>
             </div>
-            <span className="text-surface-500 text-xs font-bold">بناءً على 2000+ تقييم</span>
+            <span className="text-xs font-bold text-surface-500">تنقل واضح بين المهام والرسائل والملف الشخصي</span>
           </div>
         </div>
 
-        {/* Features Row */}
-        <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 w-full border-t border-surface-100 pt-16 animate-fade-in [animation-delay:1000ms]">
-           <div className="flex flex-col items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-primary-soft flex items-center justify-center text-primary">
-                <CheckCircle size={24} />
-              </div>
-              <h3 className="text-base font-bold text-surface-900">عمال موثوقون</h3>
-              <p className="text-sm text-surface-500 font-medium">فحص دقيق لكافة الملفات الشخصية</p>
-           </div>
-           <div className="flex flex-col items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-primary-soft flex items-center justify-center text-primary">
-                <Search size={24} />
-              </div>
-              <h3 className="text-base font-bold text-surface-900">بحث ذكي</h3>
-              <p className="text-sm text-surface-500 font-medium">جد العامل المناسب في ثوانٍ معدودة</p>
-           </div>
-           <div className="flex flex-col items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-primary-soft flex items-center justify-center text-primary">
-                <Star size={24} />
-              </div>
-              <h3 className="text-base font-bold text-surface-900">جودة مضمونة</h3>
-              <p className="text-sm text-surface-500 font-medium">ضمان الرضا الكامل عن كل مهمة</p>
-           </div>
+        <div className="mt-24 grid w-full animate-fade-in grid-cols-1 gap-8 border-t border-surface-100 pt-16 [animation-delay:1000ms] md:grid-cols-3">
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+              <CheckCircle size={24} />
+            </div>
+            <h3 className="text-base font-bold text-surface-900">ملفات مهنية واضحة</h3>
+            <p className="text-sm font-medium text-surface-500">عرض التقييم، التخصص، والحالة الحالية قبل بدء الحجز أو قبول العرض</p>
+          </div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+              <Search size={24} />
+            </div>
+            <h3 className="text-base font-bold text-surface-900">وصول سريع</h3>
+            <p className="text-sm font-medium text-surface-500">ابحث حسب التخصص أو الحي، ثم أكمل الإجراء من نفس الواجهة بدون خطوات مشتتة</p>
+          </div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+              <Star size={24} />
+            </div>
+            <h3 className="text-base font-bold text-surface-900">إدارة كاملة</h3>
+            <p className="text-sm font-medium text-surface-500">تابع التنفيذ والرسائل والإشعارات من لوحة تحكم واحدة بدل التنقل بين صفحات منفصلة</p>
+          </div>
         </div>
       </div>
     </section>

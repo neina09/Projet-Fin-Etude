@@ -1,165 +1,593 @@
-import React, { useState } from "react"
-import ProblemForm from "./ProblemForm"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
+import { Briefcase, ClipboardList, Info, LayoutGrid, MapPin, Search, Star } from "lucide-react"
+import {
+  acceptOffer,
+  cancelTaskRequest,
+  createOffer,
+  createTask,
+  deleteTask,
+  getMyOffers,
+  getMyTasks,
+  getMyWorkerProfile,
+  getOpenTasks,
+  markTaskDone,
+  refuseOffer,
+  searchOpenTasks,
+  selectOffer,
+  updateTask
+} from "../api"
 import ProblemCard from "./ProblemCard"
-import { LayoutGrid, ClipboardList, Info, Star } from "lucide-react"
-import { getOpenTasks, getMyTasks, createTask } from "../api"
+import ProblemForm from "./ProblemForm"
+import LeafletMapPicker from "./LeafletMapPicker"
+import ConfirmDialog from "./ConfirmDialog"
+
+const OFFER_STATUS_LABELS = {
+  PENDING: "قيد الانتظار",
+  SELECTED: "تم اختيارك",
+  REFUSED: "مرفوض",
+  WORKER_REFUSED: "رفضته أنت",
+  IN_PROGRESS: "قيد التنفيذ",
+  COMPLETED: "مكتمل",
+  CLOSED: "مغلق"
+}
+
+const offerStatusClass = (status) => {
+  if (status === "COMPLETED") return "bg-emerald-50 border-emerald-100 text-emerald-600"
+  if (status === "IN_PROGRESS") return "bg-amber-50 border-amber-100 text-amber-600"
+  if (status === "SELECTED") return "bg-indigo-50 border-indigo-100 text-indigo-600"
+  if (status === "WORKER_REFUSED" || status === "REFUSED") return "bg-red-50 border-red-100 text-red-600"
+  if (status === "CLOSED") return "bg-surface-50 border-surface-100 text-surface-400"
+  return "bg-primary-soft border-primary/10 text-primary"
+}
+
 
 export default function ProblemBoard({ currentUser }) {
   const [problems, setProblems] = useState([])
   const [myTasks, setMyTasks] = useState([])
+  const [myOffers, setMyOffers] = useState([])
+  const [currentWorkerProfile, setCurrentWorkerProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState("")
+  const [feedback, setFeedback] = useState("")
   const [tab, setTab] = useState("open")
+  const [editingTask, setEditingTask] = useState(null)
+  const [pendingDelete, setPendingDelete] = useState(null)
+  const [searchKeyword, setSearchKeyword] = useState("")
+  const [searchAddress, setSearchAddress] = useState("")
+  const [searchProfession, setSearchProfession] = useState("")
 
-  const fetchTasks = () => {
+  const isWorker = currentUser?.role === "WORKER"
+  const isAdmin = currentUser?.role === "ADMIN"
+
+  const fetchTasks = useCallback(async () => {
     setLoading(true)
-    getOpenTasks()
-      .then(data => {
-        setProblems(data.content || data || [])
-        setLoading(false)
-      })
-      .catch(err => {
-        console.error("Failed to fetch tasks:", err)
-        setLoading(false)
-      })
-  }
+    setError("")
 
-  const fetchMyTasks = () => {
-    getMyTasks()
-      .then(data => setMyTasks(data.content || data || []))
-      .catch(() => setMyTasks([]))
-  }
+    const searchActive = Boolean(searchKeyword.trim() || searchAddress.trim() || searchProfession.trim())
+    const openTasksPromise = searchActive
+      ? searchOpenTasks({
+          keyword: searchKeyword,
+          address: searchAddress,
+          profession: searchProfession
+        })
+      : getOpenTasks()
 
-  React.useEffect(() => {
+    const [openTasksResult, myTasksResult, myOffersResult, workerProfileResult] = await Promise.allSettled([
+      openTasksPromise,
+      getMyTasks(),
+      getMyOffers(),
+      isWorker ? getMyWorkerProfile() : Promise.resolve(null)
+    ])
+
+    if (openTasksResult.status === "fulfilled") {
+      setProblems(openTasksResult.value?.content || openTasksResult.value || [])
+    } else {
+      setProblems([])
+    }
+
+    if (myTasksResult.status === "fulfilled") {
+      setMyTasks(myTasksResult.value?.content || myTasksResult.value || [])
+    } else {
+      setMyTasks([])
+    }
+
+    if (myOffersResult.status === "fulfilled") {
+      setMyOffers(Array.isArray(myOffersResult.value) ? myOffersResult.value : [])
+    } else {
+      setMyOffers([])
+    }
+
+    if (workerProfileResult.status === "fulfilled") {
+      setCurrentWorkerProfile(workerProfileResult.value || null)
+    } else {
+      setCurrentWorkerProfile(null)
+    }
+
+    if (openTasksResult.status === "rejected" && myTasksResult.status === "rejected") {
+      setError("تعذر تحميل المهام حاليًا.")
+    } else if (openTasksResult.status === "rejected") {
+      setError("تعذر تحميل المهام العامة، لكن تم عرض مهامك الشخصية.")
+    } else if (myTasksResult.status === "rejected") {
+      setError("تعذر تحميل مهامك الشخصية، لكن تم عرض المهام العامة.")
+    }
+
+    setLoading(false)
+  }, [isWorker, searchAddress, searchKeyword, searchProfession])
+
+  useEffect(() => {
     fetchTasks()
-    fetchMyTasks()
-  }, [])
+  }, [fetchTasks])
+
+  const upsertTask = (updatedTask) => {
+    setProblems((current) => current.map((task) => task.id === updatedTask.id ? updatedTask : task))
+    setMyTasks((current) => current.map((task) => task.id === updatedTask.id ? updatedTask : task))
+  }
+
+  const removeTaskFromLists = (taskId) => {
+    setProblems((current) => current.filter((task) => task.id !== taskId))
+    setMyTasks((current) => current.filter((task) => task.id !== taskId))
+  }
 
   const addProblem = async (newProblem) => {
+    setSubmitting(true)
+    setFeedback("")
+    setError("")
+
     try {
-      const taskData = {
-        title: newProblem.title,
-        description: newProblem.body,
-        address: newProblem.location
+      if (editingTask) {
+        const savedTask = await updateTask(editingTask.id, {
+          title: newProblem.title,
+          description: newProblem.description,
+          address: newProblem.address,
+          profession: newProblem.profession,
+          latitude: newProblem.latitude,
+          longitude: newProblem.longitude
+        })
+
+        upsertTask(savedTask)
+        setEditingTask(null)
+        setFeedback("تم تحديث المهمة وإعادتها للمراجعة بنجاح.")
+        return
       }
-      const savedTask = await createTask(taskData)
-      setProblems([savedTask, ...problems])
-      setMyTasks([savedTask, ...myTasks])
+
+      const savedTask = await createTask({
+        title: newProblem.title,
+        description: newProblem.description,
+        address: newProblem.address,
+        profession: newProblem.profession,
+        latitude: newProblem.latitude,
+        longitude: newProblem.longitude
+      })
+
+      setMyTasks((current) => [savedTask, ...current])
+      setFeedback("تم إرسال المهمة إلى المدير للمراجعة قبل نشرها.")
     } catch (err) {
-      alert("فشل نشر المهمة: " + err.message)
+      setError(err.message || "تعذر حفظ المهمة.")
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  const previousTasks = myTasks.filter((t) => {
-    const st = String(t.status || "").toUpperCase()
-    return st === "COMPLETED" || st === "CLOSED" || st === "CANCELLED"
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+
+    try {
+      await deleteTask(pendingDelete.id)
+      removeTaskFromLists(pendingDelete.id)
+      if (editingTask?.id === pendingDelete.id) {
+        setEditingTask(null)
+      }
+      setFeedback("تم حذف المهمة.")
+    } catch (err) {
+      setError(err.message || "تعذر حذف المهمة.")
+    } finally {
+      setPendingDelete(null)
+    }
+  }
+
+  const handleStatusChange = async (task, action) => {
+    setFeedback("")
+    setError("")
+    try {
+      const updatedTask = action === "done"
+        ? await markTaskDone(task.id)
+        : await cancelTaskRequest(task.id)
+
+      upsertTask(updatedTask)
+      await fetchTasks()
+      setFeedback(action === "done" ? "تم تأكيد الإنجاز." : "تم إلغاء المهمة.")
+    } catch (err) {
+      setError(err.message || "فشل تحديث حالة المهمة.")
+    }
+  }
+
+  const handleOfferSubmit = async (taskId, message) => {
+    const createdOffer = await createOffer(taskId, { message })
+    setMyOffers((current) => [createdOffer, ...current.filter((offer) => offer.id !== createdOffer.id)])
+    return createdOffer
+  }
+
+  const handleOfferSelect = async (offerId) => {
+    await selectOffer(offerId)
+    await fetchTasks()
+    setFeedback("تم اختيار العرض بنجاح.")
+  }
+
+  const handleWorkerDecision = async (offerId, decision) => {
+    if (decision === "accept") {
+      await acceptOffer(offerId)
+      setFeedback("تم قبول المهمة.")
+    } else {
+      await refuseOffer(offerId)
+      setFeedback("تم رفض المهمة.")
+    }
+    await fetchTasks()
+  }
+
+  const previousTasks = myTasks.filter((task) => {
+    const status = String(task.status || "").toUpperCase()
+    return status === "COMPLETED" || status === "CLOSED" || status === "CANCELLED"
   })
 
+  const pendingReviewTasks = myTasks.filter((task) => String(task.status || "").toUpperCase() === "PENDING_REVIEW")
+
+  const activeMyTasks = myTasks.filter((task) => {
+    const status = String(task.status || "").toUpperCase()
+    return !["COMPLETED", "CLOSED", "CANCELLED", "PENDING_REVIEW"].includes(status)
+  })
+
+  const myOffersByTaskId = useMemo(() => {
+    return myOffers.reduce((accumulator, offer) => {
+      accumulator[offer.taskId] = offer
+      return accumulator
+    }, {})
+  }, [myOffers])
+
+  const mapMarkers = useMemo(() => {
+    const markers = []
+    if (problems.length > 0) {
+      problems.forEach((problem) => {
+        if (problem.latitude && problem.longitude) {
+          markers.push({
+            position: { lat: problem.latitude, lng: problem.longitude },
+            title: problem.title,
+            onClick: () => {
+              window.scrollTo({ top: 0, behavior: "smooth" })
+              setSearchAddress(problem.address)
+            }
+          })
+        }
+      })
+    }
+
+    if (activeMyTasks.length > 0) {
+      activeMyTasks.forEach((task) => {
+        if (task.latitude && task.longitude) {
+          markers.push({
+            position: { lat: task.latitude, lng: task.longitude },
+            title: task.title,
+            onClick: () => {
+              window.scrollTo({ top: 0, behavior: "smooth" })
+              setSearchAddress(task.address)
+            }
+          })
+        }
+      })
+    }
+    return markers
+  }, [problems, activeMyTasks, setSearchAddress])
+
+  const tabs = isWorker
+    ? [
+        { id: "open", lbl: "المهام المتاحة" },
+        { id: "previous", lbl: "عروضي على المهام" }
+      ]
+    : [
+        { id: "open", lbl: "المهام المنشورة" },
+        { id: "previous", lbl: "مهامي" }
+      ]
+
   return (
-    <div className="max-w-5xl mx-auto py-12 px-6">
+    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-6">
       <header className="mb-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="space-y-2">
-            <h1 className="text-3xl md:text-5xl font-black text-surface-900 tracking-tight">سوق المهام النشطة</h1>
-            <p className="text-lg font-medium text-surface-500">تواصل مع المحترفين، تتبع مهامك، وراجع سجل إنجازاتك.</p>
+            <h1 className="text-3xl font-black tracking-tight text-surface-900 md:text-5xl">
+              {isWorker ? "سوق المهام للعمال" : "سوق المهام"}
+            </h1>
+            <p className="text-lg font-medium text-surface-500">
+              {isWorker
+                ? "ابحث بالمكان أو المهنة ثم قدّم عرضك على المهام التي تمت الموافقة عليها."
+                : "أرسل المهمة أولًا للمراجعة الإدارية، وبعد الموافقة ستبدأ باستقبال عروض العمال."}
+            </p>
           </div>
-          <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border border-surface-200 shadow-sm">
-             <div className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-bold text-sm">
-                <ClipboardList size={16} />
-                الطلبات النشطة
-             </div>
-             <div className="text-surface-900 font-bold text-sm px-3">
-                {problems.length} <span className="text-surface-400 font-medium">مهمة</span>
-             </div>
+          <div className="flex items-center gap-3 rounded-xl border border-surface-200 bg-white p-1.5 shadow-sm">
+            <div className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white">
+              <ClipboardList size={16} />
+              {isWorker ? "مهام متاحة" : "طلبات نشطة"}
+            </div>
+            <div className="px-3 text-sm font-bold text-surface-900">
+              {problems.length} <span className="font-medium text-surface-400">مهمة</span>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Modern Notice Banner */}
-      <div className="relative overflow-hidden bg-indigo-50 border border-indigo-100 p-8 rounded-[2rem] mb-12 group transition-all">
-         {/* Decorative Background Icon */}
-         <Star className="absolute -left-4 -top-4 text-indigo-100 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500" size={120} />
-         
-         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
-            <div className="w-12 h-12 bg-white rounded-2xl border border-indigo-200 flex items-center justify-center text-indigo-600 shadow-sm flex-shrink-0">
-               <Info size={24} />
-            </div>
-            <div className="text-center md:text-right">
-               <h4 className="text-indigo-900 font-bold text-lg mb-1.5">كيف تحصل على أفضل النتائج؟</h4>
-               <p className="text-indigo-700/80 font-medium text-sm leading-relaxed max-w-2xl">
-                  وصفك الدقيق للمشكلة وصور واضحة تساعد المحترفين في تحديد التكلفة بدقة وبسرعة. تأكد دائماً من تحديد موقعك الحالي بدقة لضمان سرعة الوصول.
-               </p>
-            </div>
-         </div>
+      {(problems.length > 0 || activeMyTasks.length > 0) && (
+        <div className="mb-12 h-[350px] overflow-hidden rounded-[2.5rem] border border-surface-200 shadow-xl">
+         <LeafletMapPicker
+          isListView
+          markers={mapMarkers}
+        />
+        </div>
+      )}
+
+      <div className="group relative mb-8 overflow-hidden rounded-[2rem] border border-indigo-100 bg-indigo-50 p-8">
+        <Star className="absolute -left-4 -top-4 text-indigo-100 transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110" size={120} />
+        <div className="relative z-10 flex flex-col items-center gap-6 md:flex-row md:items-start">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-indigo-200 bg-white text-indigo-600 shadow-sm">
+            <Info size={24} />
+          </div>
+          <div className="text-center md:text-right">
+            <h4 className="mb-1.5 text-lg font-bold text-indigo-900">
+              {isWorker ? "تدفق المهام داخل المنصة" : "كيف تُدار المهمة بشكل صحيح؟"}
+            </h4>
+            <p className="max-w-2xl text-sm font-medium leading-relaxed text-indigo-700/80">
+              {isWorker
+                ? "لن تظهر لك إلا المهام التي اعتمدها المدير. بعد اختيارك من صاحب المهمة، يبقى القرار الأخير لك بقبول التنفيذ أو رفضه."
+                : "المهمة تبدأ بحالة قيد مراجعة المدير، ثم تصبح منشورة بعد الموافقة. بعد ذلك تستطيع اختيار العامل المناسب، ويجب أن يقبل العامل الطلب حتى يبدأ التنفيذ."}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <section className="mb-16">
-        <div className="saas-card p-1 border-surface-200 bg-surface-50 mb-8">
-           <ProblemForm onAdd={addProblem} />
+      <div className="mb-8 grid grid-cols-1 gap-4 rounded-[2rem] border border-surface-200 bg-white p-5 md:grid-cols-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={16} />
+          <input
+            value={searchKeyword}
+            onChange={(event) => setSearchKeyword(event.target.value)}
+            placeholder="ابحث بالكلمة أو وصف المهمة"
+            className="saas-input h-12 border-surface-200 pr-11"
+          />
         </div>
-      </section>
+        <div className="relative">
+          <MapPin className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={16} />
+          <input
+            value={searchAddress}
+            onChange={(event) => setSearchAddress(event.target.value)}
+            placeholder="ابحث بالمكان أو الحي"
+            className="saas-input h-12 border-surface-200 pr-11"
+          />
+        </div>
+        <div className="relative">
+          <Briefcase className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={16} />
+          <input
+            value={searchProfession}
+            onChange={(event) => setSearchProfession(event.target.value)}
+            placeholder="ابحث بالمهنة"
+            className="saas-input h-12 border-surface-200 pr-11"
+          />
+        </div>
+      </div>
+
+      {!isAdmin && (
+        <section className="mb-16">
+          <div className="saas-card border-surface-200 bg-surface-50 p-1">
+            <ProblemForm
+              onAdd={addProblem}
+              submitting={submitting}
+              initialData={editingTask}
+              onCancel={() => setEditingTask(null)}
+            />
+          </div>
+        </section>
+      )}
+
+      {feedback && (
+        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">
+          {feedback}
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-8 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+          {error}
+        </div>
+      )}
 
       <section className="space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-surface-200">
-           <div className="flex items-center gap-1.5 overflow-x-auto">
-              {[
-                { id: "open", lbl: "المهام العامة المنشورة" },
-                { id: "previous", lbl: "سجلي الشخصي" }
-              ].map((t) => (
-                <button 
-                  key={t.id}
-                  onClick={() => setTab(t.id)} 
-                  className={`whitespace-nowrap px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                    tab === t.id 
-                    ? "bg-white text-primary border border-surface-200 shadow-sm translate-y-[-1px]" 
-                    : "text-surface-400 hover:text-surface-900 hover:bg-surface-50"
-                  }`}
-                >
-                  {t.lbl}
-                </button>
-              ))}
-           </div>
-           
-           <div className="flex items-center gap-2 text-xs font-bold text-surface-400 uppercase tracking-widest">
-              <LayoutGrid size={14} className="opacity-50" />
-              عرض الشبكة
-           </div>
+        <div className="flex flex-col justify-between gap-6 border-b border-surface-200 pb-6 md:flex-row md:items-center">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            {tabs.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setTab(item.id)}
+                className={`whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${
+                  tab === item.id
+                    ? "translate-y-[-1px] border border-surface-200 bg-white text-primary shadow-sm"
+                    : "text-surface-400 hover:bg-surface-50 hover:text-surface-900"
+                }`}
+              >
+                {item.lbl}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-surface-400">
+            <LayoutGrid size={14} className="opacity-50" />
+            عرض الشبكة
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-surface-400 animate-pulse">
-               <div className="w-12 h-12 rounded-full border-4 border-t-primary border-surface-200 animate-spin mb-4" />
-               <p className="text-sm font-bold">جاري جلب أحدث المهام...</p>
+            <div className="flex animate-pulse flex-col items-center justify-center py-20 text-surface-400">
+              <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-surface-200 border-t-primary" />
+              <p className="text-sm font-bold">جارٍ جلب أحدث المهام...</p>
             </div>
           ) : (
             <>
               {tab === "open" && problems.length > 0 ? (
-                problems.map((p) => (
-                  <ProblemCard key={p.id} problem={p} currentUser={currentUser} />
+                problems.map((problem) => (
+                  <ProblemCard
+                    key={problem.id}
+                    problem={problem}
+                    currentUser={currentUser}
+                    onEdit={setEditingTask}
+                    onDelete={(task) => setPendingDelete(task)}
+                    onStatusChange={handleStatusChange}
+                    workerOffer={myOffersByTaskId[problem.id]}
+                    currentWorkerStatus={currentWorkerProfile?.availability}
+                    onSubmitOffer={handleOfferSubmit}
+                    onSelectOffer={handleOfferSelect}
+                    onWorkerDecision={handleWorkerDecision}
+                  />
                 ))
               ) : tab === "open" ? (
-                <div className="saas-card p-16 text-center border-dashed border-surface-200 bg-surface-50/50">
-                  <div className="text-5xl mb-6 grayscale opacity-20">📫</div>
-                  <h3 className="text-xl font-bold text-surface-900 mb-2">لا توجد مهام نشطة</h3>
-                  <p className="text-sm font-medium text-surface-400">كن أول من ينشر مهمة اليوم!</p>
+                <div className="saas-card border-dashed border-surface-200 bg-surface-50/50 p-16 text-center">
+                  <div className="mb-6 text-5xl opacity-20 grayscale">📭</div>
+                  <h3 className="mb-2 text-xl font-bold text-surface-900">لا توجد مهام منشورة حاليًا</h3>
+                  <p className="text-sm font-medium text-surface-400">جرّب تعديل البحث أو انتظر حتى يعتمد المدير مهامًا جديدة.</p>
                 </div>
               ) : null}
 
-              {tab === "previous" && previousTasks.length > 0 ? (
-                previousTasks.map((p) => (
-                  <ProblemCard key={p.id} problem={p} currentUser={currentUser} />
+              {tab === "previous" && isWorker && myOffers.length > 0 ? (
+                myOffers.map((offer) => (
+                  <div key={offer.id} className="saas-card border-surface-200 bg-white p-6">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-black text-surface-900">{offer.taskTitle}</h3>
+                        <p className="text-sm font-bold text-surface-500">{offer.workerJob || "عامل"} - {offer.workerName}</p>
+                      </div>
+                      <span className={`rounded-full border px-3 py-1 text-xs font-black ${offerStatusClass(offer.status)}`}>
+                        {OFFER_STATUS_LABELS[offer.status] || offer.status}
+                      </span>
+                    </div>
+                    <p className="mb-4 text-sm font-medium leading-relaxed text-surface-600">{offer.message}</p>
+
+                    {offer.status === "SELECTED" && (
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleWorkerDecision(offer.id, "accept")}
+                          className="btn-saas btn-primary h-10 text-xs"
+                        >
+                          قبول المهمة
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleWorkerDecision(offer.id, "refuse")}
+                          className="btn-saas btn-secondary h-10 border-surface-200 text-xs"
+                        >
+                          رفض المهمة
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ))
+              ) : tab === "previous" && !isWorker && (pendingReviewTasks.length > 0 || activeMyTasks.length > 0 || previousTasks.length > 0) ? (
+                <>
+                  {pendingReviewTasks.length > 0 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-black text-surface-900">مهام بانتظار اعتماد المدير</h3>
+                        <span className="text-xs font-bold text-surface-400">{pendingReviewTasks.length} مهمة</span>
+                      </div>
+                      {pendingReviewTasks.map((problem) => (
+                        <ProblemCard
+                          key={problem.id}
+                          problem={problem}
+                          currentUser={currentUser}
+                          onEdit={setEditingTask}
+                          onDelete={(task) => setPendingDelete(task)}
+                          onStatusChange={handleStatusChange}
+                          workerOffer={myOffersByTaskId[problem.id]}
+                          currentWorkerStatus={currentWorkerProfile?.availability}
+                          onSubmitOffer={handleOfferSubmit}
+                          onSelectOffer={handleOfferSelect}
+                          onWorkerDecision={handleWorkerDecision}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {activeMyTasks.length > 0 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-black text-surface-900">مهامي النشطة</h3>
+                        <span className="text-xs font-bold text-surface-400">{activeMyTasks.length} مهمة</span>
+                      </div>
+                      {activeMyTasks.map((problem) => (
+                        <ProblemCard
+                          key={problem.id}
+                          problem={problem}
+                          currentUser={currentUser}
+                          onEdit={setEditingTask}
+                          onDelete={(task) => setPendingDelete(task)}
+                          onStatusChange={handleStatusChange}
+                          workerOffer={myOffersByTaskId[problem.id]}
+                          currentWorkerStatus={currentWorkerProfile?.availability}
+                          onSubmitOffer={handleOfferSubmit}
+                          onSelectOffer={handleOfferSelect}
+                          onWorkerDecision={handleWorkerDecision}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-black text-surface-900">السجل السابق</h3>
+                      <span className="text-xs font-bold text-surface-400">{previousTasks.length} مهمة</span>
+                    </div>
+                    {previousTasks.map((problem) => (
+                      <ProblemCard
+                        key={problem.id}
+                        problem={problem}
+                        currentUser={currentUser}
+                        onEdit={setEditingTask}
+                        onDelete={(task) => setPendingDelete(task)}
+                        onStatusChange={handleStatusChange}
+                        workerOffer={myOffersByTaskId[problem.id]}
+                        currentWorkerStatus={currentWorkerProfile?.availability}
+                        onSubmitOffer={handleOfferSubmit}
+                        onSelectOffer={handleOfferSelect}
+                        onWorkerDecision={handleWorkerDecision}
+                      />
+                    ))}
+                  </div>
+                </>
               ) : tab === "previous" ? (
-                <div className="saas-card p-16 text-center border-dashed border-surface-200 bg-surface-50/50">
-                  <div className="text-5xl mb-6 grayscale opacity-20">📜</div>
-                  <h3 className="text-xl font-bold text-surface-900 mb-2">السجل فارغ</h3>
-                  <p className="text-sm font-medium text-surface-400">ستظهر مهامك المكتملة أو الملغاة هنا.</p>
+                <div className="saas-card border-dashed border-surface-200 bg-surface-50/50 p-16 text-center">
+                  <div className="mb-6 text-5xl opacity-20 grayscale">📜</div>
+                  <h3 className="mb-2 text-xl font-bold text-surface-900">
+                    {isWorker ? "لا توجد عروض مرسلة بعد" : "لا توجد مهام في حسابك بعد"}
+                  </h3>
+                  <p className="text-sm font-medium text-surface-400">
+                    {isWorker
+                      ? "عند إرسال عروض على المهام ستظهر هنا مع حالتها الدقيقة."
+                      : "ستظهر هنا مهامك قيد المراجعة والنشطة والمكتملة والملغاة."}
+                  </p>
                 </div>
               ) : null}
             </>
           )}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="حذف المهمة"
+        description={`هل تريد حذف المهمة "${pendingDelete?.title || ""}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        confirmLabel="حذف المهمة"
+        cancelLabel="إبقاء المهمة"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   )
 }
+
+

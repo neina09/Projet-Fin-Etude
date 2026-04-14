@@ -1,94 +1,96 @@
 import React from "react"
-import { Lock } from "lucide-react"
+import { Lock, RefreshCw } from "lucide-react"
 
-function ResetPassword({ resetToken, setResetToken, newPassword, setNewPassword, handleResetPassword, onResend, loading, error, success }) {
+function StatusMessage({ error, success }) {
+  if (error) {
+    return (
+      <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 shadow-sm">
+        <div className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-red-400" />
+        {error}
+      </div>
+    )
+  }
+
+  if (success) {
+    return (
+      <div className="mb-6 flex items-center gap-3 rounded-xl border border-primary/10 bg-primary-soft px-4 py-3 text-sm font-bold text-primary shadow-sm">
+        <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+        {success}
+      </div>
+    )
+  }
+
+  return null
+}
+
+export default function ResetPassword({
+  resetToken,
+  setResetToken,
+  newPassword,
+  setNewPassword,
+  handleResetPassword,
+  onResend,
+  loading,
+  error,
+  success
+}) {
   return (
-    <div className="w-full max-w-md px-6" dir="rtl">
+    <div className="mx-auto w-full max-w-sm p-1 animate-fade-in" dir="rtl">
+      <div className="mb-10 text-center">
+        <h2 className="mb-3 font-alexandria text-3xl font-black tracking-tight text-surface-900">إعادة تعيين كلمة المرور</h2>
+        <p className="text-sm font-medium leading-relaxed text-surface-500">
+          أدخل رمز الاستعادة ثم اختر كلمة مرور جديدة لحسابك.
+        </p>
+      </div>
 
-      <h2 className="text-3xl font-black text-[#004384] mb-1" style={{ fontFamily: "'Cairo', sans-serif" }}>
-        إعادة تعيين كلمة المرور
-      </h2>
-      <p className="text-sm text-[#004384]/40 mb-8" style={{ fontFamily: "'Cairo', sans-serif" }}>
-        أدخل الرمز المكون من 6 أرقام وكلمة المرور الجديدة
-      </p>
+      <StatusMessage error={error} success={success} />
 
-      {error && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-500 text-sm px-4 py-3 rounded-xl mb-5"
-          style={{ fontFamily: "'Cairo', sans-serif" }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />{error}
-        </div>
-      )}
-      {success && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-600 text-sm px-4 py-3 rounded-xl mb-5"
-          style={{ fontFamily: "'Cairo', sans-serif" }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />{success}
-        </div>
-      )}
-
-      <div className="space-y-4">
-
-        {/* Reset Code */}
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-[4px] text-[#004384]/50 mb-2 block"
-            style={{ fontFamily: "'Cairo', sans-serif" }}>
-            رمز الاستعادة
-          </label>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <label className="mb-3 block text-center text-xs font-black uppercase tracking-[0.3em] text-surface-400">رمز الاستعادة</label>
           <input
             type="text"
             placeholder="000000"
             value={resetToken}
             onChange={(e) => setResetToken(e.target.value)}
-            className="w-full bg-[#FCFDFE] border border-[#004384]/15 text-[#004384]
-              rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-black
-              focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all"
-            style={{ direction: "ltr", fontFamily: "'Cairo', sans-serif" }}
             maxLength={6}
+            className="w-full rounded-2xl border-2 border-surface-100 bg-white px-4 py-4 text-center text-3xl font-black tracking-[0.5em] text-surface-900 shadow-sm transition-all focus:border-primary focus:outline-none"
+            style={{ direction: "ltr" }}
           />
         </div>
 
-        {/* New Password */}
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-[4px] text-[#004384]/50 mb-2 block"
-            style={{ fontFamily: "'Cairo', sans-serif" }}>
-            كلمة المرور الجديدة
-          </label>
-          <div className="relative">
-            <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-[#004384]/25" size={16} />
+        <div className="space-y-2">
+          <label className="mr-1 block text-xs font-bold text-surface-700">كلمة المرور الجديدة</label>
+          <div className="group relative">
+            <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 transition-colors group-focus-within:text-primary" size={18} />
             <input
               type="password"
               placeholder="6 أحرف على الأقل"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full bg-[#FCFDFE] border border-[#004384]/15 text-[#004384] placeholder-[#004384]/25
-                rounded-xl pr-10 pl-4 py-3 text-sm focus:outline-none focus:border-[#2563EB]
-                focus:ring-2 focus:ring-[#2563EB]/20 transition-all"
-              style={{ fontFamily: "'Cairo', sans-serif" }}
+              className="saas-input h-12 pr-10 hover:border-surface-300"
+              required
             />
           </div>
         </div>
 
-        {/* Submit */}
-        <button onClick={handleResetPassword} disabled={loading}
-          className="w-full bg-[#2563EB] hover:bg-[#004384] disabled:opacity-40
-            text-white font-bold py-3 rounded-full text-sm
-            tracking-wide transition-all duration-300 shadow-[0_4px_20px_rgba(37,99,235,0.35)]
-            hover:shadow-[0_4px_20px_rgba(0,67,132,0.35)]"
-          style={{ fontFamily: "'Cairo', sans-serif" }}>
-          {loading ? "جارٍ التعيين..." : "إعادة تعيين كلمة المرور"}
+        <button
+          onClick={handleResetPassword}
+          disabled={loading || !resetToken || !newPassword}
+          className="btn-saas btn-primary h-12 w-full font-bold shadow-lg shadow-primary/20 disabled:opacity-50"
+        >
+          {loading ? "جاري التحديث..." : "تحديث كلمة المرور"}
         </button>
 
-        {/* Resend */}
-        <button onClick={onResend}
-          className="w-full bg-transparent border border-[#004384]/15 hover:border-[#2563EB]
-            text-[#004384]/50 hover:text-[#2563EB] py-3 rounded-full text-sm
-            font-semibold transition-all duration-300"
-          style={{ fontFamily: "'Cairo', sans-serif" }}>
-          إعادة إرسال الرمز
+        <button
+          onClick={onResend}
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-xs font-black text-surface-400 transition-all hover:bg-primary-soft hover:text-primary"
+        >
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          إعادة إرسال رمز جديد
         </button>
-
       </div>
     </div>
   )
 }
-
-export default ResetPassword

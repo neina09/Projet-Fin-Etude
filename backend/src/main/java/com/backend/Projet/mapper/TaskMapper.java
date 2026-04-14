@@ -16,14 +16,19 @@ public class TaskMapper {
                 .title(task.getTitle())
                 .description(task.getDescription())
                 .address(task.getAddress())
+                .profession(task.getProfession())
                 .status(task.getStatus())
                 .userId(task.getUser().getId())
                 .userName(task.getUser().getName())
                 .assignedWorkerId(
                         task.getAssignedWorker() != null ? task.getAssignedWorker().getId() : null)
+                .assignedWorkerUserId(
+                        task.getAssignedWorker() != null ? task.getAssignedWorker().getUser().getId() : null)
                 .assignedWorkerName(
                         task.getAssignedWorker() != null ? task.getAssignedWorker().getName() : null)
                 .createdAt(task.getCreatedAt())
+                .latitude(task.getLatitude())
+                .longitude(task.getLongitude())
                 .build();
     }
 }

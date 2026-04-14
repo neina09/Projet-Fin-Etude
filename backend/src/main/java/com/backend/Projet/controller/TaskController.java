@@ -32,9 +32,10 @@ public class TaskController {
     public ResponseEntity<PageResponseDto<TaskResponseDto>> searchOpenTasks(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String address,
+            @RequestParam(required = false) String profession,
             @PageableDefault(size = 10) Pageable pageable) {
         return ResponseEntity.ok(
-                taskService.searchOpenTasks(keyword, address, pageable));
+                taskService.searchOpenTasks(keyword, address, profession, pageable));
     }
 
     // FIX #1: getTaskById لا يحتاج User — يراه الجميع
@@ -144,5 +145,19 @@ public class TaskController {
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(
                 taskService.workerRefuse(offerId, currentUser));
+    }
+
+    @PatchMapping("/{id}/approve")
+    public ResponseEntity<TaskResponseDto> approveTask(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(taskService.approveTask(id, currentUser));
+    }
+
+    @PatchMapping("/{id}/reject")
+    public ResponseEntity<TaskResponseDto> rejectTask(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(taskService.rejectTask(id, currentUser));
     }
 }

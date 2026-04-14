@@ -7,6 +7,7 @@ import com.backend.Projet.exception.ResourceNotFoundException;
 import com.backend.Projet.exception.UnauthorizedException;
 import com.backend.Projet.model.*;
 import com.backend.Projet.repository.BookingRepository;
+import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,12 +21,16 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final WorkerRepository workerRepository;
+    private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final com.backend.Projet.mapper.BookingMapper bookingMapper;
 
 
     @Transactional
     public BookingResponseDto createBooking(BookingRequestDto input, User currentUser) {
+        User managedUser = userRepository.findById(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         Worker worker = workerRepository.findById(input.getWorkerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
         if (worker.getVerificationStatus() != WorkerVerificationStatus.VERIFIED) {
@@ -41,7 +46,7 @@ public class BookingService {
         }
 
         Booking booking = Booking.builder()
-                .user(currentUser)
+                .user(managedUser)
                 .worker(worker)
                 .description(input.getDescription())
                 .address(input.getAddress())
@@ -59,14 +64,16 @@ public class BookingService {
                 NotificationType.BOOKING_REQUEST
         );
 
-        return bookingMapper.toDto(saved);
+        return toBookingDto(saved);
     }
 
+    @Transactional(readOnly = true)
     public List<BookingResponseDto> getMyBookings(User currentUser) {
         return bookingRepository.findByUserId(currentUser.getId())
                 .stream().map(bookingMapper::toDto).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<BookingResponseDto> getMyRequests(User currentUser) {
         return bookingRepository.findByWorkerUserId(currentUser.getId())
                 .stream().map(bookingMapper::toDto).toList();
@@ -104,7 +111,7 @@ public class BookingService {
                 NotificationType.BOOKING_ACCEPTED
         );
 
-        return bookingMapper.toDto(saved);
+        return toBookingDto(saved);
     }
 
     @Transactional
@@ -131,7 +138,7 @@ public class BookingService {
                 NotificationType.BOOKING_REJECTED
         );
 
-        return bookingMapper.toDto(saved);
+        return toBookingDto(saved);
     }
 
     @Transactional
@@ -153,7 +160,7 @@ public class BookingService {
         worker.setAvailability(WorkerAvailability.AVAILABLE);
         workerRepository.save(worker);
 
-        return bookingMapper.toDto(bookingRepository.save(booking));
+        return toBookingDto(bookingRepository.save(booking));
     }
 
     @Transactional
@@ -170,6 +177,12 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
-        return bookingMapper.toDto(bookingRepository.save(booking));
+        return toBookingDto(bookingRepository.save(booking));
+    }
+
+    private BookingResponseDto toBookingDto(Booking booking) {
+        Booking hydratedBooking = bookingRepository.findById(booking.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+        return bookingMapper.toDto(hydratedBooking);
     }
 }

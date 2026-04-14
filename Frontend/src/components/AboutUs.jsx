@@ -14,7 +14,6 @@ const features = [
   { icon: MapPin, title: "تغطية جغرافية واسعة", text: "نربطك تلقائياً بأقرب محترف متاح في منطقتك الجغرافية الحالية." },
   { icon: CreditCard, title: "خيارات دفع مرنة", text: "ادفع نقداً أو إلكترونياً. أمنك المالي أولويتنا وراحتك هي هدفنا." },
 ]
-
 export default function AboutUs() {
   return (
     <section id="about" dir="rtl" className="py-24 bg-white">

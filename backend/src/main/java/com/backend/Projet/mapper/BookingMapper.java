@@ -14,6 +14,7 @@ public class BookingMapper {
         return BookingResponseDto.builder()
                 .id(booking.getId())
                 .workerId(booking.getWorker().getId())
+                .workerUserId(booking.getWorker().getUser().getId())
                 .workerName(booking.getWorker().getName())
                 .userId(booking.getUser().getId())
                 .userName(booking.getUser().getName())

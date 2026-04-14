@@ -1,6 +1,7 @@
 package com.backend.Projet.service;
 
 import com.backend.Projet.dto.AdminDashboardDto;
+import com.backend.Projet.mapper.TaskMapper;
 import com.backend.Projet.repository.BookingRepository;
 import com.backend.Projet.repository.NotificationRepository;
 import com.backend.Projet.repository.TaskRepository;
@@ -22,6 +23,7 @@ public class AdminService {
     private final BookingRepository bookingRepository;
     private final NotificationRepository notificationRepository;
     private final com.backend.Projet.mapper.WorkerMapper workerMapper;
+    private final TaskMapper taskMapper;
 
     public AdminDashboardDto getDashboard() {
         return AdminDashboardDto.builder()
@@ -30,6 +32,7 @@ public class AdminService {
                 .totalWorkers(workerRepository.count())
                 .verifiedWorkers(workerRepository.countByVerificationStatus(WorkerVerificationStatus.VERIFIED))
                 .pendingWorkers(workerRepository.countByVerificationStatus(WorkerVerificationStatus.PENDING))
+                .pendingTasks(taskRepository.countByStatus(TaskStatus.PENDING_REVIEW))
                 .openTasks(taskRepository.countByStatus(TaskStatus.OPEN))
                 .inProgressTasks(taskRepository.countByStatus(TaskStatus.IN_PROGRESS))
                 .completedTasks(taskRepository.countByStatus(TaskStatus.COMPLETED))
@@ -41,6 +44,10 @@ public class AdminService {
                         .findTop5ByVerificationStatusOrderByIdDesc(WorkerVerificationStatus.PENDING)
                         .stream()
                         .map(workerMapper::toDto)
+                        .toList())
+                .latestPendingTasks(taskRepository.findTop5ByStatusOrderByIdDesc(TaskStatus.PENDING_REVIEW)
+                        .stream()
+                        .map(taskMapper::toDto)
                         .toList())
                 .build();
     }

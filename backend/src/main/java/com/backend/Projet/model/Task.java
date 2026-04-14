@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -31,10 +33,14 @@ public class Task {
     @Column
     private String address;
 
+    @Column(length = 100)
+    private String profession;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 32)
     @Builder.Default
-    private TaskStatus status = TaskStatus.OPEN;
+    private TaskStatus status = TaskStatus.PENDING_REVIEW;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -46,4 +52,10 @@ public class Task {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @Column
+    private Double latitude;
+
+    @Column
+    private Double longitude;
 }

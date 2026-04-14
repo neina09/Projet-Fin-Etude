@@ -1,134 +1,108 @@
-import React, { useState } from "react"
-import { Star, MapPin, Heart, Wrench, User, ShieldCheck, ChevronLeft } from "lucide-react"
-
-const SPEC_ICON = {
-  Plumber: "🔧",
-  Electrician: "⚡",
-  Painter: "🎨",
-  Cleaner: "🧹",
-}
-
-const SPEC_TRANSLATE = {
-  Plumber: "سباك",
-  Electrician: "كهربائي",
-  Painter: "دهان",
-  Cleaner: "عامل نظافة",
-}
+import React from "react"
+import { MapPin, ShieldCheck, Star, User, Wrench } from "lucide-react"
 
 function Stars({ rating }) {
   return (
     <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map(i => (
+      {[1, 2, 3, 4, 5].map((index) => (
         <Star
-          key={i}
+          key={index}
           size={14}
-          className={i <= Math.round(rating) ? "text-yellow-500 fill-current" : "text-surface-200"}
+          className={index <= Math.round(rating) ? "fill-current text-yellow-500" : "text-surface-200"}
         />
       ))}
     </div>
   )
 }
 
-export default function WorkerCard({ worker, onHire }) {
-  const [saved, setSaved] = useState(false)
-
-  const name = worker.name;
-  const img = worker.imageUrl || worker.img;
-  const available = worker.availability === 'AVAILABLE' || worker.available === true;
-  const rating = worker.averageRating || worker.rating || 0;
-  const reviews = worker.reviews || 0;
-  const price = worker.salary || worker.price || 0;
-  const specialty = worker.job || worker.specialty || "";
-  const location = worker.address || worker.location || "";
+export default function WorkerCard({ worker, onHire, onViewDetails, canHire = true }) {
+  const name = worker.name || "عامل"
+  const available = worker.availability === "AVAILABLE" || worker.available === true
+  const rating = Number(worker.averageRating || worker.rating || 0)
+  const price = worker.salary || worker.price || 0
+  const specialty = worker.job || worker.specialty || "خدمة عامة"
+  const location = worker.address || worker.location || ""
+  const isVerified = worker.verified || worker.verificationStatus === "VERIFIED"
+  const initials = name.split(" ").slice(0, 2).map((part) => part[0]).join(" ")
 
   return (
-    <article className="saas-card group overflow-hidden border-surface-200 flex flex-col h-full bg-white hover:border-primary/20 transition-all duration-300">
-      {/* ── Photo Section ── */}
-      <div className="relative aspect-video overflow-hidden">
-        <img
-          src={img}
-          alt={name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={e => {
-            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'W')}&size=400&background=F4F7FD&color=7000FF&font-size=0.35&bold=true`
-          }}
-        />
-        
-        {/* Status badge */}
-        <div className="absolute top-3 right-3 z-10">
-          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight shadow-sm border ${
-              available
-              ? "bg-emerald-500 border-emerald-600 text-white"
-              : "bg-surface-800 border-surface-900 text-white"
-            }`}>
-            {available ? "متاح للعمل" : "في مهمة"}
+    <article className="saas-card group flex h-full flex-col overflow-hidden border-surface-200 bg-white transition-all duration-300 hover:border-primary/20">
+      <div className="relative aspect-video overflow-hidden bg-linear-to-br from-slate-100 via-white to-primary-soft">
+        {worker.imageUrl ? (
+          <img src={worker.imageUrl} alt={name} className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-lg font-black text-surface-900 shadow-lg ring-1 ring-surface-200">
+              {initials || "ع"}
+            </div>
+          </div>
+        )}
+
+        <div className="absolute right-3 top-3 z-10">
+          <span className={`rounded-full border px-3 py-1 text-[10px] font-black shadow-sm ${
+            available
+              ? "border-emerald-600 bg-emerald-500 text-white"
+              : "border-surface-900 bg-surface-800 text-white"
+          }`}>
+            {available ? "متاح للعمل" : "غير متاح"}
           </span>
         </div>
 
-        {/* Favorite Button */}
-        <button 
-          onClick={(e) => { e.stopPropagation(); setSaved(!saved) }}
-          className={`absolute top-3 left-3 w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 transition-all duration-300 z-10 ${
-            saved ? "bg-red-500 text-white border-red-600" : "bg-white/40 text-surface-900 hover:bg-white"
-          }`}
-        >
-          <Heart size={16} className={saved ? "fill-white" : ""} />
-        </button>
-
-        {/* Verification Overlay */}
-        {rating >= 4.5 && (
-          <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-lg shadow-sm flex items-center gap-1.5 z-10 border border-surface-100">
+        {isVerified && (
+          <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 rounded-lg border border-surface-100 bg-white/95 px-3 py-1 shadow-sm backdrop-blur-sm">
             <ShieldCheck size={14} className="text-primary" />
-            <span className="text-[10px] font-bold text-surface-900">موثوق</span>
+            <span className="text-[10px] font-bold text-surface-900">موثق</span>
           </div>
         )}
       </div>
 
-      {/* ── Content Body ── */}
-      <div className="p-5 flex flex-col flex-1">
-        <div className="flex items-start justify-between mb-4">
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-4 flex items-start justify-between">
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-surface-900 leading-none">
-               {name}
-            </h3>
+            <h3 className="text-lg font-bold leading-none text-surface-900">{name}</h3>
             <div className="flex items-center gap-1.5">
-               <Stars rating={rating} />
-               <span className="text-[11px] font-bold text-surface-400">({reviews})</span>
+              <Stars rating={rating} />
+              <span className="text-[11px] font-bold text-surface-400">{rating.toFixed(1)}</span>
             </div>
           </div>
           <div className="text-left">
-             <div className="text-surface-900 font-black text-xl leading-none">{price}</div>
-             <div className="text-[10px] font-bold text-surface-400 uppercase tracking-wider mt-1">MRU/ساعة</div>
+            <div className="text-xl font-black leading-none text-surface-900">{price}</div>
+            <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-surface-400">MRU/ساعة</div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-6">
-          <span className="inline-flex items-center gap-1.5 bg-primary-soft text-primary px-3 py-1 rounded-lg text-[11px] font-bold border border-primary/5">
-            <span className="text-sm leading-none">{SPEC_ICON[specialty] || "🛠️"}</span>
-            {SPEC_TRANSLATE[specialty] || specialty}
+        <div className="mb-6 flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/5 bg-primary-soft px-3 py-1 text-[11px] font-bold text-primary">
+            <Wrench size={12} />
+            {specialty}
           </span>
-          <span className="inline-flex items-center gap-1.5 bg-surface-50 text-surface-500 px-3 py-1 rounded-lg text-[11px] font-bold border border-surface-100">
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-surface-100 bg-surface-50 px-3 py-1 text-[11px] font-bold text-surface-500">
             <MapPin size={12} className="text-surface-300" />
             {location || "غير محدد"}
           </span>
         </div>
 
-        <div className="mt-auto pt-5 border-t border-surface-100 flex items-center gap-2">
-            <button 
-              onClick={() => onHire?.(worker)}
-              disabled={!available}
-              className={`flex-1 btn-saas h-11 text-xs font-bold transition-all duration-300 ${
-                available 
-                ? "btn-primary shadow-sm hover:shadow-md active:scale-95" 
-                : "bg-surface-100 text-surface-400 cursor-not-allowed border-surface-200"
-              }`}
-            >
-              <Wrench size={16} />
-              {available ? "توظيف الآن" : "غير متوفر"}
-            </button>
-            <button className="w-11 h-11 btn-saas btn-secondary border-surface-200 text-surface-500 hover:text-primary active:scale-95">
-              <User size={18} />
-            </button>
+        <div className="mt-auto flex items-center gap-2 border-t border-surface-100 pt-5">
+          <button
+            onClick={() => onHire?.(worker)}
+            disabled={!available || !canHire}
+            className={`btn-saas h-11 flex-1 text-xs font-bold transition-all duration-300 ${
+              available && canHire
+                ? "btn-primary shadow-sm hover:shadow-md active:scale-95"
+                : "cursor-not-allowed border-surface-200 bg-surface-100 text-surface-400"
+            }`}
+          >
+            <Wrench size={16} />
+            {canHire ? (available ? "اطلب هذا العامل" : "غير متوفر") : "للعرض فقط"}
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewDetails?.(worker)}
+            className="btn-saas btn-secondary h-11 w-11 border-surface-200 text-surface-500 hover:text-primary active:scale-95"
+            aria-label="عرض التفاصيل"
+          >
+            <User size={18} />
+          </button>
         </div>
       </div>
     </article>

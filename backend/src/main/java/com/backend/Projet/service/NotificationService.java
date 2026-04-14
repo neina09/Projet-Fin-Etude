@@ -29,6 +29,7 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
+    @Transactional(readOnly = true)
     public List<NotificationResponseDto> getMyNotifications(User currentUser) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId())
                 .stream().map(notificationMapper::toDto).toList();

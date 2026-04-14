@@ -17,4 +17,10 @@ public class TaskRequestDto {
 
     @Size(max = 255, message = "Address must not exceed 255 characters")
     private String address;
+
+    @Size(max = 100, message = "Profession must not exceed 100 characters")
+    private String profession;
+
+    private Double latitude;
+    private Double longitude;
 }

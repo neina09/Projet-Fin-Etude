@@ -1,194 +1,551 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Send, User as UserIcon, MessageCircle, Clock, ChevronRight, Hash } from "lucide-react";
-import { getChatHistory, sendChatMessage, getMyBookings, getMyTasks, getMyOffers } from "../api";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  ArrowRight,
+  CheckCheck,
+  MessageCircle,
+  Search,
+  Send,
+  ShieldCheck
+} from "lucide-react"
+import { getChatMessages, getMyBookingRequests, getMyBookings, getMyOffers, getMyTasks, sendChatMessage } from "../api"
+
+const AVATAR_COLORS = [
+  "bg-indigo-500",
+  "bg-primary",
+  "bg-emerald-500",
+  "bg-amber-500",
+  "bg-rose-500",
+  "bg-violet-500",
+  "bg-cyan-500",
+  "bg-fuchsia-500"
+]
+
+
+function getAvatarColor(name) {
+  let hash = 0
+  for (let index = 0; index < (name || "").length; index += 1) {
+    hash = name.charCodeAt(index) + ((hash << 5) - hash)
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
+function getInitial(name) {
+  return name?.[0]?.toUpperCase() || "U"
+}
 
 export default function ChatSystem({ currentUser }) {
-  const [contacts, setContacts] = useState([]);
-  const [selectedContact, setSelectedContact] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef(null);
+  const [contacts, setContacts] = useState([])
+  const [selectedContact, setSelectedContact] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [newMessage, setNewMessage] = useState("")
+  const [error, setError] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [loadingContacts, setLoadingContacts] = useState(true)
+  const [sendingMessage, setSendingMessage] = useState(false)
+  const messagesEndRef = useRef(null)
+  const inputRef = useRef(null)
+  
+  // FIX 1: use a ref to always access latest selectedContact inside intervals
+  const selectedContactRef = useRef(selectedContact)
+  useEffect(() => {
+    selectedContactRef.current = selectedContact
+  }, [selectedContact])
+
+  // FIX 2: wrap fetchContacts in useCallback so it's stable and can be safely listed in deps
+  const fetchContacts = useCallback(async (keepSelectedId = null, showLoader = true) => {
+    if (showLoader) setLoadingContacts(true)
+    setError("")
+
+    try {
+      const [bookingsResult, bookingRequestsResult, myTasksResult, myOffersResult] = await Promise.allSettled([
+        getMyBookings(),
+        getMyBookingRequests(),
+        getMyTasks(),
+        getMyOffers()
+      ])
+
+      const chatMap = new Map()
+
+      if (bookingsResult.status === "fulfilled") {
+        const list = Array.isArray(bookingsResult.value?.content || bookingsResult.value)
+          ? bookingsResult.value?.content || bookingsResult.value
+          : []
+        list.forEach((booking) => {
+          if (String(booking.status || "").toUpperCase() === "ACCEPTED" && booking.workerUserId) {
+            chatMap.set(booking.workerUserId, {
+              id: booking.workerUserId,
+              name: booking.workerName,
+              role: booking.workerJob || "عامل",
+              context: `حجز رقم ${booking.id}`,
+              type: "booking"
+            })
+          }
+        })
+      }
+
+      if (bookingRequestsResult.status === "fulfilled") {
+        const list = Array.isArray(bookingRequestsResult.value?.content || bookingRequestsResult.value)
+          ? bookingRequestsResult.value?.content || bookingRequestsResult.value
+          : []
+        list.forEach((booking) => {
+          if (String(booking.status || "").toUpperCase() === "ACCEPTED" && booking.userId) {
+            chatMap.set(booking.userId, {
+              id: booking.userId,
+              name: booking.userName,
+              role: "عميل",
+              context: `طلب حجز رقم ${booking.id}`,
+              type: "booking"
+            })
+          }
+        })
+      }
+
+      if (myTasksResult.status === "fulfilled") {
+        const list = Array.isArray(myTasksResult.value?.content || myTasksResult.value)
+          ? myTasksResult.value?.content || myTasksResult.value
+          : []
+        list.forEach((task) => {
+          if (String(task.status || "").toUpperCase() === "IN_PROGRESS" && task.assignedWorkerUserId) {
+            chatMap.set(task.assignedWorkerUserId, {
+              id: task.assignedWorkerUserId,
+              name: task.assignedWorkerName || "عامل",
+              role: "عامل",
+              context: `مهمة: ${task.title}`,
+              type: "task"
+            })
+          }
+        })
+      }
+
+      if (myOffersResult.status === "fulfilled") {
+        const list = Array.isArray(myOffersResult.value) ? myOffersResult.value : []
+        list.forEach((offer) => {
+          if (String(offer.status || "").toUpperCase() === "IN_PROGRESS" && offer.taskUserId) {
+            chatMap.set(offer.taskUserId, {
+              id: offer.taskUserId,
+              name: offer.taskUserName || "صاحب المهمة",
+              role: "صاحب المهمة",
+              context: `مهمة: ${offer.taskTitle}`,
+              type: "task"
+            })
+          }
+        })
+      }
+
+      const contactsList = Array.from(chatMap.values())
+      const withLastMessage = await Promise.all(
+        contactsList.map(async (contact) => {
+          try {
+            const history = await getChatMessages(contact.id)
+            const sorted = Array.isArray(history) ? history : []
+            const last = sorted[sorted.length - 1]
+            return {
+              ...contact,
+              lastMessage: last?.content || "",
+              lastMessageTime: last?.timestamp || null,
+              lastMessageIsMe: last?.senderId === currentUser?.id
+            }
+          } catch {
+            return { ...contact, lastMessage: "", lastMessageTime: null, lastMessageIsMe: false }
+          }
+        })
+      )
+
+      withLastMessage.sort((left, right) => {
+        if (!left.lastMessageTime && !right.lastMessageTime) return 0
+        if (!left.lastMessageTime) return 1
+        if (!right.lastMessageTime) return -1
+        return new Date(right.lastMessageTime) - new Date(left.lastMessageTime)
+      })
+
+      setContacts(withLastMessage)
+
+      if (keepSelectedId) {
+        const updatedSelection = withLastMessage.find((c) => c.id === keepSelectedId)
+        if (updatedSelection) setSelectedContact(updatedSelection)
+      }
+    } catch (err) {
+      setError(err.message || "تعذر تحميل جهات الاتصال.")
+    } finally {
+      if (showLoader) setLoadingContacts(false)
+    }
+  }, [currentUser?.id])
+
+  // FIX 3: wrap fetchMessages in useCallback
+  const fetchMessages = useCallback(async (userId) => {
+    try {
+      const data = await getChatMessages(userId)
+      const sorted = Array.isArray(data) ? data : []
+      setMessages(sorted)
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 80)
+
+      if (sorted.length > 0) {
+        const last = sorted[sorted.length - 1]
+        setContacts((current) =>
+          current.map((contact) =>
+            contact.id === userId
+              ? { ...contact, lastMessage: last.content, lastMessageTime: last.timestamp, lastMessageIsMe: last.senderId === currentUser?.id }
+              : contact
+          )
+        )
+      }
+    } catch (err) {
+      setError(err.message || "تعذر تحميل الرسائل.")
+    }
+  }, [currentUser?.id])
 
   useEffect(() => {
-    fetchContacts();
+    fetchContacts()
+  }, [fetchContacts])
+
+  // FIX 4: use ref inside interval — avoids stale closure without adding selectedContact to deps
+  useEffect(() => {
     const interval = setInterval(() => {
-      if (selectedContact) fetchMessages(selectedContact.id);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [selectedContact]);
+      const current = selectedContactRef.current
+      fetchContacts(current?.id ?? null, false)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [fetchContacts])
 
-  const fetchContacts = async () => {
+  useEffect(() => {
+    if (!selectedContact) return
+    fetchMessages(selectedContact.id)
+    const interval = setInterval(() => fetchMessages(selectedContact.id), 3000)
+    return () => clearInterval(interval)
+  }, [selectedContact?.id, fetchMessages])
+
+  const handleSend = async (event) => {
+    event.preventDefault()
+    if (!newMessage.trim() || !selectedContact || sendingMessage) return
+
+    setSendingMessage(true)
     try {
-      const bookings = await getMyBookings();
-      const myOffers = await getMyOffers();
-      
-      const chatableUsers = new Map();
+      const sent = await sendChatMessage(selectedContact.id, newMessage.trim())
 
-      // From Bookings (as User)
-      bookings.forEach(b => {
-        if (b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS' || b.status === 'COMPLETED') {
-          chatableUsers.set(b.worker.user.id, {
-            id: b.worker.user.id,
-            name: b.worker.name,
-            role: 'Worker',
-            context: 'Booking #' + b.id
-          });
-        }
-      });
-
-      // From My Offers (as Worker)
-      myOffers.forEach(o => {
-        if (o.task && (o.status === 'IN_PROGRESS' || o.status === 'COMPLETED')) {
-           chatableUsers.set(o.task.userId, {
-             id: o.task.userId,
-             name: o.task.userName,
-             role: 'Client',
-             context: 'Task: ' + o.task.title
-           });
-        }
-      });
-
-      setContacts(Array.from(chatableUsers.values()));
+      // FIX 5: update state optimistically — no need to re-fetch after send
+      setMessages((current) => [...current, sent])
+      setNewMessage("")
+      setError("")
+      setContacts((current) =>
+        current
+          .map((contact) =>
+            contact.id === selectedContact.id
+              ? { ...contact, lastMessage: sent.content, lastMessageTime: sent.timestamp, lastMessageIsMe: true }
+              : contact
+          )
+          .sort((left, right) => {
+            if (!left.lastMessageTime && !right.lastMessageTime) return 0
+            if (!left.lastMessageTime) return 1
+            if (!right.lastMessageTime) return -1
+            return new Date(right.lastMessageTime) - new Date(left.lastMessageTime)
+          })
+      )
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 80)
+      inputRef.current?.focus()
     } catch (err) {
-      console.error("Error fetching contacts:", err);
+      setError(err.message || "تعذر إرسال الرسالة.")
+    } finally {
+      setSendingMessage(false)
     }
-  };
+  }
 
-  const fetchMessages = async (userId) => {
-    try {
-      const data = await getChatHistory(userId);
-      setMessages(data);
-      scrollToBottom();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const filteredContacts = useMemo(
+    () => contacts.filter((contact) => contact.name?.toLowerCase().includes(searchQuery.toLowerCase())),
+    [contacts, searchQuery]
+  )
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedContact) return;
-    try {
-      const sent = await sendChatMessage(selectedContact.id, newMessage);
-      setMessages([...messages, sent]);
-      setNewMessage("");
-      scrollToBottom();
-    } catch (err) {
-      alert("فشل إرسال الرسالة: " + err.message);
-    }
-  };
+  // Format functions defined BEFORE groupedMessages to avoid "Cannot access before initialization" error
+  const formatTime = (timestamp) =>
+    timestamp ? new Date(timestamp).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : ""
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const formatDate = (timestamp) => {
+    if (!timestamp) return ""
+    const date = new Date(timestamp)
+    const today = new Date()
+    if (date.toDateString() === today.toDateString()) return "اليوم"
+    const yesterday = new Date(today)
+    yesterday.setDate(today.getDate() - 1)
+    if (date.toDateString() === yesterday.toDateString()) return "أمس"
+    return date.toLocaleDateString("ar-EG")
+  }
+
+  const formatSidebarTime = (timestamp) => {
+    if (!timestamp) return ""
+    const date = new Date(timestamp)
+    const today = new Date()
+    if (date.toDateString() === today.toDateString()) return formatTime(timestamp)
+    const yesterday = new Date(today)
+    yesterday.setDate(today.getDate() - 1)
+    if (date.toDateString() === yesterday.toDateString()) return "أمس"
+    return date.toLocaleDateString("ar-EG", { month: "short", day: "numeric" })
+  }
+
+  const groupedMessages = useMemo(() =>
+    messages.reduce((groups, message) => {
+      const date = formatDate(message.timestamp)
+      if (!groups[date]) groups[date] = []
+      groups[date].push(message)
+      return groups
+    }, {}),
+    [messages]
+  )
+
+  const selectedSummary = selectedContact
+    ? {
+        title: selectedContact.type === "task" ? "مسار تنفيذ مهمة" : "محادثة مرتبطة بحجز",
+        note:
+          selectedContact.type === "task"
+            ? "استخدم هذه المساحة لتنسيق خطوات التنفيذ، الموعد، وأي تحديثات أثناء العمل."
+            : "هذه المحادثة مخصصة لتأكيد التفاصيل العملية للزيارة أو الخدمة المحجوزة."
+      }
+    : null
 
   return (
-    <div className="flex h-[calc(100vh-160px)] bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-700">
-      
-      {/* ── Contacts Sidebar ── */}
-      <div className="w-80 border-s border-slate-100 flex flex-col bg-slate-50/30">
-        <div className="p-8 border-b border-slate-100">
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">المحادثات</h2>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">لديك {contacts.length} جهة اتصال نشطة</p>
+    <div className={`grid h-[calc(100vh-160px)] overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-xl transition-all ${selectedContact ? "lg:grid-cols-[300px_minmax(0,1fr)_260px]" : "lg:grid-cols-[300px_minmax(0,1fr)]"}`}>
+      {/* ===== Sidebar: Contacts ===== */}
+      <aside className={`${selectedContact ? "hidden lg:flex" : "flex"} flex-col border-e border-surface-100 bg-surface-50`}>
+        <div className="border-b border-surface-100 bg-white px-5 py-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[11px] font-bold text-surface-400">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              {contacts.length} نشط
+            </div>
+            <h2 className="text-base font-black text-surface-900">الرسائل</h2>
+          </div>
+          <div className="relative">
+            <Search size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-surface-300" />
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="بحث..."
+              className="saas-input h-9 bg-surface-50 pr-8 text-xs"
+            />
+          </div>
         </div>
-        
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {contacts.length > 0 ? (
-            contacts.map(c => (
-              <button 
-                key={c.id}
-                onClick={() => setSelectedContact(c)}
-                className={`w-full flex items-center gap-4 p-4 rounded-[2rem] transition-all ${selectedContact?.id === c.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-100 -translate-x-1' : 'hover:bg-white text-slate-600'}`}
-              >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${selectedContact?.id === c.id ? 'bg-white text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
-                  {c.name[0].toUpperCase()}
-                </div>
-                <div className="flex-1 text-end">
-                  <h4 className="text-sm font-black truncate">{c.name}</h4>
-                  <p className={`text-[10px] font-bold opacity-60 uppercase tracking-tighter`}>{c.role}</p>
-                </div>
-              </button>
-            ))
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {loadingContacts ? (
+            <div className="flex flex-col items-center justify-center px-6 py-16 text-surface-400">
+              <div className="mb-3 h-8 w-8 animate-spin rounded-full border-2 border-surface-200 border-t-primary" />
+              <p className="text-xs font-medium">جاري التحميل...</p>
+            </div>
+          ) : filteredContacts.length > 0 ? (
+            <div className="space-y-0.5">
+              {filteredContacts.map((contact) => {
+                const isActive = selectedContact?.id === contact.id
+                return (
+                  <button
+                    key={contact.id}
+                    onClick={() => { setSelectedContact(contact); setError("") }}
+                    className={`w-full rounded-xl p-3 text-right transition-all ${
+                      isActive
+                        ? "bg-primary/8 shadow-none"
+                        : "hover:bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${getAvatarColor(contact.name)}`}>
+                        {getInitial(contact.name)}
+                        <span className="absolute -bottom-0.5 -left-0.5 h-3 w-3 rounded-full border-2 border-surface-50 bg-emerald-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[10px] text-surface-400">
+                            {contact.lastMessageTime ? formatSidebarTime(contact.lastMessageTime) : ""}
+                          </span>
+                          <h4 className="truncate text-sm font-bold text-surface-900">{contact.name}</h4>
+                        </div>
+                        <div className="mt-0.5 flex items-center justify-between gap-1">
+                          <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${contact.type === "task" ? "bg-indigo-50 text-indigo-500" : "bg-amber-50 text-amber-600"}`}>
+                            {contact.type === "task" ? "مهمة" : "حجز"}
+                          </span>
+                          <p className="truncate text-[11px] text-surface-400">
+                            {contact.lastMessage
+                              ? `${contact.lastMessageIsMe ? "أنت: " : ""}${contact.lastMessage}`
+                              : contact.context}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
-              <MessageCircle size={40} className="mb-4" />
-              <p className="text-xs font-black">لا توجد محادثات نشطة بعد. اطلب خدمة أولاً.</p>
+            <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+              <MessageCircle size={28} className="mb-3 text-surface-200" />
+              <p className="text-sm font-bold text-surface-600">لا توجد محادثات</p>
+              <p className="mt-1 text-xs text-surface-400">تظهر بعد قبول الحجز أو بدء المهمة.</p>
             </div>
           )}
         </div>
-      </div>
+      </aside>
 
-      {/* ── Message Window ── */}
-      <div className="flex-1 flex flex-col bg-white">
+      {/* ===== Main: Messages ===== */}
+      <section className={`${!selectedContact ? "hidden lg:flex" : "flex"} min-w-0 flex-col bg-white`}>
         {selectedContact ? (
           <>
-            {/* Header */}
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black text-xl border border-blue-100">
-                  {selectedContact.name[0].toUpperCase()}
+            <div className="border-b border-surface-100 bg-white px-5 py-3">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setSelectedContact(null)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 hover:bg-surface-50 lg:hidden"
+                >
+                  <ArrowRight size={17} />
+                </button>
+                <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white ${getAvatarColor(selectedContact.name)}`}>
+                  {getInitial(selectedContact.name)}
                 </div>
-                <div>
-                  <h3 className="text-lg font-black text-slate-900 leading-none">{selectedContact.name}</h3>
-                  <div className="flex items-center gap-2 mt-1.5 font-bold text-[9px] text-emerald-500 uppercase tracking-widest">
-                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                     نشط الآن
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="truncate text-sm font-bold text-surface-900">{selectedContact.name}</h3>
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    <span className="text-[11px] text-emerald-500">نشط</span>
                   </div>
+                  <p className="truncate text-[11px] text-surface-400">{selectedContact.context}</p>
                 </div>
-              </div>
-              <div className="px-4 py-1.5 bg-slate-50 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-100">
-                 {selectedContact.context}
+                <span className={`rounded-lg px-2.5 py-1 text-[10px] font-bold ${selectedContact.type === "task" ? "bg-indigo-50 text-indigo-500" : "bg-amber-50 text-amber-600"}`}>
+                  {selectedContact.type === "task" ? "مهمة" : "حجز"}
+                </span>
               </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-8 space-y-6">
-              {messages.map((m, idx) => {
-                const isMe = m.senderId === currentUser.id;
-                return (
-                  <div key={m.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2`}>
-                    <div className={`max-w-[70%] p-5 rounded-[2.5rem] ${isMe ? 'bg-blue-600 text-white rounded-be- shadow-xl shadow-blue-100' : 'bg-slate-50 text-slate-700 rounded-bs-'}`}>
-                      <p className="text-sm font-bold leading-relaxed">{m.content}</p>
-                      <div className={`flex items-center gap-1.5 mt-2 font-black text-[9px] uppercase tracking-widest ${isMe ? 'text-blue-100' : 'text-slate-400'}`}>
-                        <Clock size={10} />
-                        {new Date(m.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+            <div className="flex-1 overflow-y-auto px-5 py-6">
+              {error && (
+                <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+                  {error}
+                </div>
+              )}
+
+              {messages.length === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center text-center">
+                  <div className="mb-5 flex h-24 w-24 items-center justify-center rounded-[2rem] border border-dashed border-surface-200 bg-white text-surface-300">
+                    <Send size={34} className="rotate-180" />
+                  </div>
+                  <h4 className="text-lg font-black text-surface-800">ابدأ التنسيق الآن</h4>
+                  <p className="mt-2 max-w-sm text-sm font-medium leading-relaxed text-surface-500">
+                    أرسل أول رسالة لبدء الاتفاق على الموعد، تفاصيل الخدمة، أو أي ملاحظات خاصة بالتنفيذ.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(groupedMessages).map(([date, group]) => (
+                    <div key={date}>
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className="flex-1 border-t border-dashed border-surface-200" />
+                        <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-surface-400 shadow-sm">
+                          {date}
+                        </span>
+                        <span className="flex-1 border-t border-dashed border-surface-200" />
+                      </div>
+                      <div className="space-y-2">
+                        {group.map((message, index) => {
+                          const isMe = message.senderId === currentUser?.id
+                          return (
+                            <div
+                              key={message.id || index}
+                              className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}
+                            >
+                              <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ${isMe ? "bg-primary" : getAvatarColor(selectedContact.name)}`}>
+                                {isMe ? getInitial(currentUser?.username) : getInitial(selectedContact.name)}
+                              </div>
+                              <div className={`max-w-[72%] rounded-2xl px-4 py-2.5 ${isMe ? "rounded-bl-sm bg-primary text-white" : "rounded-br-sm bg-surface-100 text-surface-800"}`}>
+                                <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
+                                <div className={`mt-1 flex items-center gap-1 text-[10px] ${isMe ? "justify-start flex-row-reverse text-white/60" : "text-surface-400"}`}>
+                                  <span>{formatTime(message.timestamp)}</span>
+                                  {isMe && <CheckCheck size={11} />}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
             </div>
 
-            {/* Input Area */}
-            <div className="p-8 border-t border-slate-100">
-              <form onSubmit={handleSend} className="flex gap-4 p-2 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100 focus-within:border-blue-500 transition-all">
-                <input 
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="اكتب رسالتك هنا..."
-                  className="flex-1 bg-transparent px-6 text-sm font-bold text-slate-800 outline-none placeholder:text-slate-300"
-                />
-                <button 
+            <div className="border-t border-surface-100 bg-white px-4 py-3">
+              <form onSubmit={handleSend} className="flex items-center gap-2 rounded-xl border border-surface-200 bg-surface-50 px-3 py-2">
+                <button
                   type="submit"
-                  disabled={!newMessage.trim()}
-                  className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 disabled:grayscale"
+                  disabled={!newMessage.trim() || sendingMessage}
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-white disabled:opacity-40"
                 >
-                  <Send size={24} className="rotate-180" />
+                  <Send size={14} className="rotate-180" />
                 </button>
+                <input
+                  ref={inputRef}
+                  value={newMessage}
+                  onChange={(event) => setNewMessage(event.target.value)}
+                  placeholder="اكتب رسالة..."
+                  className="flex-1 bg-transparent text-sm text-surface-800 placeholder-surface-300 outline-none"
+                />
               </form>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-12 opacity-50">
-            <div className="w-32 h-32 bg-slate-50 rounded-[4rem] flex items-center justify-center text-slate-200 mb-8 border-4 border-dashed border-slate-100">
-              <MessageCircle size={64} />
+          <div className="hidden h-full flex-1 flex-col items-center justify-center px-10 text-center lg:flex">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-50 text-surface-300">
+              <MessageCircle size={30} />
             </div>
-            <h3 className="text-2xl font-black text-slate-400">ابدأ المحادثة</h3>
-            <p className="text-sm font-bold text-slate-300 mt-4 max-w-xs">اختر جهة اتصال من القائمة اليمنى لبدء المراسلة الفورية.</p>
+            <h3 className="text-lg font-bold text-surface-700">اختر محادثة</h3>
+            <p className="mt-1 max-w-xs text-sm text-surface-400">
+              اختر جهة اتصال من القائمة لبدء التواصل.
+            </p>
           </div>
         )}
-      </div>
+      </section>
+
+      {/* ===== Sidebar: Details ===== */}
+      {selectedContact && (
+      <aside className="hidden border-s border-surface-100 bg-surface-50 p-4 lg:flex lg:flex-col">
+        <div className="rounded-xl border border-surface-200 bg-white p-4">
+          <div className="mb-3 flex items-center gap-3">
+            <div className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold text-white ${getAvatarColor(selectedContact.name)}`}>
+              {getInitial(selectedContact.name)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="truncate text-sm font-bold text-surface-900">{selectedContact.name}</h4>
+              <p className="text-[11px] text-surface-400">{selectedContact.role}</p>
+            </div>
+          </div>
+          <p className="rounded-lg bg-surface-50 px-3 py-2.5 text-[11px] leading-relaxed text-surface-500">
+            {selectedSummary?.note}
+          </p>
+        </div>
+
+        <div className="mt-3 rounded-xl border border-surface-200 bg-white p-4">
+          <h5 className="mb-3 text-xs font-bold text-surface-700">تفاصيل</h5>
+          <div className="space-y-2">
+            {[
+              { label: "الارتباط", value: selectedContact.context },
+              { label: "آخر تحديث", value: selectedContact.lastMessageTime ? formatSidebarTime(selectedContact.lastMessageTime) : "—" },
+              { label: "الرسائل", value: messages.length },
+            ].map(({ label, value }) => (
+              <div key={label} className="flex items-center justify-between rounded-lg bg-surface-50 px-3 py-2">
+                <span className="text-[11px] font-medium text-surface-400">{label}</span>
+                <span className="text-[11px] font-bold text-surface-700">{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-xl border border-primary/10 bg-primary/5 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <ShieldCheck size={13} className="text-primary" />
+            <span className="text-[10px] font-bold text-primary">نصائح</span>
+          </div>
+          <ul className="space-y-1.5 text-[11px] leading-relaxed text-surface-600">
+            <li>أكد الموعد والمكان بوضوح.</li>
+            <li>أرسل التحديثات أثناء التنفيذ.</li>
+            <li>احتفظ بالملاحظات في نفس المسار.</li>
+          </ul>
+        </div>
+      </aside>
+      )}
     </div>
-  );
+  )
 }
