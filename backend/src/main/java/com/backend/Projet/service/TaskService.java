@@ -9,6 +9,8 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Service
 @RequiredArgsConstructor
@@ -38,15 +40,29 @@ public class TaskService {
                 .user(managedUser)
                 .build();
 
-        return toTaskDto(taskRepository.save(task));
+        Task savedTask = taskRepository.save(task);
+
+        notificationService.sendNotificationToRole(
+                Role.ADMIN,
+                "New task pending review: " + savedTask.getTitle(),
+                NotificationType.ADMIN_TASK_REVIEW
+        );
+
+        return toTaskDto(savedTask);
     }
 
     // مرئية للجميع بدون login
     @Transactional(readOnly = true)
     public PageResponseDto<TaskResponseDto> getOpenTasks(Pageable pageable) {
+        return getOpenTasks(pageable, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponseDto<TaskResponseDto> getOpenTasks(
+            Pageable pageable, Double userLatitude, Double userLongitude) {
         return PageResponseDto.from(
                 taskRepository.findByStatus(TaskStatus.OPEN, pageable)
-                        .map(taskMapper::toDto)
+                        .map(task -> toTaskDto(task, userLatitude, userLongitude))
         );
     }
 
@@ -54,10 +70,17 @@ public class TaskService {
     @Transactional(readOnly = true)
     public PageResponseDto<TaskResponseDto> searchOpenTasks(
             String keyword, String address, String profession, Pageable pageable) {
+        return searchOpenTasks(keyword, address, profession, pageable, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponseDto<TaskResponseDto> searchOpenTasks(
+            String keyword, String address, String profession, Pageable pageable,
+            Double userLatitude, Double userLongitude) {
         return PageResponseDto.from(
                 taskRepository.searchOpenTasks(
                                 TaskStatus.OPEN, address, profession, keyword, pageable)
-                        .map(taskMapper::toDto)
+                        .map(task -> toTaskDto(task, userLatitude, userLongitude))
         );
     }
 
@@ -70,15 +93,36 @@ public class TaskService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public List<TaskResponseDto> getTasksAssignedToMe(User workerUser) {
+        Worker worker = workerRepository.findByUserId(workerUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Worker profile not found"));
+        return taskRepository.findByAssignedWorkerId(worker.getId())
+                .stream().map(taskMapper::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponseDto<TaskResponseDto> getPendingTasks(Pageable pageable) {
+        return PageResponseDto.from(
+                taskRepository.findByStatus(TaskStatus.PENDING_REVIEW, pageable)
+                        .map(taskMapper::toDto)
+        );
+    }
+
     // FIX #1: يرى الجميع تفاصيل Task المفتوحة (مش مقيد بصاحب الـ Task فقط)
     @Transactional(readOnly = true)
     public TaskResponseDto getTaskById(Long id) {
+        return getTaskById(id, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public TaskResponseDto getTaskById(Long id, Double userLatitude, Double userLongitude) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
         if (task.getStatus() != TaskStatus.OPEN) {
             throw new ResourceNotFoundException("Task not found");
         }
-        return taskMapper.toDto(task);
+        return toTaskDto(task, userLatitude, userLongitude);
     }
 
     @Transactional
@@ -401,6 +445,36 @@ public class TaskService {
     private TaskResponseDto toTaskDto(Task task) {
         Task hydratedTask = taskRepository.findById(task.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
-        return taskMapper.toDto(hydratedTask);
+        return toTaskDto(hydratedTask, null, null);
+    }
+
+    private TaskResponseDto toTaskDto(Task task, Double userLatitude, Double userLongitude) {
+        TaskResponseDto dto = taskMapper.toDto(task);
+        dto.setDistanceKm(calculateDistanceKm(
+                userLatitude, userLongitude, task.getLatitude(), task.getLongitude()));
+        return dto;
+    }
+
+    private Double calculateDistanceKm(
+            Double userLatitude, Double userLongitude,
+            Double taskLatitude, Double taskLongitude) {
+        if (userLatitude == null || userLongitude == null
+                || taskLatitude == null || taskLongitude == null) {
+            return null;
+        }
+
+        double earthRadiusKm = 6371.0;
+        double latDistance = Math.toRadians(taskLatitude - userLatitude);
+        double lonDistance = Math.toRadians(taskLongitude - userLongitude);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(userLatitude))
+                * Math.cos(Math.toRadians(taskLatitude))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double distanceKm = earthRadiusKm * c;
+
+        return BigDecimal.valueOf(distanceKm)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
     }
 }

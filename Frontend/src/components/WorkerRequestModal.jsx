@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react"
 import { Calendar, Clock, MapPin, MessageSquare, Send, ShieldCheck, X } from "lucide-react"
+import { resolveAssetUrl } from "../api"
 
 function getDateInputMin() {
   const now = new Date()
@@ -27,7 +28,7 @@ export default function WorkerRequestModal({ worker, onClose, onSubmit }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  const workerImg = worker.imageUrl || worker.img
+  const workerImg = resolveAssetUrl(worker.imageUrl || worker.img)
   const minDate = useMemo(() => getDateInputMin(), [])
   const minTime = useMemo(() => getTimeInputMin(date), [date])
 

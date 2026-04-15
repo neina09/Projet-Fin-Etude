@@ -5,8 +5,10 @@ import com.backend.Projet.exception.ResourceNotFoundException;
 import com.backend.Projet.exception.UnauthorizedException;
 import com.backend.Projet.model.Notification;
 import com.backend.Projet.model.NotificationType;
+import com.backend.Projet.model.Role;
 import com.backend.Projet.model.User;
 import com.backend.Projet.repository.NotificationRepository;
+import com.backend.Projet.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,16 +19,27 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
     private final com.backend.Projet.mapper.NotificationMapper notificationMapper;
 
     @Transactional
     public void sendNotification(User target, String msg, NotificationType type) {
+        if (target == null) {
+            return;
+        }
+
         Notification notification = Notification.builder()
                 .user(target)
                 .message(msg)
                 .type(type)
                 .build();
         notificationRepository.save(notification);
+    }
+
+    @Transactional
+    public void sendNotificationToRole(Role role, String msg, NotificationType type) {
+        userRepository.findByRole(role)
+                .forEach(user -> sendNotification(user, msg, type));
     }
 
     @Transactional(readOnly = true)

@@ -1,6 +1,7 @@
 package com.backend.Projet.controller;
 
 import com.backend.Projet.dto.AdminDashboardDto;
+import com.backend.Projet.model.User;
 import com.backend.Projet.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,8 @@ public class AdminController {
 
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<AdminDashboardDto> getDashboard() {
-        return ResponseEntity.ok(adminService.getDashboard());
+    public ResponseEntity<AdminDashboardDto> getDashboard(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(adminService.getDashboard(currentUser));
     }
 }

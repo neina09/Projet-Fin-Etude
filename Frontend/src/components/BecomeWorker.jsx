@@ -1,9 +1,104 @@
-import React, { useState } from "react"
-import { ArrowLeft, BadgeCheck, CheckCircle, Clock, MapPin, Shield, Sparkles, TrendingUp, Zap } from "lucide-react"
-import { createWorkerProfile } from "../api"
+import React, { useMemo, useState } from "react"
+import { ArrowLeft, BadgeCheck, CheckCircle, Clock, MapPin, Shield, Sparkles, TrendingUp, Upload, X, Zap } from "lucide-react"
+import { createWorkerProfile, getMyWorkerProfile, uploadIdentityDocument, uploadWorkerImage } from "../api"
 
 const SPECIALTIES = ["سباك", "كهربائي", "دهان", "تنظيف"]
 const SPEC_ICON = { "سباك": "🔧", "كهربائي": "⚡", "دهان": "🎨", "تنظيف": "🧹" }
+
+function previewUrl(file) {
+  return file ? URL.createObjectURL(file) : ""
+}
+
+function readImageDimensions(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const image = new Image()
+
+    image.onload = () => {
+      resolve({ image, url, width: image.width, height: image.height })
+    }
+
+    image.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error("تعذر قراءة الصورة المختارة."))
+    }
+
+    image.src = url
+  })
+}
+
+async function combineIdentityFiles(frontFile, backFile) {
+  if (!frontFile && !backFile) return null
+  if (frontFile && !backFile) return frontFile
+  if (!frontFile && backFile) return backFile
+
+  const front = await readImageDimensions(frontFile)
+  const back = await readImageDimensions(backFile)
+
+  const padding = 32
+  const labelHeight = 48
+  const canvas = document.createElement("canvas")
+  const width = Math.max(front.width, back.width) + padding * 2
+  const height = front.height + back.height + padding * 3 + labelHeight * 2
+
+  canvas.width = width
+  canvas.height = height
+
+  const context = canvas.getContext("2d")
+  context.fillStyle = "#ffffff"
+  context.fillRect(0, 0, width, height)
+  context.fillStyle = "#111827"
+  context.font = "bold 24px Arial"
+  context.direction = "rtl"
+  context.textAlign = "right"
+
+  const labelX = width - padding
+  let currentY = padding
+
+  context.fillText("البطاقة - الوجه الأمامي", labelX, currentY + 28)
+  currentY += labelHeight
+  context.drawImage(front.image, (width - front.width) / 2, currentY)
+  currentY += front.height + padding
+
+  context.fillText("البطاقة - الوجه الخلفي", labelX, currentY + 28)
+  currentY += labelHeight
+  context.drawImage(back.image, (width - back.width) / 2, currentY)
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92))
+
+  URL.revokeObjectURL(front.url)
+  URL.revokeObjectURL(back.url)
+
+  if (!blob) {
+    throw new Error("تعذر تجهيز صور البطاقة للرفع.")
+  }
+
+  return new File([blob], "identity-front-back.jpg", { type: "image/jpeg" })
+}
+
+function FilePreview({ file, label, onClear }) {
+  const src = useMemo(() => previewUrl(file), [file])
+
+  if (!file) return null
+
+  return (
+    <div className="rounded-2xl border border-surface-200 bg-surface-50 p-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="text-xs font-black text-surface-700">{label}</span>
+        <button
+          type="button"
+          onClick={onClear}
+          className="inline-flex items-center gap-1 rounded-lg border border-surface-200 bg-white px-2 py-1 text-xs font-bold text-surface-500 hover:bg-surface-100"
+        >
+          <X size={12} />
+          إزالة
+        </button>
+      </div>
+      <img src={src} alt={label} className="h-40 w-full rounded-xl object-cover" />
+      <p className="mt-2 truncate text-xs font-bold text-surface-500">{file.name}</p>
+    </div>
+  )
+}
 
 export default function BecomeWorker({ onSuccess }) {
   const [form, setForm] = useState({
@@ -12,9 +107,11 @@ export default function BecomeWorker({ onSuccess }) {
     salary: "",
     phoneNumber: "",
     address: "",
-    nationalIdNumber: "",
-    imageUrl: ""
+    nationalIdNumber: ""
   })
+  const [workerImageFile, setWorkerImageFile] = useState(null)
+  const [identityFrontFile, setIdentityFrontFile] = useState(null)
+  const [identityBackFile, setIdentityBackFile] = useState(null)
   const [done, setDone] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -29,6 +126,14 @@ export default function BecomeWorker({ onSuccess }) {
     setError("")
 
     try {
+      if (!workerImageFile) {
+        throw new Error("يجب إضافة الصورة الشخصية قبل إرسال طلب التوثيق.")
+      }
+
+      if (!identityFrontFile || !identityBackFile) {
+        throw new Error("يجب إضافة صورة البطاقة من الأمام والخلف قبل إرسال الطلب.")
+      }
+
       const response = await createWorkerProfile({
         ...form,
         salary: Number(form.salary)
@@ -36,6 +141,22 @@ export default function BecomeWorker({ onSuccess }) {
 
       if (response?.token) {
         localStorage.setItem("token", response.token)
+      }
+
+      const workerProfile = await getMyWorkerProfile()
+      const workerId = workerProfile?.id || response?.id || response?.workerId || response?.worker?.id
+
+      if (!workerId) {
+        throw new Error("تم إنشاء الحساب لكن لم أستطع معرفة معرف العامل لرفع الملفات.")
+      }
+
+      if (workerImageFile) {
+        await uploadWorkerImage(workerId, workerImageFile)
+      }
+
+      const identityFile = await combineIdentityFiles(identityFrontFile, identityBackFile)
+      if (identityFile) {
+        await uploadIdentityDocument(workerId, identityFile)
       }
 
       setDone(true)
@@ -56,7 +177,7 @@ export default function BecomeWorker({ onSuccess }) {
           </div>
           <h2 className="mb-4 text-3xl font-black tracking-tight text-surface-900">تم استلام طلبك بنجاح</h2>
           <p className="mb-10 font-medium leading-relaxed text-surface-500">
-            أُرسل ملفك المهني إلى الخلفية بنجاح، وسيبقى الحساب في انتظار مراجعة الإدارة قبل نشره للعميل.
+            أُرسل ملفك المهني إلى الخلفية بنجاح، مع الصورة الشخصية وصور البطاقة التي اخترتها من جهازك، وسيبقى الحساب في انتظار مراجعة الإدارة قبل نشره للعميل.
           </p>
           <button
             onClick={() => window.location.reload()}
@@ -87,8 +208,7 @@ export default function BecomeWorker({ onSuccess }) {
               كعامل <span className="italic text-primary">موثوق</span>
             </h1>
             <p className="max-w-xl text-xl font-medium leading-relaxed text-surface-300">
-              هذا النموذج متصل مباشرة بالـ backend عندك، لذلك أي طلب يرسل من هنا يدخل نفس دورة التحقق
-              والإدارة المعتمدة في المنصة.
+              هذا النموذج متصل مباشرة بالـ backend عندك، لذلك أي طلب يرسل من هنا يدخل نفس دورة التحقق والإدارة المعتمدة في المنصة.
             </p>
 
             <div className="flex flex-wrap gap-6 pt-4">
@@ -151,7 +271,7 @@ export default function BecomeWorker({ onSuccess }) {
             <div className="mb-10">
               <h3 className="mb-2 text-2xl font-black text-surface-900">نموذج التسجيل المهني</h3>
               <p className="text-sm font-medium text-surface-500">
-                املأ البيانات كما يطلبها الـ backend حتى يصل الطلب بشكل صحيح وقابل للمراجعة.
+                ارفع الصورة الشخصية وصور الهوية مباشرة من جهازك، وسيشاهدها المدير بوضوح عند مراجعة طلب التوثيق.
               </p>
             </div>
 
@@ -159,24 +279,11 @@ export default function BecomeWorker({ onSuccess }) {
               <div className="grid gap-8 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="block text-xs font-black uppercase tracking-widest text-surface-400">الاسم الكامل</label>
-                  <input
-                    name="name"
-                    required
-                    value={form.name}
-                    onChange={setField}
-                    placeholder="مثال: محمد سالم"
-                    className="saas-input h-12 border-surface-100 pr-4 focus:bg-white"
-                  />
+                  <input name="name" required value={form.name} onChange={setField} placeholder="مثال: محمد سالم" className="saas-input h-12 border-surface-100 pr-4 focus:bg-white" />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-xs font-black uppercase tracking-widest text-surface-400">التخصص الرئيسي</label>
-                  <select
-                    name="job"
-                    required
-                    value={form.job}
-                    onChange={setField}
-                    className="saas-input h-12 cursor-pointer border-surface-100 pr-4 focus:bg-white"
-                  >
+                  <select name="job" required value={form.job} onChange={setField} className="saas-input h-12 cursor-pointer border-surface-100 pr-4 focus:bg-white">
                     <option value="">اختر تخصصك...</option>
                     {SPECIALTIES.map((specialty) => (
                       <option key={specialty} value={specialty}>{SPEC_ICON[specialty]} {specialty}</option>
@@ -188,29 +295,11 @@ export default function BecomeWorker({ onSuccess }) {
               <div className="grid gap-8 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="block text-xs font-black uppercase tracking-widest text-surface-400">أجر الساعة (MRU)</label>
-                  <input
-                    name="salary"
-                    type="number"
-                    min="1"
-                    required
-                    value={form.salary}
-                    onChange={setField}
-                    placeholder="التكلفة التقديرية"
-                    className="saas-input h-12 border-surface-100 pr-4 focus:bg-white"
-                  />
+                  <input name="salary" type="number" min="1" required value={form.salary} onChange={setField} placeholder="التكلفة التقديرية" className="saas-input h-12 border-surface-100 pr-4 focus:bg-white" />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-xs font-black uppercase tracking-widest text-surface-400">رقم الهاتف</label>
-                  <input
-                    name="phoneNumber"
-                    type="tel"
-                    required
-                    value={form.phoneNumber}
-                    onChange={setField}
-                    placeholder="+222 23243247"
-                    dir="ltr"
-                    className="saas-input h-12 border-surface-100 pr-4 text-left focus:bg-white"
-                  />
+                  <input name="phoneNumber" type="tel" required value={form.phoneNumber} onChange={setField} placeholder="+222 23243247" dir="ltr" className="saas-input h-12 border-surface-100 pr-4 text-left focus:bg-white" />
                 </div>
               </div>
 
@@ -219,28 +308,66 @@ export default function BecomeWorker({ onSuccess }) {
                   <label className="block text-xs font-black uppercase tracking-widest text-surface-400">العنوان أو الحي</label>
                   <div className="relative">
                     <MapPin className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={18} />
-                    <input
-                      name="address"
-                      required
-                      value={form.address}
-                      onChange={setField}
-                      placeholder="تفرغ زينة، تيارت، لكصر..."
-                      className="saas-input h-12 border-surface-100 pr-11 focus:bg-white"
-                    />
+                    <input name="address" required value={form.address} onChange={setField} placeholder="تفرغ زينة، تيارت، لكصر..." className="saas-input h-12 border-surface-100 pr-11 focus:bg-white" />
                   </div>
                 </div>
-               
+                <div className="space-y-2">
+                  <label className="block text-xs font-black uppercase tracking-widest text-surface-400">رقم الهوية الوطنية</label>
+                  <input name="nationalIdNumber" required value={form.nationalIdNumber} onChange={setField} placeholder="أدخل رقم الهوية" className="saas-input h-12 border-surface-100 pr-4 focus:bg-white" />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-xs font-black uppercase tracking-widest text-surface-400">رابط الصورة الشخصية (اختياري)</label>
-                <input
-                  name="imageUrl"
-                  value={form.imageUrl}
-                  onChange={setField}
-                  placeholder="https://example.com/photo.jpg"
-                  className="saas-input h-12 border-surface-100 pr-4 focus:bg-white"
-                />
+              <div className="rounded-2xl border border-surface-200 bg-surface-50 p-5">
+                <div className="mb-4 flex items-center gap-2 text-sm font-black text-surface-900">
+                  <Upload size={16} />
+                  الصورة الشخصية من جهازك
+                </div>
+                <label className="mb-4 inline-flex cursor-pointer items-center rounded-xl bg-primary px-4 py-2 text-sm font-black text-white transition-all hover:bg-primary-hover">
+                  اختر الصورة الشخصية
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => setWorkerImageFile(event.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </label>
+                <p className="mb-4 truncate text-xs font-bold text-surface-500">
+                  {workerImageFile ? workerImageFile.name : "لم يتم اختيار صورة بعد."}
+                </p>
+                <FilePreview file={workerImageFile} label="الصورة الشخصية" onClear={() => setWorkerImageFile(null)} />
+                <p className="mt-3 text-xs font-bold text-surface-500">هذه الصورة ستظهر للمدير أثناء المراجعة، ثم للعملاء بعد قبول التوثيق.</p>
+              </div>
+
+              <div className="rounded-2xl border border-surface-200 bg-surface-50 p-5">
+                <div className="mb-2 flex items-center gap-2 text-sm font-black text-surface-900">
+                  <Shield size={16} />
+                  صور البطاقة من جهازك
+                </div>
+                <p className="mb-4 text-xs font-bold text-surface-500">اختر صورة الوجه الأمامي وصورة الوجه الخلفي. الواجهة ستدمجهما تلقائيًا وترفعهما كوثيقة هوية واحدة لأن الخلفية الحالية تستقبل ملفًا واحدًا فقط.</p>
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-xs font-black text-surface-500">البطاقة - الوجه الأمامي</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => setIdentityFrontFile(event.target.files?.[0] || null)}
+                      className="mb-4 block w-full text-sm"
+                    />
+                    <FilePreview file={identityFrontFile} label="الوجه الأمامي" onClear={() => setIdentityFrontFile(null)} />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-xs font-black text-surface-500">البطاقة - الوجه الخلفي</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => setIdentityBackFile(event.target.files?.[0] || null)}
+                      className="mb-4 block w-full text-sm"
+                    />
+                    <FilePreview file={identityBackFile} label="الوجه الخلفي" onClear={() => setIdentityBackFile(null)} />
+                  </div>
+                </div>
               </div>
 
               {error && (

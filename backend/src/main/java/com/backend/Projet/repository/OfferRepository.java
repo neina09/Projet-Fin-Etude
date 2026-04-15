@@ -6,6 +6,7 @@ import com.backend.Projet.model.OfferStatus;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
@@ -28,4 +29,10 @@ public interface OfferRepository extends JpaRepository<Offer, Long> {
     Optional<Offer> findById(Long id);
 
     boolean      existsByTaskIdAndWorkerId(Long taskId, Long workerId);
+
+    @Modifying
+    void deleteByTaskUserId(Long userId);
+
+    @Modifying
+    void deleteByWorkerId(Long workerId);
 }

@@ -3,6 +3,7 @@ package com.backend.Projet.repository;
 import com.backend.Projet.model.Notification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -16,4 +17,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     java.util.Optional<Notification> findById(Long id);
 
     long countByIsReadFalse();
+    long countByUserIdAndIsReadFalse(Long userId);
+
+    @Modifying
+    void deleteByUserId(Long userId);
 }

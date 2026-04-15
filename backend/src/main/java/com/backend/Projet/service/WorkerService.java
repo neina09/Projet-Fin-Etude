@@ -32,6 +32,7 @@ public class WorkerService {
     private final UserRepository userRepository;
     private final com.backend.Projet.mapper.WorkerMapper workerMapper;
     private final FileStorageService fileStorageService;
+    private final NotificationService notificationService;
 
 
     @Transactional
@@ -42,16 +43,13 @@ public class WorkerService {
         String normalizedPhone = MauritaniaPhoneUtils.normalize(dto.getPhoneNumber());
         validateWorkerIdentity(dto.getNationalIdNumber(), normalizedPhone, null);
 
-        currentUser.setRole(Role.WORKER);
-        userRepository.save(currentUser);
-
         Worker worker = Worker.builder()
                 .name(dto.getName())
                 .phoneNumber(normalizedPhone)
                 .job(dto.getJob())
                 .address(dto.getAddress())
                 .salary(dto.getSalary())
-                .imageUrl(dto.getImageUrl())
+                .imageUrl(normalizeOptionalImageUrl(dto.getImageUrl()))
                 .nationalIdNumber(dto.getNationalIdNumber().trim())
                 .user(currentUser)
                 .availability(WorkerAvailability.AVAILABLE)
@@ -59,7 +57,15 @@ public class WorkerService {
                 .verificationNotes("Pending admin review")
                 .build();
 
-        return workerMapper.toDto(workerRepository.save(worker));
+        Worker savedWorker = workerRepository.save(worker);
+
+        notificationService.sendNotificationToRole(
+                Role.ADMIN,
+                "New worker profile pending review: " + savedWorker.getName(),
+                com.backend.Projet.model.NotificationType.ADMIN_WORKER_REVIEW
+        );
+
+        return workerMapper.toDto(savedWorker);
     }
 
     @Transactional
@@ -82,7 +88,7 @@ public class WorkerService {
                 .job(dto.getJob())
                 .address(dto.getAddress())
                 .salary(dto.getSalary())
-                .imageUrl(dto.getImageUrl())
+                .imageUrl(normalizeOptionalImageUrl(dto.getImageUrl()))
                 .nationalIdNumber(dto.getNationalIdNumber().trim())
                 .user(user)
                 .availability(WorkerAvailability.AVAILABLE)
@@ -151,11 +157,12 @@ public class WorkerService {
         worker.setJob(dto.getJob());
         worker.setAddress(dto.getAddress());
         worker.setSalary(dto.getSalary());
-        worker.setImageUrl(dto.getImageUrl());
-        worker.setNationalIdNumber(dto.getNationalIdNumber().trim());
-        if (!isAdmin) {
-            worker.setVerificationStatus(WorkerVerificationStatus.PENDING);
-            worker.setVerificationNotes("Profile updated and waiting for admin review");
+        String imageUrl = normalizeOptionalImageUrl(dto.getImageUrl());
+        if (imageUrl != null) {
+            worker.setImageUrl(imageUrl);
+        }
+        if (isAdmin) {
+            worker.setNationalIdNumber(dto.getNationalIdNumber().trim());
         }
         return workerMapper.toDto(workerRepository.save(worker));
     }
@@ -229,20 +236,31 @@ public class WorkerService {
     public WorkerResponseDto uploadWorkerImage(Long id, MultipartFile file, User currentUser) {
         Worker worker = getOwnedOrManagedWorker(id, currentUser);
         worker.setImageUrl(fileStorageService.storeWorkerImage(file));
-        if (worker.getVerificationStatus() != WorkerVerificationStatus.VERIFIED) {
-            worker.setVerificationStatus(WorkerVerificationStatus.PENDING);
-            worker.setVerificationNotes("Profile image uploaded and waiting for admin review");
-        }
         return workerMapper.toDto(workerRepository.save(worker));
     }
 
     @Transactional
     public WorkerResponseDto uploadIdentityDocument(Long id, MultipartFile file, User currentUser) {
         Worker worker = getOwnedOrManagedWorker(id, currentUser);
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        boolean alreadyHasIdentityDocument = worker.getIdentityDocumentUrl() != null && !worker.getIdentityDocumentUrl().isBlank();
+
+        if (!isAdmin && alreadyHasIdentityDocument) {
+            throw new BusinessException("Identity document can only be submitted during worker registration");
+        }
+
         worker.setIdentityDocumentUrl(fileStorageService.storeWorkerDocument(file));
         worker.setVerificationStatus(WorkerVerificationStatus.PENDING);
         worker.setVerificationNotes("Identity document uploaded and waiting for admin review");
-        return workerMapper.toDto(workerRepository.save(worker));
+        Worker savedWorker = workerRepository.save(worker);
+
+        notificationService.sendNotificationToRole(
+                Role.ADMIN,
+                "Worker submitted identity document for review: " + savedWorker.getName(),
+                com.backend.Projet.model.NotificationType.ADMIN_WORKER_REVIEW
+        );
+
+        return workerMapper.toDto(savedWorker);
     }
 
     @Transactional
@@ -252,10 +270,27 @@ public class WorkerService {
         }
         Worker worker = workerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
+        if (worker.getImageUrl() == null || worker.getImageUrl().isBlank()) {
+            throw new BusinessException("Worker profile photo is required before verification");
+        }
+        if (worker.getIdentityDocumentUrl() == null || worker.getIdentityDocumentUrl().isBlank()) {
+            throw new BusinessException("Identity document is required before verification");
+        }
         worker.setVerificationStatus(WorkerVerificationStatus.VERIFIED);
         worker.setVerificationNotes(notes == null || notes.isBlank() ? "Verified by admin" : notes.trim());
         worker.setAvailability(WorkerAvailability.AVAILABLE);
-        return workerMapper.toDto(workerRepository.save(worker));
+        User workerUser = worker.getUser();
+        workerUser.setRole(Role.WORKER);
+        userRepository.save(workerUser);
+        Worker savedWorker = workerRepository.save(worker);
+
+        notificationService.sendNotification(
+                workerUser,
+                "Your worker account has been verified.",
+                com.backend.Projet.model.NotificationType.WORKER_VERIFIED
+        );
+
+        return workerMapper.toDto(savedWorker);
     }
 
     @Transactional
@@ -267,7 +302,18 @@ public class WorkerService {
                 .orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
         worker.setVerificationStatus(WorkerVerificationStatus.REJECTED);
         worker.setVerificationNotes(notes == null || notes.isBlank() ? "Rejected by admin" : notes.trim());
-        return workerMapper.toDto(workerRepository.save(worker));
+        User workerUser = worker.getUser();
+        workerUser.setRole(Role.USER);
+        userRepository.save(workerUser);
+        Worker savedWorker = workerRepository.save(worker);
+
+        notificationService.sendNotification(
+                workerUser,
+                "Your worker verification was rejected. Please review your documents and try again.",
+                com.backend.Projet.model.NotificationType.WORKER_REJECTED
+        );
+
+        return workerMapper.toDto(savedWorker);
     }
 
     private void validateWorkerIdentity(String nationalIdNumber, String phoneNumber, Long currentWorkerId) {
@@ -282,6 +328,23 @@ public class WorkerService {
                 .ifPresent(worker -> {
                     throw new BusinessException("National ID number is already used by another worker");
                 });
+    }
+
+    private String normalizeOptionalImageUrl(String imageUrl) {
+        if (imageUrl == null) {
+            return null;
+        }
+
+        String trimmed = imageUrl.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+
+        if (trimmed.startsWith("data:")) {
+            throw new BusinessException("Profile photo must be uploaded as a file");
+        }
+
+        return trimmed;
     }
 
     private Worker getOwnedOrManagedWorker(Long id, User currentUser) {

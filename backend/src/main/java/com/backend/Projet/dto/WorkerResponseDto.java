@@ -18,5 +18,7 @@ public class WorkerResponseDto {
     private WorkerAvailability availability;
     private double averageRating;
     private WorkerVerificationStatus verificationStatus;
+    private String verificationNotes;
+    private Long userId;
     private boolean verified;
 }

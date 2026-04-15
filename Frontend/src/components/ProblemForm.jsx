@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Briefcase, MapPin, Send, Sparkles, X } from "lucide-react"
+import { Briefcase, ChevronDown, MapPin, Send, Sparkles, X } from "lucide-react"
 import LeafletMapPicker from "./LeafletMapPicker"
 
 const EMPTY_FORM = { title: "", description: "", address: "", profession: "" }
@@ -17,6 +17,7 @@ export default function ProblemForm({
   const [latitude, setLatitude] = useState(null)
   const [longitude, setLongitude] = useState(null)
   const [locating, setLocating] = useState(false)
+  const [isMapOpen, setIsMapOpen] = useState(false)
 
   useEffect(() => {
     if (initialData) {
@@ -26,6 +27,7 @@ export default function ProblemForm({
       setProfession(initialData.profession || "")
       setLatitude(initialData.latitude ?? null)
       setLongitude(initialData.longitude ?? null)
+      setIsMapOpen(false)
       return
     }
 
@@ -35,6 +37,7 @@ export default function ProblemForm({
     setProfession(EMPTY_FORM.profession)
     setLatitude(null)
     setLongitude(null)
+    setIsMapOpen(false)
   }, [initialData])
 
   const handleLocationSelect = (location) => {
@@ -71,11 +74,13 @@ export default function ProblemForm({
       setProfession("")
       setLatitude(null)
       setLongitude(null)
+      setIsMapOpen(false)
     }
   }
 
   const isFormValid = title.trim() && description.trim() && address.trim() && profession.trim()
   const isEditing = Boolean(initialData)
+  const hasSelectedLocation = latitude !== null && longitude !== null
 
   return (
     <div className="rounded-2xl bg-white p-8">
@@ -91,7 +96,7 @@ export default function ProblemForm({
             <p className="text-sm font-medium text-surface-400">
               {isEditing
                 ? "عدّل بيانات المهمة ثم احفظ التغييرات، وستعود للمراجعة الإدارية إذا لزم الأمر."
-                : "بعد الإرسال ستبقى المهمة قيد مراجعة المدير أولًا، ولن تظهر في المنصة حتى تتم الموافقة عليها."}
+                : "بعد الإرسال ستبقى المهمة قيد مراجعة المدير أولاً، ولن تظهر في المنصة حتى تتم الموافقة عليها."}
             </p>
           </div>
         </div>
@@ -128,19 +133,51 @@ export default function ProblemForm({
                 <input
                   type="text"
                   value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  onChange={(event) => setAddress(event.target.value)}
                   placeholder={locating ? "جاري تحديد الموقع..." : "الموقع المحدد أو اكتب هنا..."}
                   className={`saas-input h-12 border-surface-200 pr-11 ${locating ? "animate-pulse bg-surface-50" : "bg-white"}`}
                 />
               </div>
             </div>
           </div>
+
           <div className="space-y-4 md:col-span-2">
-            <label className="block text-xs font-black uppercase tracking-widest text-surface-400">حدد موقع انطلاق المهمة على الخريطة</label>
-                <LeafletMapPicker
-                  onLocationSelect={handleLocationSelect}
-                  initialLocation={latitude && longitude ? { lat: latitude, lng: longitude } : null}
-                />
+            <div className="rounded-2xl border border-surface-200 bg-surface-50 p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-surface-400">حدد موقع انطلاق المهمة على الخريطة</label>
+                  <p className="mt-1 text-sm font-medium text-surface-500">
+                    {hasSelectedLocation
+                      ? "الموقع محدد بالفعل، ويمكنك فتح الخريطة لمراجعته أو تعديله."
+                      : "افتح الخريطة أولاً لمشاهدة الموقع أو لتحديده قبل نشر المهمة."}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsMapOpen((current) => !current)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-2 text-sm font-bold text-surface-600 transition hover:bg-surface-100"
+                >
+                  {isMapOpen ? "إغلاق الخريطة" : hasSelectedLocation ? "عرض الخريطة" : "فتح الخريطة"}
+                  <ChevronDown size={16} className={`transition-transform ${isMapOpen ? "rotate-180" : ""}`} />
+                </button>
+              </div>
+
+              {hasSelectedLocation && (
+                <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                  تم حفظ الموقع المحدد، والخريطة أصبحت قابلة للفتح والإغلاق.
+                </div>
+              )}
+
+              {isMapOpen && (
+                <div className="mt-4">
+                  <LeafletMapPicker
+                    onLocationSelect={handleLocationSelect}
+                    initialLocation={hasSelectedLocation ? { lat: latitude, lng: longitude } : null}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2 md:col-span-2">

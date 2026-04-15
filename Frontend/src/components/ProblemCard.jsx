@@ -1,5 +1,18 @@
 import React, { useEffect, useState } from "react"
-import { Briefcase, Calendar, CheckCircle2, MapPin, MessageSquare, Pencil, Send, Sparkles, Trash2, User, XCircle } from "lucide-react"
+import {
+  Briefcase,
+  Calendar,
+  CheckCircle2,
+  MapPin,
+  MessageSquare,
+  Navigation,
+  Pencil,
+  Send,
+  Sparkles,
+  Trash2,
+  User,
+  XCircle
+} from "lucide-react"
 import { getOffersForTask } from "../api"
 import LeafletMapPicker from "./LeafletMapPicker"
 
@@ -32,6 +45,24 @@ function badgeClass(status) {
   return "bg-primary-soft border-primary/10 text-primary"
 }
 
+function formatAddress(address) {
+  if (!address || typeof address !== "string") return "الموقع غير محدد"
+
+  const parts = address
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (!parts.length) return "الموقع غير محدد"
+
+  const uniqueParts = parts.filter((part, index) => parts.indexOf(part) === index)
+  const visibleParts = uniqueParts
+    .filter((part) => !["موريتانيا", "Mauritania"].includes(part))
+    .slice(0, 3)
+
+  return visibleParts.length ? visibleParts.join("، ") : "الموقع غير محدد"
+}
+
 export default function ProblemCard({
   problem = {},
   currentUser,
@@ -51,14 +82,17 @@ export default function ProblemCard({
   const [offerError, setOfferError] = useState("")
   const [sendingOffer, setSendingOffer] = useState(false)
   const [deciding, setDeciding] = useState(false)
+  const [distanceKm, setDistanceKm] = useState(null)
 
   const status = String(problem.status || "OPEN").toUpperCase()
   const title = problem.title || "بدون عنوان"
   const description = problem.description || ""
   const address = problem.address || "الموقع غير محدد"
+  const displayAddress = formatAddress(problem.address)
   const profession = problem.profession || "مهنة غير محددة"
-  const hasCoordinates = Number.isFinite(Number(problem.latitude)) && Number.isFinite(Number(problem.longitude))
-  const mapQuery = hasCoordinates ? `${Number(problem.latitude)},${Number(problem.longitude)}` : address
+  const latitude = Number(problem.latitude)
+  const longitude = Number(problem.longitude)
+  const hasCoordinates = Number.isFinite(latitude) && Number.isFinite(longitude)
   const time = problem.createdAt ? new Date(problem.createdAt).toLocaleDateString("ar-EG") : "الآن"
   const isOwner = Boolean(currentUser?.id && problem.userId === currentUser.id)
   const isWorker = currentUser?.role === "WORKER"
@@ -78,6 +112,12 @@ export default function ProblemCard({
       .catch((err) => setOfferError(err.message || "تعذر تحميل العروض"))
       .finally(() => setLoadingOffers(false))
   }, [isOwner, open, problem.id, status])
+
+  useEffect(() => {
+    if (!open) {
+      setDistanceKm(null)
+    }
+  }, [open])
 
   const handleOfferSubmit = async () => {
     if (!offerText.trim()) return
@@ -120,27 +160,53 @@ export default function ProblemCard({
 
   return (
     <article className="saas-card border-surface-200 bg-white p-6 transition-all duration-300 hover:border-primary/20">
-      <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-surface-100 bg-surface-50 text-surface-400">
-            <User size={20} />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-surface-900">{problem.userName || "مستخدم"}</p>
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-tight text-surface-400">
-              <Calendar size={12} className="opacity-50" />
-              {time}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-surface-100 bg-surface-50 text-surface-400">
+              <User size={20} />
             </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-surface-900">{problem.userName || "مستخدم"}</p>
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-surface-400">
+                <Calendar size={12} className="opacity-50" />
+                {time}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-2xl font-black leading-tight text-surface-900">{title}</h3>
+            {description && (
+              <p className="text-sm font-medium leading-7 text-surface-600">{description}</p>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-xl border border-primary/10 bg-primary-soft px-3 py-2 text-xs font-black text-primary">
+              <Briefcase size={14} />
+              {profession}
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-xl border border-surface-200 bg-surface-50 px-3 py-2 text-xs font-bold text-surface-500">
+              <MapPin size={14} className="text-primary opacity-70" />
+              <span title={address}>{displayAddress}</span>
+            </span>
+            {distanceKm !== null && (
+              <span className="inline-flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700">
+                <Navigation size={14} />
+                مسافة الطريق {distanceKm} كم
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-tight ${badgeClass(status)}`}>
+        <div className="flex flex-col items-start gap-3 lg:items-end">
+          <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-black ${badgeClass(status)}`}>
             {TASK_STATUS_LABELS[status] || status}
           </span>
 
           {isOwner && (
-            <>
+            <div className="flex flex-wrap gap-2 lg:justify-end">
               <button
                 type="button"
                 onClick={() => onEdit?.(problem)}
@@ -157,13 +223,13 @@ export default function ProblemCard({
                 <Trash2 size={14} />
                 حذف
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
 
       {isWorker && workerOffer?.status === "SELECTED" && (
-        <div className="mb-6 flex items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50 p-4 animate-pulse">
+        <div className="mt-6 flex flex-col gap-4 rounded-xl border border-indigo-200 bg-indigo-50 p-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
               <Sparkles size={20} />
@@ -192,22 +258,7 @@ export default function ProblemCard({
         </div>
       )}
 
-      <div className="mb-6 space-y-3">
-        <h3 className="text-lg font-black leading-snug tracking-tight text-surface-900">{title}</h3>
-        <p className="max-w-2xl text-sm font-medium leading-relaxed text-surface-500">{description}</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-6 border-b border-surface-100 pb-6">
-        <div className="inline-flex items-center gap-2 text-xs font-bold text-surface-400">
-          <Briefcase size={14} className="text-primary opacity-60" />
-          {profession}
-        </div>
-
-        <div className="inline-flex items-center gap-2 text-xs font-bold text-surface-400">
-          <MapPin size={14} className="text-primary opacity-60" />
-          {address}
-        </div>
-
+      <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-surface-100 pt-5">
         {(canMarkDone || canCancelTask) && (
           <div className="flex flex-wrap items-center gap-2">
             {canMarkDone && (
@@ -236,11 +287,11 @@ export default function ProblemCard({
         {(isOwner || canOffer || workerOffer) && (
           <button
             onClick={() => setOpen((current) => !current)}
-            className={`inline-flex items-center gap-2 text-xs font-bold transition-colors ${
-              open ? "text-primary" : "text-surface-400 hover:text-primary"
+            className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${
+              open ? "bg-primary-soft text-primary" : "text-surface-500 hover:bg-surface-50 hover:text-primary"
             }`}
           >
-            <MessageSquare size={14} className="opacity-60" />
+            <MessageSquare size={14} className="opacity-70" />
             {isOwner ? "التفاصيل والعروض" : "إضافة عرض"}
           </button>
         )}
@@ -252,18 +303,39 @@ export default function ProblemCard({
             {hasCoordinates ? (
               <LeafletMapPicker
                 isListView
-                height="224px"
-                markers={[{
-                  position: { lat: problem.latitude, lng: problem.longitude },
-                  title: title
-                }]}
+                height="260px"
+                showCurrentLocation
+                taskLocation={{ lat: latitude, lng: longitude }}
+                taskLabel={title}
+                onDistanceChange={setDistanceKm}
               />
             ) : (
-              <div className="flex h-56 w-full items-center justify-center bg-surface-50 text-surface-400 text-sm font-medium">
+              <div className="flex h-56 w-full items-center justify-center bg-surface-50 text-sm font-medium text-surface-400">
                 الموقع غير محدد على الخريطة
               </div>
             )}
           </div>
+
+          {hasCoordinates && (
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-xl border border-surface-200 bg-surface-50 px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-widest text-surface-400">موقع المهمة</p>
+                <p className="mt-1 text-sm font-bold text-surface-900">{displayAddress}</p>
+              </div>
+              <div className="rounded-xl border border-surface-200 bg-surface-50 px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-widest text-surface-400">الإحداثيات</p>
+                <p className="mt-1 text-sm font-bold text-surface-900">
+                  {latitude.toFixed(5)}, {longitude.toFixed(5)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-widest text-blue-500">مسافة الطريق</p>
+                <p className="mt-1 text-sm font-bold text-surface-900">
+                  {distanceKm !== null ? `تبعد المهمة عنك عبر الطريق ${distanceKm} كم` : "اسمح بالوصول إلى موقعك لحساب مسافة الطريق"}
+                </p>
+              </div>
+            </div>
+          )}
 
           {status === "PENDING_REVIEW" && isOwner && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">

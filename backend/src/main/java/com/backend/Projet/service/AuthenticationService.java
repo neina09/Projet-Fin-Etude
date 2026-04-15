@@ -5,7 +5,15 @@ import com.backend.Projet.exception.BusinessException;
 import com.backend.Projet.exception.ResourceNotFoundException;
 import com.backend.Projet.model.Role;
 import com.backend.Projet.model.User;
+import com.backend.Projet.model.Worker;
+import com.backend.Projet.repository.BookingRepository;
+import com.backend.Projet.repository.ChatMessageRepository;
+import com.backend.Projet.repository.NotificationRepository;
+import com.backend.Projet.repository.OfferRepository;
+import com.backend.Projet.repository.RatingRepository;
+import com.backend.Projet.repository.TaskRepository;
 import com.backend.Projet.repository.UserRepository;
+import com.backend.Projet.repository.WorkerRepository;
 import com.backend.Projet.util.MauritaniaPhoneUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,19 +37,40 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final com.backend.Projet.mapper.UserMapper userMapper;
     private final SmsService smsService;
+    private final WorkerRepository workerRepository;
+    private final OfferRepository offerRepository;
+    private final BookingRepository bookingRepository;
+    private final RatingRepository ratingRepository;
+    private final TaskRepository taskRepository;
+    private final NotificationRepository notificationRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
     public AuthenticationService(
             UserRepository userRepository,
             AuthenticationManager authenticationManager,
             PasswordEncoder passwordEncoder,
             com.backend.Projet.mapper.UserMapper userMapper,
-            SmsService smsService
+            SmsService smsService,
+            WorkerRepository workerRepository,
+            OfferRepository offerRepository,
+            BookingRepository bookingRepository,
+            RatingRepository ratingRepository,
+            TaskRepository taskRepository,
+            NotificationRepository notificationRepository,
+            ChatMessageRepository chatMessageRepository
     ) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
         this.smsService = smsService;
+        this.workerRepository = workerRepository;
+        this.offerRepository = offerRepository;
+        this.bookingRepository = bookingRepository;
+        this.ratingRepository = ratingRepository;
+        this.taskRepository = taskRepository;
+        this.notificationRepository = notificationRepository;
+        this.chatMessageRepository = chatMessageRepository;
     }
 
     @Transactional
@@ -172,8 +201,48 @@ public class AuthenticationService {
 
     @Transactional
     public void deleteAccount(User currentUser) {
+        Long userId = currentUser.getId();
+
+        log.info("Starting account deletion for user ID: {}", userId);
+
+        // 1. Independent child records
+        notificationRepository.deleteByUserId(userId);
+        chatMessageRepository.deleteByParticipantId(userId);
+
+        // 2. Worker-related data (if applicable)
+        Worker worker = workerRepository.findByUserId(userId).orElse(null);
+        if (worker != null) {
+            Long workerId = worker.getId();
+            log.info("User is a worker (ID: {}). Cleaning up worker data.", workerId);
+
+            taskRepository.clearAssignedWorkerByWorkerId(workerId);
+            ratingRepository.deleteByBookingWorkerId(workerId); // Delete ratings of bookings the worker performed
+            ratingRepository.deleteByWorkerId(workerId);        // Delete general ratings for this worker
+            offerRepository.deleteByWorkerId(workerId);
+            bookingRepository.deleteByWorkerId(workerId);
+            workerRepository.delete(worker);
+        }
+
+        // 3. User-related data as a customer
+        // Delete ratings of bookings the user made
+        ratingRepository.deleteByBookingUserId(userId);
+        // Delete ratings the user wrote
+        ratingRepository.deleteByUserId(userId);
+        
+        // Delete offers on tasks owned by this user
+        offerRepository.deleteByTaskUserId(userId);
+        
+        // Delete bookings the user created
+        bookingRepository.deleteByUserId(userId);
+        
+        // Delete tasks the user created
+        taskRepository.deleteByUserId(userId);
+
+        // 4. Finally delete the user
         userRepository.delete(currentUser);
+        log.info("Successfully deleted user ID: {}", userId);
     }
+
 
 
     private void sendVerificationCode(User user) {

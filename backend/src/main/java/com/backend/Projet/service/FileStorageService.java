@@ -61,7 +61,7 @@ public class FileStorageService {
                 Files.copy(inputStream, targetFile, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            return "/" + uploadRoot.relativize(targetFile).toString().replace('\\', '/');
+            return "/uploads/" + uploadRoot.relativize(targetFile).toString().replace('\\', '/');
         } catch (IOException exception) {
             throw new BusinessException("Failed to store file");
         }

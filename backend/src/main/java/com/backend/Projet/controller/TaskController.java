@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -23,9 +24,12 @@ public class TaskController {
 
     @GetMapping("/open")
     public ResponseEntity<PageResponseDto<TaskResponseDto>> getOpenTasks(
+            @RequestParam(required = false) Double userLatitude,
+            @RequestParam(required = false) Double userLongitude,
             @PageableDefault(size = 10, sort = "createdAt",
                     direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(taskService.getOpenTasks(pageable));
+        return ResponseEntity.ok(
+                taskService.getOpenTasks(pageable, userLatitude, userLongitude));
     }
 
     @GetMapping("/open/search")
@@ -33,16 +37,21 @@ public class TaskController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String address,
             @RequestParam(required = false) String profession,
+            @RequestParam(required = false) Double userLatitude,
+            @RequestParam(required = false) Double userLongitude,
             @PageableDefault(size = 10) Pageable pageable) {
         return ResponseEntity.ok(
-                taskService.searchOpenTasks(keyword, address, profession, pageable));
+                taskService.searchOpenTasks(
+                        keyword, address, profession, pageable, userLatitude, userLongitude));
     }
 
     // FIX #1: getTaskById لا يحتاج User — يراه الجميع
     @GetMapping("/{id}")
     public ResponseEntity<TaskResponseDto> getTaskById(
+            @RequestParam(required = false) Double userLatitude,
+            @RequestParam(required = false) Double userLongitude,
             @PathVariable Long id) {
-        return ResponseEntity.ok(taskService.getTaskById(id));
+        return ResponseEntity.ok(taskService.getTaskById(id, userLatitude, userLongitude));
     }
 
     // ── USER actions ──
@@ -62,6 +71,12 @@ public class TaskController {
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(
                 taskService.getMyTasks(currentUser, pageable));
+    }
+
+    @GetMapping("/assigned-to-me")
+    public ResponseEntity<List<TaskResponseDto>> getTasksAssignedToMe(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(taskService.getTasksAssignedToMe(currentUser));
     }
 
     @PutMapping("/{id}")
@@ -159,5 +174,12 @@ public class TaskController {
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(taskService.rejectTask(id, currentUser));
+    }
+
+    @GetMapping("/admin/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PageResponseDto<TaskResponseDto>> getPendingTasks(
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(taskService.getPendingTasks(pageable));
     }
 }

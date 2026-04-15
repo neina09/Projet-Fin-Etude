@@ -21,4 +21,5 @@ public class TaskResponseDto {
     private LocalDateTime createdAt;
     private Double        latitude;
     private Double        longitude;
+    private Double        distanceKm;
 }

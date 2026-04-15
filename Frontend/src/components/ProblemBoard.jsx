@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { Briefcase, ClipboardList, Info, LayoutGrid, MapPin, Search, Star } from "lucide-react"
+import { Briefcase, ChevronDown, ClipboardList, Info, LayoutGrid, MapPin, Search, Star } from "lucide-react"
 import {
   acceptOffer,
   cancelTaskRequest,
@@ -10,6 +10,7 @@ import {
   getMyTasks,
   getMyWorkerProfile,
   getOpenTasks,
+  getTasksAssignedToMe,
   markTaskDone,
   refuseOffer,
   searchOpenTasks,
@@ -31,6 +32,24 @@ const OFFER_STATUS_LABELS = {
   CLOSED: "مغلق"
 }
 
+const SEARCH_TYPE_META = {
+  keyword: {
+    icon: Search,
+    label: "بحث بالكلمة",
+    placeholder: "ابحث بالكلمة أو وصف المهمة"
+  },
+  address: {
+    icon: MapPin,
+    label: "بحث بالموقع",
+    placeholder: "ابحث بالمكان أو الحي"
+  },
+  profession: {
+    icon: Briefcase,
+    label: "بحث بالمهنة",
+    placeholder: "ابحث بالمهنة"
+  }
+}
+
 const offerStatusClass = (status) => {
   if (status === "COMPLETED") return "bg-emerald-50 border-emerald-100 text-emerald-600"
   if (status === "IN_PROGRESS") return "bg-amber-50 border-amber-100 text-amber-600"
@@ -40,10 +59,10 @@ const offerStatusClass = (status) => {
   return "bg-primary-soft border-primary/10 text-primary"
 }
 
-
 export default function ProblemBoard({ currentUser }) {
   const [problems, setProblems] = useState([])
   const [myTasks, setMyTasks] = useState([])
+  const [assignedTasks, setAssignedTasks] = useState([])
   const [myOffers, setMyOffers] = useState([])
   const [currentWorkerProfile, setCurrentWorkerProfile] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -53,9 +72,8 @@ export default function ProblemBoard({ currentUser }) {
   const [tab, setTab] = useState("open")
   const [editingTask, setEditingTask] = useState(null)
   const [pendingDelete, setPendingDelete] = useState(null)
-  const [searchKeyword, setSearchKeyword] = useState("")
-  const [searchAddress, setSearchAddress] = useState("")
-  const [searchProfession, setSearchProfession] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchType, setSearchType] = useState("keyword")
 
   const isWorker = currentUser?.role === "WORKER"
   const isAdmin = currentUser?.role === "ADMIN"
@@ -64,18 +82,20 @@ export default function ProblemBoard({ currentUser }) {
     setLoading(true)
     setError("")
 
-    const searchActive = Boolean(searchKeyword.trim() || searchAddress.trim() || searchProfession.trim())
+    const normalizedQuery = searchQuery.trim()
+    const searchActive = Boolean(normalizedQuery)
     const openTasksPromise = searchActive
       ? searchOpenTasks({
-          keyword: searchKeyword,
-          address: searchAddress,
-          profession: searchProfession
+          keyword: searchType === "keyword" ? normalizedQuery : "",
+          address: searchType === "address" ? normalizedQuery : "",
+          profession: searchType === "profession" ? normalizedQuery : ""
         })
       : getOpenTasks()
 
-    const [openTasksResult, myTasksResult, myOffersResult, workerProfileResult] = await Promise.allSettled([
+    const [openTasksResult, myTasksResult, assignedTasksResult, myOffersResult, workerProfileResult] = await Promise.allSettled([
       openTasksPromise,
       getMyTasks(),
+      isWorker ? getTasksAssignedToMe() : Promise.resolve([]),
       getMyOffers(),
       isWorker ? getMyWorkerProfile() : Promise.resolve(null)
     ])
@@ -92,6 +112,12 @@ export default function ProblemBoard({ currentUser }) {
       setMyTasks([])
     }
 
+    if (assignedTasksResult.status === "fulfilled") {
+      setAssignedTasks(Array.isArray(assignedTasksResult.value) ? assignedTasksResult.value : [])
+    } else {
+      setAssignedTasks([])
+    }
+
     if (myOffersResult.status === "fulfilled") {
       setMyOffers(Array.isArray(myOffersResult.value) ? myOffersResult.value : [])
     } else {
@@ -105,7 +131,7 @@ export default function ProblemBoard({ currentUser }) {
     }
 
     if (openTasksResult.status === "rejected" && myTasksResult.status === "rejected") {
-      setError("تعذر تحميل المهام حاليًا.")
+      setError("تعذر تحميل المهام حالياً.")
     } else if (openTasksResult.status === "rejected") {
       setError("تعذر تحميل المهام العامة، لكن تم عرض مهامك الشخصية.")
     } else if (myTasksResult.status === "rejected") {
@@ -113,7 +139,7 @@ export default function ProblemBoard({ currentUser }) {
     }
 
     setLoading(false)
-  }, [isWorker, searchAddress, searchKeyword, searchProfession])
+  }, [isWorker, searchQuery, searchType])
 
   useEffect(() => {
     fetchTasks()
@@ -246,6 +272,7 @@ export default function ProblemBoard({ currentUser }) {
 
   const mapMarkers = useMemo(() => {
     const markers = []
+
     if (problems.length > 0) {
       problems.forEach((problem) => {
         if (problem.latitude && problem.longitude) {
@@ -254,7 +281,9 @@ export default function ProblemBoard({ currentUser }) {
             title: problem.title,
             onClick: () => {
               window.scrollTo({ top: 0, behavior: "smooth" })
-              setSearchAddress(problem.address)
+              setSearchQuery(problem.address || "")
+              setSearchType("address")
+              setTab("open")
             }
           })
         }
@@ -269,19 +298,23 @@ export default function ProblemBoard({ currentUser }) {
             title: task.title,
             onClick: () => {
               window.scrollTo({ top: 0, behavior: "smooth" })
-              setSearchAddress(task.address)
+              setSearchQuery(task.address || "")
+              setSearchType("address")
             }
           })
         }
       })
     }
+
     return markers
-  }, [problems, activeMyTasks, setSearchAddress])
+  }, [problems, activeMyTasks])
+
+  const ActiveSearchIcon = SEARCH_TYPE_META[searchType].icon
 
   const tabs = isWorker
     ? [
         { id: "open", lbl: "المهام المتاحة" },
-        { id: "previous", lbl: "عروضي على المهام" }
+        { id: "previous", lbl: "مهامي وعروضي" }
       ]
     : [
         { id: "open", lbl: "المهام المنشورة" },
@@ -299,7 +332,7 @@ export default function ProblemBoard({ currentUser }) {
             <p className="text-lg font-medium text-surface-500">
               {isWorker
                 ? "ابحث بالمكان أو المهنة ثم قدّم عرضك على المهام التي تمت الموافقة عليها."
-                : "أرسل المهمة أولًا للمراجعة الإدارية، وبعد الموافقة ستبدأ باستقبال عروض العمال."}
+                : "أرسل المهمة أولاً للمراجعة الإدارية، وبعد الموافقة ستبدأ باستقبال عروض العمال."}
             </p>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-surface-200 bg-white p-1.5 shadow-sm">
@@ -316,10 +349,7 @@ export default function ProblemBoard({ currentUser }) {
 
       {(problems.length > 0 || activeMyTasks.length > 0) && (
         <div className="mb-12 h-[350px] overflow-hidden rounded-[2.5rem] border border-surface-200 shadow-xl">
-         <LeafletMapPicker
-          isListView
-          markers={mapMarkers}
-        />
+          <LeafletMapPicker isListView markers={mapMarkers} />
         </div>
       )}
 
@@ -339,36 +369,6 @@ export default function ProblemBoard({ currentUser }) {
                 : "المهمة تبدأ بحالة قيد مراجعة المدير، ثم تصبح منشورة بعد الموافقة. بعد ذلك تستطيع اختيار العامل المناسب، ويجب أن يقبل العامل الطلب حتى يبدأ التنفيذ."}
             </p>
           </div>
-        </div>
-      </div>
-
-      <div className="mb-8 grid grid-cols-1 gap-4 rounded-[2rem] border border-surface-200 bg-white p-5 md:grid-cols-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={16} />
-          <input
-            value={searchKeyword}
-            onChange={(event) => setSearchKeyword(event.target.value)}
-            placeholder="ابحث بالكلمة أو وصف المهمة"
-            className="saas-input h-12 border-surface-200 pr-11"
-          />
-        </div>
-        <div className="relative">
-          <MapPin className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={16} />
-          <input
-            value={searchAddress}
-            onChange={(event) => setSearchAddress(event.target.value)}
-            placeholder="ابحث بالمكان أو الحي"
-            className="saas-input h-12 border-surface-200 pr-11"
-          />
-        </div>
-        <div className="relative">
-          <Briefcase className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={16} />
-          <input
-            value={searchProfession}
-            onChange={(event) => setSearchProfession(event.target.value)}
-            placeholder="ابحث بالمهنة"
-            className="saas-input h-12 border-surface-200 pr-11"
-          />
         </div>
       </div>
 
@@ -421,6 +421,36 @@ export default function ProblemBoard({ currentUser }) {
           </div>
         </div>
 
+        {tab === "open" && (
+          <div className="grid grid-cols-1 gap-4 rounded-[2rem] border border-surface-200 bg-white p-5 md:grid-cols-[220px_minmax(0,1fr)]">
+            <div className="relative">
+              <Briefcase className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={16} />
+              <select
+                value={searchType}
+                onChange={(event) => setSearchType(event.target.value)}
+                className="saas-input h-12 w-full appearance-none border-surface-200 pr-11 pl-10"
+              >
+                {Object.entries(SEARCH_TYPE_META).map(([value, item]) => (
+                  <option key={value} value={value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-surface-300" size={16} />
+            </div>
+
+            <div className="relative">
+              <ActiveSearchIcon className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={16} />
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder={SEARCH_TYPE_META[searchType].placeholder}
+                className="saas-input h-12 border-surface-200 pr-11"
+              />
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-6">
           {loading ? (
             <div className="flex animate-pulse flex-col items-center justify-center py-20 text-surface-400">
@@ -448,18 +478,43 @@ export default function ProblemBoard({ currentUser }) {
               ) : tab === "open" ? (
                 <div className="saas-card border-dashed border-surface-200 bg-surface-50/50 p-16 text-center">
                   <div className="mb-6 text-5xl opacity-20 grayscale">📭</div>
-                  <h3 className="mb-2 text-xl font-bold text-surface-900">لا توجد مهام منشورة حاليًا</h3>
+                  <h3 className="mb-2 text-xl font-bold text-surface-900">لا توجد مهام منشورة حالياً</h3>
                   <p className="text-sm font-medium text-surface-400">جرّب تعديل البحث أو انتظر حتى يعتمد المدير مهامًا جديدة.</p>
                 </div>
               ) : null}
 
-              {tab === "previous" && isWorker && myOffers.length > 0 ? (
-                myOffers.map((offer) => (
+              {tab === "previous" && isWorker && (assignedTasks.length > 0 || myOffers.length > 0) ? (
+                <>
+                  {assignedTasks.length > 0 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-black text-surface-900">مهام مسندة إليك</h3>
+                        <span className="text-xs font-bold text-surface-400">{assignedTasks.length} مهمة</span>
+                      </div>
+                      {assignedTasks.map((problem) => (
+                        <ProblemCard
+                          key={`assigned-${problem.id}`}
+                          problem={problem}
+                          currentUser={currentUser}
+                          onEdit={setEditingTask}
+                          onDelete={(task) => setPendingDelete(task)}
+                          onStatusChange={handleStatusChange}
+                          workerOffer={myOffersByTaskId[problem.id]}
+                          currentWorkerStatus={currentWorkerProfile?.availability}
+                          onSubmitOffer={handleOfferSubmit}
+                          onSelectOffer={handleOfferSelect}
+                          onWorkerDecision={handleWorkerDecision}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {myOffers.map((offer) => (
                   <div key={offer.id} className="saas-card border-surface-200 bg-white p-6">
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <h3 className="text-lg font-black text-surface-900">{offer.taskTitle}</h3>
-                        <p className="text-sm font-bold text-surface-500">{offer.workerJob || "عامل"} - {offer.workerName}</p>
+                        <p className="text-sm font-bold text-surface-500">{offer.taskUserName || "صاحب المهمة"}</p>
                       </div>
                       <span className={`rounded-full border px-3 py-1 text-xs font-black ${offerStatusClass(offer.status)}`}>
                         {OFFER_STATUS_LABELS[offer.status] || offer.status}
@@ -486,7 +541,8 @@ export default function ProblemBoard({ currentUser }) {
                       </div>
                     )}
                   </div>
-                ))
+                ))}
+                </>
               ) : tab === "previous" && !isWorker && (pendingReviewTasks.length > 0 || activeMyTasks.length > 0 || previousTasks.length > 0) ? (
                 <>
                   {pendingReviewTasks.length > 0 && (
@@ -589,5 +645,3 @@ export default function ProblemBoard({ currentUser }) {
     </div>
   )
 }
-
-

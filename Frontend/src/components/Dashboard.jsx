@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { AnimatePresence } from "framer-motion"
-import { ArrowUpRight, Briefcase, ClipboardList, Eye, FileText } from "lucide-react"
+import { ArrowUpRight, Briefcase, ClipboardList, Clock, Eye, FileText } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
 import {
   getMe,
@@ -8,6 +8,8 @@ import {
   getMyBookings,
   getMyOffers,
   getMyTasks,
+  getMyWorkerProfile,
+  getTasksAssignedToMe,
   getWorkers
 } from "../api"
 import Sidebar from "./Sidebar"
@@ -51,9 +53,11 @@ export default function Dashboard({ onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [workers, setWorkers] = useState([])
   const [myTasks, setMyTasks] = useState([])
+  const [assignedTasks, setAssignedTasks] = useState([])
   const [myBookings, setMyBookings] = useState([])
   const [myRequests, setMyRequests] = useState([])
   const [myOffers, setMyOffers] = useState([])
+  const [workerProfile, setWorkerProfile] = useState(null)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -79,13 +83,16 @@ export default function Dashboard({ onLogout }) {
   }
 
   const loadDashboardData = async () => {
-    const [workersResult, tasksResult, bookingsResult, requestsResult, offersResult] = await Promise.allSettled([
+    const [workersResult, tasksResult, assignedTasksResult, bookingsResult, requestsResult, offersResult, workerProfileResult] = await Promise.allSettled([
       getWorkers(),
       getMyTasks(),
+      isWorker ? getTasksAssignedToMe() : Promise.resolve([]),
       getMyBookings(),
       getMyBookingRequests(),
-      getMyOffers()
+      getMyOffers(),
+      isWorker ? getMyWorkerProfile() : Promise.resolve(null)
     ])
+
 
     if (workersResult.status === "fulfilled") {
       setWorkers(Array.isArray(workersResult.value) ? workersResult.value : [])
@@ -94,6 +101,12 @@ export default function Dashboard({ onLogout }) {
     if (tasksResult.status === "fulfilled") {
       const tasks = tasksResult.value?.content || tasksResult.value || []
       setMyTasks(Array.isArray(tasks) ? tasks : [])
+    }
+
+    if (assignedTasksResult.status === "fulfilled") {
+      setAssignedTasks(Array.isArray(assignedTasksResult.value) ? assignedTasksResult.value : [])
+    } else {
+      setAssignedTasks([])
     }
 
     if (bookingsResult.status === "fulfilled") {
@@ -107,7 +120,12 @@ export default function Dashboard({ onLogout }) {
     if (offersResult.status === "fulfilled") {
       setMyOffers(Array.isArray(offersResult.value) ? offersResult.value : [])
     }
+
+    if (workerProfileResult.status === "fulfilled" && workerProfileResult.value) {
+      setWorkerProfile(workerProfileResult.value)
+    }
   }
+
 
   useEffect(() => {
     let active = true
@@ -159,8 +177,8 @@ export default function Dashboard({ onLogout }) {
   const dashboardCards = useMemo(() => {
     if (isWorker) {
       const pendingRequests = myRequests.filter((booking) => String(booking.status || "").toUpperCase() === "PENDING").length
-      const activeJobs = myRequests.filter((booking) => String(booking.status || "").toUpperCase() === "ACCEPTED").length
-      const completedJobs = myRequests.filter((booking) => String(booking.status || "").toUpperCase() === "COMPLETED").length
+      const activeJobs = assignedTasks.filter((task) => String(task.status || "").toUpperCase() === "IN_PROGRESS").length
+      const completedJobs = assignedTasks.filter((task) => String(task.status || "").toUpperCase() === "COMPLETED").length
 
       return [
         { icon: Briefcase, color: "text-primary", bg: "bg-primary-soft", num: String(activeJobs), lbl: "أعمال جارية", trend: `${pendingRequests} طلبات جديدة` },
@@ -183,7 +201,7 @@ export default function Dashboard({ onLogout }) {
       { icon: FileText, color: "text-indigo-600", bg: "bg-indigo-50", num: String(completedTasksCount), lbl: "مهام مكتملة", trend: `${completedTasksCount} منجز` },
       { icon: Eye, color: "text-amber-600", bg: "bg-amber-50", num: String(myBookings.length), lbl: "حجوزاتي", trend: `${myBookings.length} حجز` }
     ]
-  }, [isWorker, myBookings.length, myOffers.length, myRequests, myTasks])
+  }, [assignedTasks, isWorker, myBookings.length, myOffers.length, myRequests, myTasks])
 
   const averageRating = workers.length
     ? (workers.reduce((sum, worker) => sum + (worker.averageRating || 0), 0) / workers.length).toFixed(1)
@@ -215,7 +233,36 @@ export default function Dashboard({ onLogout }) {
             >
               {page === "dashboard" && !isAdmin && (
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+                  {isWorker && workerProfile && !workerProfile.verified && (
+                    <div className="mb-8 rounded-[2rem] border border-amber-200 bg-amber-50 p-8 shadow-sm">
+                      <div className="flex flex-col items-center gap-6 text-center md:flex-row md:text-right">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">
+                          <Clock size={32} />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="mb-1 text-xl font-black text-amber-900">ملفك المهني قيد المراجعة</h3>
+                          <p className="max-w-xl text-sm font-bold text-amber-700">
+                            تم استلام بياناتك بنجاح. ملفك المهني غير ظاهر حالياً للعملاء حتى مراجعته وتوثيقه من قبل الإدارة.
+                            سنقوم بإعلامك فور تفعيل حسابك.
+                          </p>
+                          {workerProfile?.verificationNotes && (
+                            <div className="mt-3 rounded-2xl border border-amber-300 bg-white/80 px-4 py-3 text-sm font-bold text-amber-900">
+                              ملاحظات الإدارة: {workerProfile.verificationNotes}
+                            </div>
+                          )}
+                        </div>
+                        <button 
+                          onClick={() => setPage("profile")}
+                          className="rounded-xl border border-amber-300 bg-white px-6 py-2 text-sm font-black text-amber-700 transition-all hover:bg-amber-100"
+                        >
+                          عرض تفاصيل الملف
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="relative mb-10 overflow-hidden rounded-[2.5rem] border border-surface-200 bg-white p-8 shadow-xl shadow-surface-900/[0.03] lg:p-12">
+
                     <div className="pointer-events-none absolute inset-0 opacity-40">
                       <div className="absolute -top-[10%] -right-[5%] h-[50%] w-[30%] rounded-full bg-primary/5 blur-3xl" />
                       <div className="absolute -bottom-[10%] -left-[5%] h-[40%] w-[40%] rounded-full bg-indigo-50/50 blur-3xl" />
@@ -254,10 +301,10 @@ export default function Dashboard({ onLogout }) {
                       <div className="flex w-full flex-col items-center gap-4 sm:flex-row lg:w-auto">
                         <div className="min-w-[160px] flex-1 rounded-3xl border border-surface-200 bg-surface-50 p-8 text-center transition-all hover:border-primary/20">
                           <div className="mb-1 font-alexandria text-4xl font-black text-surface-900">
-                            {isWorker ? myRequests.length : workers.length}
+                            {isWorker ? assignedTasks.length : workers.length}
                           </div>
                           <div className="text-[10px] font-black uppercase tracking-widest text-surface-400">
-                            {isWorker ? "طلبات العمل" : "عمال متاحون"}
+                            {isWorker ? "مهام مسندة" : "عمال متاحون"}
                           </div>
                         </div>
                         <div className="min-w-[160px] flex-1 rounded-3xl border border-surface-200 bg-surface-50 p-8 text-center transition-all hover:border-primary/20">
@@ -272,7 +319,7 @@ export default function Dashboard({ onLogout }) {
                     </div>
                   </div>
 
-                  <TaskStatsCharts tasks={isWorker ? myRequests : myTasks} />
+                  <TaskStatsCharts tasks={isWorker ? assignedTasks : myTasks} />
 
                   <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-3">
                     {dashboardCards.map((stat, index) => (

@@ -7,7 +7,14 @@ import {
   Send,
   ShieldCheck
 } from "lucide-react"
-import { getChatMessages, getMyBookingRequests, getMyBookings, getMyOffers, getMyTasks, sendChatMessage } from "../api"
+import {
+  getChatMessages,
+  getMyBookingRequests,
+  getMyBookings,
+  getMyOffers,
+  getMyTasks,
+  sendChatMessage
+} from "../api"
 
 const AVATAR_COLORS = [
   "bg-indigo-500",
@@ -19,7 +26,6 @@ const AVATAR_COLORS = [
   "bg-cyan-500",
   "bg-fuchsia-500"
 ]
-
 
 function getAvatarColor(name) {
   let hash = 0
@@ -44,14 +50,16 @@ export default function ChatSystem({ currentUser }) {
   const [sendingMessage, setSendingMessage] = useState(false)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
-  
-  // FIX 1: use a ref to always access latest selectedContact inside intervals
   const selectedContactRef = useRef(selectedContact)
+
+  const scrollToBottom = useCallback((behavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior, block: "end" })
+  }, [])
+
   useEffect(() => {
     selectedContactRef.current = selectedContact
   }, [selectedContact])
 
-  // FIX 2: wrap fetchContacts in useCallback so it's stable and can be safely listed in deps
   const fetchContacts = useCallback(async (keepSelectedId = null, showLoader = true) => {
     if (showLoader) setLoadingContacts(true)
     setError("")
@@ -70,6 +78,7 @@ export default function ChatSystem({ currentUser }) {
         const list = Array.isArray(bookingsResult.value?.content || bookingsResult.value)
           ? bookingsResult.value?.content || bookingsResult.value
           : []
+
         list.forEach((booking) => {
           if (String(booking.status || "").toUpperCase() === "ACCEPTED" && booking.workerUserId) {
             chatMap.set(booking.workerUserId, {
@@ -87,6 +96,7 @@ export default function ChatSystem({ currentUser }) {
         const list = Array.isArray(bookingRequestsResult.value?.content || bookingRequestsResult.value)
           ? bookingRequestsResult.value?.content || bookingRequestsResult.value
           : []
+
         list.forEach((booking) => {
           if (String(booking.status || "").toUpperCase() === "ACCEPTED" && booking.userId) {
             chatMap.set(booking.userId, {
@@ -104,6 +114,7 @@ export default function ChatSystem({ currentUser }) {
         const list = Array.isArray(myTasksResult.value?.content || myTasksResult.value)
           ? myTasksResult.value?.content || myTasksResult.value
           : []
+
         list.forEach((task) => {
           if (String(task.status || "").toUpperCase() === "IN_PROGRESS" && task.assignedWorkerUserId) {
             chatMap.set(task.assignedWorkerUserId, {
@@ -119,6 +130,7 @@ export default function ChatSystem({ currentUser }) {
 
       if (myOffersResult.status === "fulfilled") {
         const list = Array.isArray(myOffersResult.value) ? myOffersResult.value : []
+
         list.forEach((offer) => {
           if (String(offer.status || "").toUpperCase() === "IN_PROGRESS" && offer.taskUserId) {
             chatMap.set(offer.taskUserId, {
@@ -139,6 +151,7 @@ export default function ChatSystem({ currentUser }) {
             const history = await getChatMessages(contact.id)
             const sorted = Array.isArray(history) ? history : []
             const last = sorted[sorted.length - 1]
+
             return {
               ...contact,
               lastMessage: last?.content || "",
@@ -146,7 +159,12 @@ export default function ChatSystem({ currentUser }) {
               lastMessageIsMe: last?.senderId === currentUser?.id
             }
           } catch {
-            return { ...contact, lastMessage: "", lastMessageTime: null, lastMessageIsMe: false }
+            return {
+              ...contact,
+              lastMessage: "",
+              lastMessageTime: null,
+              lastMessageIsMe: false
+            }
           }
         })
       )
@@ -161,8 +179,10 @@ export default function ChatSystem({ currentUser }) {
       setContacts(withLastMessage)
 
       if (keepSelectedId) {
-        const updatedSelection = withLastMessage.find((c) => c.id === keepSelectedId)
-        if (updatedSelection) setSelectedContact(updatedSelection)
+        const updatedSelection = withLastMessage.find((contact) => contact.id === keepSelectedId)
+        if (updatedSelection) {
+          setSelectedContact(updatedSelection)
+        }
       }
     } catch (err) {
       setError(err.message || "تعذر تحميل جهات الاتصال.")
@@ -171,48 +191,56 @@ export default function ChatSystem({ currentUser }) {
     }
   }, [currentUser?.id])
 
-  // FIX 3: wrap fetchMessages in useCallback
   const fetchMessages = useCallback(async (userId) => {
     try {
       const data = await getChatMessages(userId)
       const sorted = Array.isArray(data) ? data : []
       setMessages(sorted)
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 80)
 
       if (sorted.length > 0) {
         const last = sorted[sorted.length - 1]
         setContacts((current) =>
           current.map((contact) =>
             contact.id === userId
-              ? { ...contact, lastMessage: last.content, lastMessageTime: last.timestamp, lastMessageIsMe: last.senderId === currentUser?.id }
+              ? {
+                  ...contact,
+                  lastMessage: last.content,
+                  lastMessageTime: last.timestamp,
+                  lastMessageIsMe: last.senderId === currentUser?.id
+                }
               : contact
           )
         )
       }
+
+      setTimeout(() => scrollToBottom("smooth"), 60)
     } catch (err) {
       setError(err.message || "تعذر تحميل الرسائل.")
     }
-  }, [currentUser?.id])
+  }, [currentUser?.id, scrollToBottom])
 
   useEffect(() => {
     fetchContacts()
   }, [fetchContacts])
 
-  // FIX 4: use ref inside interval — avoids stale closure without adding selectedContact to deps
   useEffect(() => {
     const interval = setInterval(() => {
       const current = selectedContactRef.current
       fetchContacts(current?.id ?? null, false)
-    }, 5000)
+    }, 2500)
+
     return () => clearInterval(interval)
   }, [fetchContacts])
 
   useEffect(() => {
     if (!selectedContact) return
+
     fetchMessages(selectedContact.id)
-    const interval = setInterval(() => fetchMessages(selectedContact.id), 3000)
+    setTimeout(() => scrollToBottom("auto"), 40)
+
+    const interval = setInterval(() => fetchMessages(selectedContact.id), 1500)
     return () => clearInterval(interval)
-  }, [selectedContact?.id, fetchMessages])
+  }, [fetchMessages, scrollToBottom, selectedContact?.id])
 
   const handleSend = async (event) => {
     event.preventDefault()
@@ -222,15 +250,20 @@ export default function ChatSystem({ currentUser }) {
     try {
       const sent = await sendChatMessage(selectedContact.id, newMessage.trim())
 
-      // FIX 5: update state optimistically — no need to re-fetch after send
       setMessages((current) => [...current, sent])
       setNewMessage("")
       setError("")
+
       setContacts((current) =>
         current
           .map((contact) =>
             contact.id === selectedContact.id
-              ? { ...contact, lastMessage: sent.content, lastMessageTime: sent.timestamp, lastMessageIsMe: true }
+              ? {
+                  ...contact,
+                  lastMessage: sent.content,
+                  lastMessageTime: sent.timestamp,
+                  lastMessageIsMe: true
+                }
               : contact
           )
           .sort((left, right) => {
@@ -240,7 +273,8 @@ export default function ChatSystem({ currentUser }) {
             return new Date(right.lastMessageTime) - new Date(left.lastMessageTime)
           })
       )
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 80)
+
+      setTimeout(() => scrollToBottom("smooth"), 50)
       inputRef.current?.focus()
     } catch (err) {
       setError(err.message || "تعذر إرسال الرسالة.")
@@ -254,7 +288,6 @@ export default function ChatSystem({ currentUser }) {
     [contacts, searchQuery]
   )
 
-  // Format functions defined BEFORE groupedMessages to avoid "Cannot access before initialization" error
   const formatTime = (timestamp) =>
     timestamp ? new Date(timestamp).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : ""
 
@@ -262,10 +295,13 @@ export default function ChatSystem({ currentUser }) {
     if (!timestamp) return ""
     const date = new Date(timestamp)
     const today = new Date()
+
     if (date.toDateString() === today.toDateString()) return "اليوم"
+
     const yesterday = new Date(today)
     yesterday.setDate(today.getDate() - 1)
     if (date.toDateString() === yesterday.toDateString()) return "أمس"
+
     return date.toLocaleDateString("ar-EG")
   }
 
@@ -274,19 +310,22 @@ export default function ChatSystem({ currentUser }) {
     const date = new Date(timestamp)
     const today = new Date()
     if (date.toDateString() === today.toDateString()) return formatTime(timestamp)
+
     const yesterday = new Date(today)
     yesterday.setDate(today.getDate() - 1)
     if (date.toDateString() === yesterday.toDateString()) return "أمس"
+
     return date.toLocaleDateString("ar-EG", { month: "short", day: "numeric" })
   }
 
-  const groupedMessages = useMemo(() =>
-    messages.reduce((groups, message) => {
-      const date = formatDate(message.timestamp)
-      if (!groups[date]) groups[date] = []
-      groups[date].push(message)
-      return groups
-    }, {}),
+  const groupedMessages = useMemo(
+    () =>
+      messages.reduce((groups, message) => {
+        const date = formatDate(message.timestamp)
+        if (!groups[date]) groups[date] = []
+        groups[date].push(message)
+        return groups
+      }, {}),
     [messages]
   )
 
@@ -295,15 +334,14 @@ export default function ChatSystem({ currentUser }) {
         title: selectedContact.type === "task" ? "مسار تنفيذ مهمة" : "محادثة مرتبطة بحجز",
         note:
           selectedContact.type === "task"
-            ? "استخدم هذه المساحة لتنسيق خطوات التنفيذ، الموعد، وأي تحديثات أثناء العمل."
+            ? "استخدم هذه المساحة لتنسيق خطوات التنفيذ والموعد وأي تحديثات أثناء العمل."
             : "هذه المحادثة مخصصة لتأكيد التفاصيل العملية للزيارة أو الخدمة المحجوزة."
       }
     : null
 
   return (
-    <div className={`grid h-[calc(100vh-160px)] overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-xl transition-all ${selectedContact ? "lg:grid-cols-[300px_minmax(0,1fr)_260px]" : "lg:grid-cols-[300px_minmax(0,1fr)]"}`}>
-      {/* ===== Sidebar: Contacts ===== */}
-      <aside className={`${selectedContact ? "hidden lg:flex" : "flex"} flex-col border-e border-surface-100 bg-surface-50`}>
+    <div className={`grid h-[calc(100vh-160px)] min-h-0 overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-xl transition-all ${selectedContact ? "lg:grid-cols-[300px_minmax(0,1fr)_260px]" : "lg:grid-cols-[300px_minmax(0,1fr)]"}`}>
+      <aside className={`${selectedContact ? "hidden lg:flex" : "flex"} min-h-0 flex-col border-e border-surface-100 bg-surface-50`}>
         <div className="border-b border-surface-100 bg-white px-5 py-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-[11px] font-bold text-surface-400">
@@ -323,7 +361,7 @@ export default function ChatSystem({ currentUser }) {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2">
           {loadingContacts ? (
             <div className="flex flex-col items-center justify-center px-6 py-16 text-surface-400">
               <div className="mb-3 h-8 w-8 animate-spin rounded-full border-2 border-surface-200 border-t-primary" />
@@ -336,11 +374,12 @@ export default function ChatSystem({ currentUser }) {
                 return (
                   <button
                     key={contact.id}
-                    onClick={() => { setSelectedContact(contact); setError("") }}
+                    onClick={() => {
+                      setSelectedContact(contact)
+                      setError("")
+                    }}
                     className={`w-full rounded-xl p-3 text-right transition-all ${
-                      isActive
-                        ? "bg-primary/8 shadow-none"
-                        : "hover:bg-white"
+                      isActive ? "bg-primary/8 shadow-none" : "hover:bg-white"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -381,8 +420,7 @@ export default function ChatSystem({ currentUser }) {
         </div>
       </aside>
 
-      {/* ===== Main: Messages ===== */}
-      <section className={`${!selectedContact ? "hidden lg:flex" : "flex"} min-w-0 flex-col bg-white`}>
+      <section className={`${!selectedContact ? "hidden lg:flex" : "flex"} min-h-0 min-w-0 flex-col bg-white`}>
         {selectedContact ? (
           <>
             <div className="border-b border-surface-100 bg-white px-5 py-3">
@@ -410,7 +448,7 @@ export default function ChatSystem({ currentUser }) {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-6">
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6">
               {error && (
                 <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
                   {error}
@@ -424,7 +462,7 @@ export default function ChatSystem({ currentUser }) {
                   </div>
                   <h4 className="text-lg font-black text-surface-800">ابدأ التنسيق الآن</h4>
                   <p className="mt-2 max-w-sm text-sm font-medium leading-relaxed text-surface-500">
-                    أرسل أول رسالة لبدء الاتفاق على الموعد، تفاصيل الخدمة، أو أي ملاحظات خاصة بالتنفيذ.
+                    أرسل أول رسالة لبدء الاتفاق على الموعد وتفاصيل الخدمة وأي ملاحظات خاصة بالتنفيذ.
                   </p>
                 </div>
               ) : (
@@ -451,7 +489,7 @@ export default function ChatSystem({ currentUser }) {
                               </div>
                               <div className={`max-w-[72%] rounded-2xl px-4 py-2.5 ${isMe ? "rounded-bl-sm bg-primary text-white" : "rounded-br-sm bg-surface-100 text-surface-800"}`}>
                                 <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
-                                <div className={`mt-1 flex items-center gap-1 text-[10px] ${isMe ? "justify-start flex-row-reverse text-white/60" : "text-surface-400"}`}>
+                                <div className={`mt-1 flex items-center gap-1 text-[10px] ${isMe ? "flex-row-reverse justify-start text-white/60" : "text-surface-400"}`}>
                                   <span>{formatTime(message.timestamp)}</span>
                                   {isMe && <CheckCheck size={11} />}
                                 </div>
@@ -499,52 +537,51 @@ export default function ChatSystem({ currentUser }) {
         )}
       </section>
 
-      {/* ===== Sidebar: Details ===== */}
       {selectedContact && (
-      <aside className="hidden border-s border-surface-100 bg-surface-50 p-4 lg:flex lg:flex-col">
-        <div className="rounded-xl border border-surface-200 bg-white p-4">
-          <div className="mb-3 flex items-center gap-3">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold text-white ${getAvatarColor(selectedContact.name)}`}>
-              {getInitial(selectedContact.name)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="truncate text-sm font-bold text-surface-900">{selectedContact.name}</h4>
-              <p className="text-[11px] text-surface-400">{selectedContact.role}</p>
-            </div>
-          </div>
-          <p className="rounded-lg bg-surface-50 px-3 py-2.5 text-[11px] leading-relaxed text-surface-500">
-            {selectedSummary?.note}
-          </p>
-        </div>
-
-        <div className="mt-3 rounded-xl border border-surface-200 bg-white p-4">
-          <h5 className="mb-3 text-xs font-bold text-surface-700">تفاصيل</h5>
-          <div className="space-y-2">
-            {[
-              { label: "الارتباط", value: selectedContact.context },
-              { label: "آخر تحديث", value: selectedContact.lastMessageTime ? formatSidebarTime(selectedContact.lastMessageTime) : "—" },
-              { label: "الرسائل", value: messages.length },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between rounded-lg bg-surface-50 px-3 py-2">
-                <span className="text-[11px] font-medium text-surface-400">{label}</span>
-                <span className="text-[11px] font-bold text-surface-700">{value}</span>
+        <aside className="hidden min-h-0 border-s border-surface-100 bg-surface-50 p-4 lg:flex lg:flex-col">
+          <div className="rounded-xl border border-surface-200 bg-white p-4">
+            <div className="mb-3 flex items-center gap-3">
+              <div className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold text-white ${getAvatarColor(selectedContact.name)}`}>
+                {getInitial(selectedContact.name)}
               </div>
-            ))}
+              <div className="min-w-0 flex-1">
+                <h4 className="truncate text-sm font-bold text-surface-900">{selectedContact.name}</h4>
+                <p className="text-[11px] text-surface-400">{selectedContact.role}</p>
+              </div>
+            </div>
+            <p className="rounded-lg bg-surface-50 px-3 py-2.5 text-[11px] leading-relaxed text-surface-500">
+              {selectedSummary?.note}
+            </p>
           </div>
-        </div>
 
-        <div className="mt-3 rounded-xl border border-primary/10 bg-primary/5 p-4">
-          <div className="mb-2 flex items-center gap-2">
-            <ShieldCheck size={13} className="text-primary" />
-            <span className="text-[10px] font-bold text-primary">نصائح</span>
+          <div className="mt-3 rounded-xl border border-surface-200 bg-white p-4">
+            <h5 className="mb-3 text-xs font-bold text-surface-700">تفاصيل</h5>
+            <div className="space-y-2">
+              {[
+                { label: "الارتباط", value: selectedContact.context },
+                { label: "آخر تحديث", value: selectedContact.lastMessageTime ? formatSidebarTime(selectedContact.lastMessageTime) : "—" },
+                { label: "الرسائل", value: messages.length }
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-center justify-between rounded-lg bg-surface-50 px-3 py-2">
+                  <span className="text-[11px] font-medium text-surface-400">{label}</span>
+                  <span className="text-[11px] font-bold text-surface-700">{value}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <ul className="space-y-1.5 text-[11px] leading-relaxed text-surface-600">
-            <li>أكد الموعد والمكان بوضوح.</li>
-            <li>أرسل التحديثات أثناء التنفيذ.</li>
-            <li>احتفظ بالملاحظات في نفس المسار.</li>
-          </ul>
-        </div>
-      </aside>
+
+          <div className="mt-3 rounded-xl border border-primary/10 bg-primary/5 p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <ShieldCheck size={13} className="text-primary" />
+              <span className="text-[10px] font-bold text-primary">نصائح</span>
+            </div>
+            <ul className="space-y-1.5 text-[11px] leading-relaxed text-surface-600">
+              <li>أكد الموعد والمكان بوضوح.</li>
+              <li>أرسل التحديثات أثناء التنفيذ.</li>
+              <li>احتفظ بالملاحظات في نفس المسار.</li>
+            </ul>
+          </div>
+        </aside>
       )}
     </div>
   )

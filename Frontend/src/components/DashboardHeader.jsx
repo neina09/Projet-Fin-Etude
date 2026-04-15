@@ -1,46 +1,61 @@
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { Bell, Menu, Search } from "lucide-react"
 import NotificationList from "./NotificationList"
 import { getMyNotifications, markNotificationRead } from "../api"
 
+const normalizeNotification = (notification) => ({
+  ...notification,
+  isRead: Boolean(notification?.isRead ?? notification?.read ?? false)
+})
+
 export default function DashboardHeader({ user, title, onToggleSidebar }) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState([])
+  const [hiddenNotificationIds, setHiddenNotificationIds] = useState([])
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const data = await getMyNotifications()
-      setNotifications(Array.isArray(data) ? data : [])
+      const list = (Array.isArray(data) ? data : []).map(normalizeNotification)
+      setNotifications(
+        list
+          .map((notification) =>
+            hiddenNotificationIds.includes(notification.id)
+              ? { ...notification, isRead: true }
+              : notification
+          )
+          .filter((notification) => !notification.isRead)
+      )
     } catch (error) {
       console.error("Failed to fetch notifications:", error)
     }
-  }
+  }, [hiddenNotificationIds])
 
   useEffect(() => {
     const initialTimer = setTimeout(() => {
       fetchNotifications()
     }, 0)
-    const interval = setInterval(fetchNotifications, 30000)
+    const interval = setInterval(fetchNotifications, 8000)
     return () => {
       clearTimeout(initialTimer)
       clearInterval(interval)
     }
-  }, [])
+  }, [fetchNotifications])
 
   const handleMarkRead = async (id) => {
     try {
       await markNotificationRead(id)
-      setNotifications((current) =>
-        current.map((notification) =>
-          notification.id === id ? { ...notification, isRead: true } : notification
-        )
-      )
+      setHiddenNotificationIds((current) => (current.includes(id) ? current : [...current, id]))
+      setNotifications((current) => current.filter((notification) => notification.id !== id))
     } catch (error) {
       console.error("Failed to mark notification as read:", error)
     }
   }
 
-  const unreadCount = notifications.filter((notification) => !notification.isRead).length
+  const unreadCount = useMemo(
+    () => notifications.filter((notification) => !notification.isRead).length,
+    [notifications]
+  )
 
   return (
     <header className="sticky top-0 z-[50] flex h-20 items-center justify-between border-b border-surface-200 bg-white/80 px-4 backdrop-blur-md sm:px-6 lg:px-8">

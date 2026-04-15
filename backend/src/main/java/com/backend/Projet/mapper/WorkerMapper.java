@@ -24,6 +24,8 @@ public class WorkerMapper {
                 .availability(worker.getAvailability())
                 .averageRating(worker.getAverageRating())
                 .verificationStatus(worker.getVerificationStatus())
+                .verificationNotes(worker.getVerificationNotes())
+                .userId(worker.getUser() != null ? worker.getUser().getId() : null)
                 .verified(worker.getVerificationStatus() == WorkerVerificationStatus.VERIFIED)
                 .build();
     }

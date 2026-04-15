@@ -23,10 +23,10 @@ public class Worker {
     @JsonProperty("phoneNumber")
     private String phoneNumber;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", length = 2048)
     private String imageUrl;
 
-    @Column(name = "identity_document_url")
+    @Column(name = "identity_document_url", length = 2048)
     private String identityDocumentUrl;
 
     @NotBlank(message = "Job is required")

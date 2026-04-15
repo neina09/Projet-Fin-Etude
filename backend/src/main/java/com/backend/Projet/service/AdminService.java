@@ -9,6 +9,7 @@ import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import com.backend.Projet.model.BookingStatus;
 import com.backend.Projet.model.TaskStatus;
+import com.backend.Projet.model.User;
 import com.backend.Projet.model.WorkerVerificationStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,7 @@ public class AdminService {
     private final com.backend.Projet.mapper.WorkerMapper workerMapper;
     private final TaskMapper taskMapper;
 
-    public AdminDashboardDto getDashboard() {
+    public AdminDashboardDto getDashboard(User currentUser) {
         return AdminDashboardDto.builder()
                 .totalUsers(userRepository.count())
                 .verifiedUsers(userRepository.countByEnabledTrue())
@@ -39,7 +40,7 @@ public class AdminService {
                 .pendingBookings(bookingRepository.countByStatus(BookingStatus.PENDING))
                 .acceptedBookings(bookingRepository.countByStatus(BookingStatus.ACCEPTED))
                 .completedBookings(bookingRepository.countByStatus(BookingStatus.COMPLETED))
-                .totalNotifications(notificationRepository.count())
+                .totalNotifications(notificationRepository.countByUserIdAndIsReadFalse(currentUser.getId()))
                 .latestPendingWorkers(workerRepository
                         .findTop5ByVerificationStatusOrderByIdDesc(WorkerVerificationStatus.PENDING)
                         .stream()

@@ -1,5 +1,6 @@
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { MapPin, ShieldCheck, Star, User, Wrench } from "lucide-react"
+import { resolveAssetUrl } from "../api"
 
 function Stars({ rating }) {
   return (
@@ -17,19 +18,35 @@ function Stars({ rating }) {
 
 export default function WorkerCard({ worker, onHire, onViewDetails, canHire = true }) {
   const name = worker.name || "عامل"
+  const resolvedImageUrl = resolveAssetUrl(worker.imageUrl)
+  const [imageFailed, setImageFailed] = useState(false)
+  const imageUrl = imageFailed ? "" : resolvedImageUrl
   const available = worker.availability === "AVAILABLE" || worker.available === true
   const rating = Number(worker.averageRating || worker.rating || 0)
   const price = worker.salary || worker.price || 0
   const specialty = worker.job || worker.specialty || "خدمة عامة"
   const location = worker.address || worker.location || ""
   const isVerified = worker.verified || worker.verificationStatus === "VERIFIED"
-  const initials = name.split(" ").slice(0, 2).map((part) => part[0]).join(" ")
+  const initials = name
+    .split(" ")
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join(" ")
+
+  useEffect(() => {
+    setImageFailed(false)
+  }, [resolvedImageUrl])
 
   return (
     <article className="saas-card group flex h-full flex-col overflow-hidden border-surface-200 bg-white transition-all duration-300 hover:border-primary/20">
       <div className="relative aspect-video overflow-hidden bg-linear-to-br from-slate-100 via-white to-primary-soft">
-        {worker.imageUrl ? (
-          <img src={worker.imageUrl} alt={name} className="h-full w-full object-cover" />
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={name}
+            className="h-full w-full object-cover"
+            onError={() => setImageFailed(true)}
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-lg font-black text-surface-900 shadow-lg ring-1 ring-surface-200">
@@ -39,11 +56,11 @@ export default function WorkerCard({ worker, onHire, onViewDetails, canHire = tr
         )}
 
         <div className="absolute right-3 top-3 z-10">
-          <span className={`rounded-full border px-3 py-1 text-[10px] font-black shadow-sm ${
-            available
-              ? "border-emerald-600 bg-emerald-500 text-white"
-              : "border-surface-900 bg-surface-800 text-white"
-          }`}>
+          <span
+            className={`rounded-full border px-3 py-1 text-[10px] font-black shadow-sm ${
+              available ? "border-emerald-600 bg-emerald-500 text-white" : "border-surface-900 bg-surface-800 text-white"
+            }`}
+          >
             {available ? "متاح للعمل" : "غير متاح"}
           </span>
         </div>

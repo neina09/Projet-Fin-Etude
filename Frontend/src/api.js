@@ -1,4 +1,39 @@
 const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8081").replace(/\/$/, "")
+const OPENROUTESERVICE_API_KEY = import.meta.env.VITE_OPENROUTESERVICE_API_KEY || ""
+
+export const resolveAssetUrl = (value) => {
+  if (!value || typeof value !== "string") return ""
+
+  const trimmed = value.trim().replace(/\\/g, "/")
+  if (!trimmed) return ""
+
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+    return trimmed
+  }
+
+  const uploadsIndex = trimmed.indexOf("/uploads/")
+  if (uploadsIndex >= 0) {
+    return `${BASE_URL}${trimmed.slice(uploadsIndex)}`
+  }
+
+  if (trimmed.startsWith("uploads/")) {
+    return `${BASE_URL}/${trimmed}`
+  }
+
+  if (trimmed.startsWith("/uploads/")) {
+    return `${BASE_URL}${trimmed}`
+  }
+
+  if (trimmed.startsWith("/workers/")) {
+    return `${BASE_URL}/uploads${trimmed}`
+  }
+
+  if (trimmed.startsWith("/")) {
+    return `${BASE_URL}${trimmed}`
+  }
+
+  return `${BASE_URL}/${trimmed}`
+}
 
 const getToken = () => localStorage.getItem("token")
 
@@ -139,6 +174,11 @@ export const getMyTasks = async () =>
     headers: buildHeaders({}, true)
   })
 
+export const getTasksAssignedToMe = async () =>
+  request("/api/tasks/assigned-to-me", {
+    headers: buildHeaders({}, true)
+  })
+
 export const createTask = async (taskData) =>
   request("/api/tasks", {
     method: "POST",
@@ -203,6 +243,11 @@ export const approveTask = async (taskId) =>
 export const rejectTask = async (taskId) =>
   request(`/api/tasks/${taskId}/reject`, {
     method: "PATCH",
+    headers: buildHeaders({}, true)
+  })
+
+export const getPendingTasks = async () =>
+  request("/api/tasks/admin/pending", {
     headers: buildHeaders({}, true)
   })
 
@@ -354,3 +399,72 @@ export const sendChatMessage = async (recipientId, content) =>
     headers: buildHeaders({ "Content-Type": "application/json" }, true),
     body: JSON.stringify({ recipientId, content })
   })
+
+export const getRoadRoute = async ({ startLat, startLng, endLat, endLng }) => {
+  if (![startLat, startLng, endLat, endLng].every((value) => Number.isFinite(Number(value)))) {
+    throw new Error("إحداثيات المسار غير صالحة")
+  }
+
+  const normalizedStartLat = Number(startLat)
+  const normalizedStartLng = Number(startLng)
+  const normalizedEndLat = Number(endLat)
+  const normalizedEndLng = Number(endLng)
+
+  if (OPENROUTESERVICE_API_KEY) {
+    const response = await fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: OPENROUTESERVICE_API_KEY
+      },
+      body: JSON.stringify({
+        coordinates: [
+          [normalizedStartLng, normalizedStartLat],
+          [normalizedEndLng, normalizedEndLat]
+        ]
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error("تعذر حساب مسافة الطريق")
+    }
+
+    const data = await response.json()
+    const feature = Array.isArray(data?.features) ? data.features[0] : null
+    const segment = Array.isArray(feature?.properties?.segments) ? feature.properties.segments[0] : null
+    const coordinates = Array.isArray(feature?.geometry?.coordinates) ? feature.geometry.coordinates : []
+
+    return {
+      distanceKm: Number(((segment?.distance || 0) / 1000).toFixed(2)),
+      durationMinutes: Number(((segment?.duration || 0) / 60).toFixed(0)),
+      coordinates: coordinates.map(([lng, lat]) => [lat, lng])
+    }
+  }
+
+  const params = new URLSearchParams({
+    overview: "full",
+    geometries: "geojson"
+  })
+  const response = await fetch(
+    `https://router.project-osrm.org/route/v1/driving/${normalizedStartLng},${normalizedStartLat};${normalizedEndLng},${normalizedEndLat}?${params.toString()}`
+  )
+
+  if (!response.ok) {
+    throw new Error("تعذر حساب مسافة الطريق")
+  }
+
+  const data = await response.json()
+  const route = Array.isArray(data?.routes) ? data.routes[0] : null
+
+  if (!route) {
+    throw new Error("لا يوجد مسار طريق متاح بين الموقعين")
+  }
+
+  return {
+    distanceKm: Number(((route.distance || 0) / 1000).toFixed(2)),
+    durationMinutes: Number(((route.duration || 0) / 60).toFixed(0)),
+    coordinates: Array.isArray(route.geometry?.coordinates)
+      ? route.geometry.coordinates.map(([lng, lat]) => [lat, lng])
+      : []
+  }
+}

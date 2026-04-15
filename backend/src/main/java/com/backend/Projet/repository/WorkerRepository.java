@@ -7,6 +7,7 @@ import com.backend.Projet.model.WorkerVerificationStatus;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 import java.util.*;
 
@@ -50,4 +51,7 @@ public interface WorkerRepository extends JpaRepository<Worker, Long> {
     @Override
     @EntityGraph(attributePaths = {"user"})
     Optional<Worker> findById(Long id);
+
+    @Modifying
+    void deleteByUserId(Long userId);
 }

@@ -1,14 +1,19 @@
 import React from "react"
-import { Bell, Briefcase, Check, Clock, Info, MessageSquare, UserCheck } from "lucide-react"
+import { Bell, Briefcase, Check, Clock, FileCheck, Info, MessageSquare, ShieldCheck, UserCheck } from "lucide-react"
 
 export default function NotificationList({ notifications, onMarkAsRead }) {
   const iconSize = 16
 
   const typeConfig = {
+    CHAT_MESSAGE: { icon: <MessageSquare size={iconSize} />, color: "text-cyan-600", bg: "bg-cyan-50" },
     TASK_OFFER: { icon: <MessageSquare size={iconSize} />, color: "text-blue-600", bg: "bg-blue-50" },
     TASK_SELECTED: { icon: <UserCheck size={iconSize} />, color: "text-emerald-600", bg: "bg-emerald-50" },
     TASK_ACCEPTED: { icon: <Briefcase size={iconSize} />, color: "text-amber-600", bg: "bg-amber-50" },
     TASK_REFUSED: { icon: <Info size={iconSize} />, color: "text-rose-600", bg: "bg-rose-50" },
+    ADMIN_TASK_REVIEW: { icon: <Briefcase size={iconSize} />, color: "text-indigo-600", bg: "bg-indigo-50" },
+    ADMIN_WORKER_REVIEW: { icon: <FileCheck size={iconSize} />, color: "text-fuchsia-600", bg: "bg-fuchsia-50" },
+    WORKER_VERIFIED: { icon: <ShieldCheck size={iconSize} />, color: "text-emerald-600", bg: "bg-emerald-50" },
+    WORKER_REJECTED: { icon: <Info size={iconSize} />, color: "text-rose-600", bg: "bg-rose-50" },
     BOOKING_REQUEST: { icon: <Bell size={iconSize} />, color: "text-indigo-600", bg: "bg-indigo-50" },
     BOOKING_ACCEPTED: { icon: <Check size={iconSize} />, color: "text-emerald-600", bg: "bg-emerald-50" },
     BOOKING_REJECTED: { icon: <Info size={iconSize} />, color: "text-rose-600", bg: "bg-rose-50" },

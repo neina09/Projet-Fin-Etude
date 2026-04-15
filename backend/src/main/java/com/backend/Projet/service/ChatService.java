@@ -19,6 +19,7 @@ public class ChatService {
     private final UserRepository         userRepository;
     private final BookingRepository      bookingRepository;
     private final OfferRepository        offerRepository;
+    private final NotificationService    notificationService;
     private final com.backend.Projet.mapper.ChatMapper chatMapper;
 
 
@@ -43,7 +44,15 @@ public class ChatService {
                 .content(input.getContent())
                 .build();
 
-        return chatMapper.toDto(chatMessageRepository.saveAndFlush(message));
+        ChatMessage savedMessage = chatMessageRepository.saveAndFlush(message);
+
+        notificationService.sendNotification(
+                recipient,
+                "New message from " + sender.getUsername(),
+                NotificationType.CHAT_MESSAGE
+        );
+
+        return chatMapper.toDto(savedMessage);
     }
 
     @Transactional(readOnly = true)

@@ -1,10 +1,27 @@
 import React, { useEffect, useState } from "react"
-import { AlertCircle, BellRing, Briefcase, CheckCircle, ClipboardList, Clock, ShieldCheck, TrendingUp, Users } from "lucide-react"
-import { approveTask, getAdminDashboard, rejectTask, rejectWorker, verifyWorker } from "../api"
+import { BellRing, Briefcase, ClipboardList, TrendingUp, Users } from "lucide-react"
+import { approveTask, getAdminDashboard, getMyNotifications, getPendingTasks, rejectTask, rejectWorker, resolveAssetUrl, verifyWorker } from "../api"
 import TaskStatsCharts from "./TaskStatsCharts"
+
+function getVerificationNote(worker) {
+  const note = String(worker?.verificationNotes || "").trim()
+  if (!note) return "تم رفع الوثائق والطلب بانتظار مراجعة الإدارة."
+
+  const lower = note.toLowerCase()
+  if (lower.includes("waiting for admin review") || lower.includes("document uploaded")) {
+    return "تم رفع الوثائق والطلب بانتظار مراجعة الإدارة."
+  }
+
+  if (lower === "verified by admin") return "تم توثيق الحساب من الإدارة."
+  if (lower === "rejected by admin") return "تم رفض الطلب من الإدارة."
+
+  return note
+}
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
+  const [pendingTasks, setPendingTasks] = useState([])
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -13,8 +30,19 @@ export default function AdminDashboard() {
     setError("")
 
     try {
-      const data = await getAdminDashboard()
+      const [data, pendingTasksPage, notifications] = await Promise.all([
+        getAdminDashboard(),
+        getPendingTasks(),
+        getMyNotifications()
+      ])
+
       setStats(data)
+      setPendingTasks(Array.isArray(pendingTasksPage?.content) ? pendingTasksPage.content : [])
+      setUnreadNotificationsCount(
+        (Array.isArray(notifications) ? notifications : []).filter(
+          (notification) => !(notification?.isRead ?? notification?.read ?? false)
+        ).length
+      )
     } catch (err) {
       setError(err.message || "تعذر تحميل لوحة الإدارة.")
     } finally {
@@ -66,7 +94,7 @@ export default function AdminDashboard() {
     { label: "إجمالي المستخدمين", value: stats?.totalUsers ?? 0, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
     { label: "إجمالي العمال", value: stats?.totalWorkers ?? 0, icon: Briefcase, color: "text-primary", bg: "bg-primary-soft" },
     { label: "مهام بانتظار المراجعة", value: stats?.pendingTasks ?? 0, icon: ClipboardList, color: "text-orange-600", bg: "bg-orange-50" },
-    { label: "الإشعارات", value: stats?.totalNotifications ?? 0, icon: BellRing, color: "text-emerald-600", bg: "bg-emerald-50" }
+    { label: "الإشعارات غير المقروءة", value: unreadNotificationsCount, icon: BellRing, color: "text-emerald-600", bg: "bg-emerald-50" }
   ]
 
   const pseudoTasks = [
@@ -76,19 +104,15 @@ export default function AdminDashboard() {
     ...Array.from({ length: Number(stats?.completedTasks || 0) }, (_, i) => ({ id: `done-${i}`, status: "COMPLETED", createdAt: new Date().toISOString() }))
   ]
 
-  const bookingsTotal = Number(stats?.pendingBookings || 0) + Number(stats?.acceptedBookings || 0) + Number(stats?.completedBookings || 0)
-  const completedBookingsPercent = bookingsTotal ? (Number(stats?.completedBookings || 0) / bookingsTotal) * 100 : 0
-  const verifiedWorkersPercent = Number(stats?.totalWorkers || 0) ? (Number(stats?.verifiedWorkers || 0) / Number(stats.totalWorkers)) * 100 : 0
-
   return (
     <div className="mx-auto max-w-7xl px-6 py-10 lg:px-10">
       <div className="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
         <div>
-          <h2 className="mb-2 font-alexandria text-3xl font-black text-surface-900">نظرة عامة على المنصة</h2>
-          <p className="text-sm font-bold uppercase tracking-widest text-surface-500">متابعة توثيق العمال واعتماد المهام الجديدة</p>
+          <h2 className="mb-2 font-alexandria text-3xl font-black text-surface-900">لوحة الإدارة</h2>
+          <p className="text-sm font-bold text-surface-500">راجع طلبات التوثيق والمهام المعلقة ثم قرر القبول أو الرفض.</p>
         </div>
         <div className="rounded-2xl border border-surface-200 bg-white px-5 py-3 text-sm font-bold text-surface-600">
-          طلبات العاملين المعلقة: {stats?.pendingWorkers ?? 0} | المهام المعلقة: {stats?.pendingTasks ?? 0}
+          طلبات التوثيق: {stats?.pendingWorkers ?? 0} | المهام المعلقة: {stats?.pendingTasks ?? 0}
         </div>
       </div>
 
@@ -118,37 +142,128 @@ export default function AdminDashboard() {
 
       <TaskStatsCharts tasks={pseudoTasks} />
 
-      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div className="saas-card border-surface-200 bg-white p-8">
           <h3 className="mb-6 font-alexandria text-lg font-black text-surface-900">طلبات توثيق العمال</h3>
 
           {loading ? (
-            <div className="py-12 text-center font-bold text-surface-400">جارٍ تحميل بيانات الإدارة...</div>
+            <div className="py-12 text-center font-bold text-surface-400">جارٍ تحميل طلبات التوثيق...</div>
           ) : stats?.latestPendingWorkers?.length ? (
-            <div className="space-y-4">
-              {stats.latestPendingWorkers.map((worker) => (
-                <div key={worker.id} className="rounded-2xl border border-surface-100 bg-surface-50 p-4">
-                  <div className="mb-3">
-                    <p className="text-sm font-black text-surface-900">{worker.name}</p>
-                    <p className="mt-0.5 text-xs font-bold text-surface-500">{worker.job} - {worker.address}</p>
-                  </div>
+            <div className="space-y-5">
+              {stats.latestPendingWorkers.map((worker) => {
+                const workerImageUrl = resolveAssetUrl(worker.imageUrl)
+                const identityDocumentUrl = resolveAssetUrl(worker.identityDocumentUrl)
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleReject(worker.id)}
-                      className="h-9 rounded-xl border border-red-200 px-4 text-[10px] font-black text-red-600 transition-all hover:bg-red-50"
-                    >
-                      رفض
-                    </button>
-                    <button
-                      onClick={() => handleVerify(worker.id)}
-                      className="h-9 rounded-xl bg-primary px-4 text-[10px] font-black text-white shadow-sm shadow-primary/20 transition-all hover:bg-primary-hover"
-                    >
-                      توثيق الحساب
-                    </button>
+                return (
+                  <div key={worker.id} className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm">
+                    <div className="mb-5 flex items-start gap-4">
+                      <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-2xl border border-surface-200 bg-surface-50">
+                        {workerImageUrl ? (
+                          <>
+                            <img
+                              src={workerImageUrl}
+                              alt={worker.name}
+                              className="h-full w-full object-cover"
+                              onError={(event) => {
+                                event.currentTarget.style.display = "none"
+                                const fallback = event.currentTarget.nextElementSibling
+                                if (fallback) fallback.style.display = "flex"
+                              }}
+                            />
+                            <div className="hidden h-full w-full items-center justify-center px-2 text-center text-xs font-black text-surface-400">
+                              لا توجد صورة واضحة
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center px-2 text-center text-xs font-black text-surface-400">
+                            لا توجد صورة واضحة
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-lg font-black text-surface-900">{worker.name || "-"}</p>
+                        <p className="mt-1 text-sm font-bold text-surface-600">{worker.job || "بدون مهنة"}</p>
+                        <p className="mt-1 text-sm font-bold text-primary">{worker.phoneNumber || "بدون هاتف"}</p>
+                        <p className="mt-2 text-sm font-medium leading-relaxed text-surface-500">{worker.address || "بدون عنوان"}</p>
+                      </div>
+                    </div>
+
+                    <div className="mb-5 grid grid-cols-1 gap-3 rounded-2xl border border-surface-100 bg-surface-50 p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-xs font-black text-surface-400">الاسم</span>
+                        <span className="text-sm font-black text-surface-900">{worker.name || "-"}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-xs font-black text-surface-400">المهنة</span>
+                        <span className="text-sm font-bold text-surface-700">{worker.job || "-"}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-xs font-black text-surface-400">الهاتف</span>
+                        <span className="text-sm font-bold text-surface-700">{worker.phoneNumber || "-"}</span>
+                      </div>
+                      <div className="flex items-start justify-between gap-4">
+                        <span className="pt-0.5 text-xs font-black text-surface-400">العنوان</span>
+                        <span className="max-w-[65%] text-left text-sm font-bold leading-relaxed text-surface-700">{worker.address || "-"}</span>
+                      </div>
+                      <div className="flex items-start justify-between gap-4">
+                        <span className="pt-0.5 text-xs font-black text-surface-400">ملاحظات النظام</span>
+                        <span className="max-w-[65%] text-left text-sm font-medium leading-relaxed text-surface-600">{getVerificationNote(worker)}</span>
+                      </div>
+                    </div>
+
+                    {identityDocumentUrl ? (
+                      <div className="mb-5">
+                        <p className="mb-2 text-sm font-black text-surface-700">وثيقة الهوية المرفوعة</p>
+                        <div className="group relative h-56 w-full overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-sm">
+                          <img
+                            src={identityDocumentUrl}
+                            alt="وثيقة الهوية"
+                            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                            onError={(event) => {
+                              event.currentTarget.style.display = "none"
+                              const fallback = event.currentTarget.nextElementSibling
+                              if (fallback) fallback.style.display = "flex"
+                            }}
+                            onClick={() => window.open(identityDocumentUrl, "_blank")}
+                            title="انقر لعرض الوثيقة بحجم أوضح"
+                          />
+                          <div className="hidden h-full w-full items-center justify-center bg-surface-100 px-4 text-center text-sm font-bold text-surface-500">
+                            تعذر تحميل الوثيقة في المعاينة.
+                          </div>
+                        </div>
+                        <a
+                          href={identityDocumentUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-3 inline-flex rounded-xl border border-surface-200 bg-surface-50 px-4 py-2 text-xs font-black text-surface-700 transition-all hover:bg-white"
+                        >
+                          فتح الوثيقة في نافذة جديدة
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
+                        لم يتم رفع وثيقة هوية واضحة بعد.
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleReject(worker.id)}
+                        className="flex-1 h-11 rounded-xl border border-red-200 px-4 text-sm font-black text-red-600 transition-all hover:bg-red-50"
+                      >
+                        رفض الطلب
+                      </button>
+                      <button
+                        onClick={() => handleVerify(worker.id)}
+                        className="flex-1 h-11 rounded-xl bg-primary px-4 text-sm font-black text-white shadow-sm shadow-primary/20 transition-all hover:bg-primary-hover"
+                      >
+                        توثيق الحساب
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className="py-12 text-center font-bold text-surface-400">لا توجد طلبات توثيق معلقة حاليًا.</div>
@@ -160,26 +275,26 @@ export default function AdminDashboard() {
 
           {loading ? (
             <div className="py-12 text-center font-bold text-surface-400">جارٍ تحميل المهام...</div>
-          ) : stats?.latestPendingTasks?.length ? (
+          ) : pendingTasks.length ? (
             <div className="space-y-4">
-              {stats.latestPendingTasks.map((task) => (
-                <div key={task.id} className="rounded-2xl border border-surface-100 bg-surface-50 p-4">
+              {pendingTasks.map((task) => (
+                <div key={task.id} className="rounded-2xl border border-surface-100 bg-surface-50 p-5">
                   <div className="mb-3">
-                    <p className="text-sm font-black text-surface-900">{task.title}</p>
-                    <p className="mt-0.5 text-xs font-bold text-surface-500">{task.profession || "بدون مهنة"} - {task.address || "بدون مكان"}</p>
-                    <p className="mt-2 text-xs font-medium leading-relaxed text-surface-500">{task.description}</p>
+                    <p className="text-base font-black text-surface-900">{task.title}</p>
+                    <p className="mt-1 text-sm font-bold text-surface-500">{task.profession || "بدون مهنة"} - {task.address || "بدون مكان"}</p>
+                    <p className="mt-3 text-sm font-medium leading-relaxed text-surface-600">{task.description}</p>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <button
                       onClick={() => handleRejectTask(task.id)}
-                      className="h-9 rounded-xl border border-red-200 px-4 text-[10px] font-black text-red-600 transition-all hover:bg-red-50"
+                      className="h-10 rounded-xl border border-red-200 px-4 text-sm font-black text-red-600 transition-all hover:bg-red-50"
                     >
                       رفض المهمة
                     </button>
                     <button
                       onClick={() => handleApproveTask(task.id)}
-                      className="h-9 rounded-xl bg-primary px-4 text-[10px] font-black text-white shadow-sm shadow-primary/20 transition-all hover:bg-primary-hover"
+                      className="h-10 rounded-xl bg-primary px-4 text-sm font-black text-white shadow-sm shadow-primary/20 transition-all hover:bg-primary-hover"
                     >
                       اعتماد المهمة
                     </button>
@@ -190,56 +305,6 @@ export default function AdminDashboard() {
           ) : (
             <div className="py-12 text-center font-bold text-surface-400">لا توجد مهام معلقة للمراجعة حاليًا.</div>
           )}
-        </div>
-
-        <div className="saas-card relative overflow-hidden bg-surface-900 p-8 text-white">
-          <div className="relative z-10">
-            <h3 className="mb-4 font-alexandria text-lg font-black">ملخص الإدارة</h3>
-
-            <div className="mb-8">
-              <div className="mb-2 flex items-end justify-between">
-                <span className="text-sm font-bold opacity-60">العمال الموثقون</span>
-                <span className="text-xl font-black">{stats?.verifiedWorkers ?? 0}</span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-                <div className="h-full bg-primary" style={{ width: `${Math.min(100, verifiedWorkersPercent)}%` }} />
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <div className="mb-2 flex items-end justify-between">
-                <span className="text-sm font-bold opacity-60">الحجوزات المكتملة</span>
-                <span className="text-xl font-black">{stats?.completedBookings ?? 0}</span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-                <div className="h-full bg-indigo-500" style={{ width: `${Math.min(100, completedBookingsPercent)}%` }} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-                <div className="mb-2 flex items-center gap-2 text-xs font-bold text-white/70">
-                  <CheckCircle size={14} />
-                  مستخدمون مفعلون
-                </div>
-                <div className="text-2xl font-black">{stats?.verifiedUsers ?? 0}</div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-                <div className="mb-2 flex items-center gap-2 text-xs font-bold text-white/70">
-                  <ShieldCheck size={14} />
-                  بانتظار التوثيق
-                </div>
-                <div className="text-2xl font-black">{stats?.pendingWorkers ?? 0}</div>
-              </div>
-            </div>
-
-            <button className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/10 py-4 text-sm font-black transition-all hover:bg-white/20">
-              <AlertCircle size={18} />
-              متابعة حالة الإدارة
-            </button>
-          </div>
-
-          <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
         </div>
       </div>
     </div>

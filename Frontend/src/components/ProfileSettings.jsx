@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react"
-import { CheckCircle2, FileBadge2, KeyRound, Phone, Save, ShieldAlert, Star, Trash2, Upload, User, Wrench } from "lucide-react"
+﻿import React, { useCallback, useEffect, useMemo, useState } from "react"
+import { CheckCircle2, FileBadge2, KeyRound, Phone, Save, ShieldAlert, Star, Trash2, Upload, User, Wrench, X } from "lucide-react"
 import {
   changePassword,
   createRating,
@@ -12,9 +12,105 @@ import {
   getMyWorkerProfile,
   updateWorkerAvailability,
   updateWorkerProfile,
+  resolveAssetUrl,
   uploadIdentityDocument,
   uploadWorkerImage
 } from "../api"
+
+function previewUrl(file) {
+  return file ? URL.createObjectURL(file) : ""
+}
+
+function readImageDimensions(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const image = new Image()
+
+    image.onload = () => {
+      resolve({ image, url, width: image.width, height: image.height })
+    }
+
+    image.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error("تعذر قراءة الصورة المختارة."))
+    }
+
+    image.src = url
+  })
+}
+
+async function combineIdentityFiles(frontFile, backFile) {
+  if (!frontFile && !backFile) return null
+  if (frontFile && !backFile) return frontFile
+  if (!frontFile && backFile) return backFile
+
+  const front = await readImageDimensions(frontFile)
+  const back = await readImageDimensions(backFile)
+
+  const padding = 32
+  const labelHeight = 48
+  const canvas = document.createElement("canvas")
+  const width = Math.max(front.width, back.width) + padding * 2
+  const height = front.height + back.height + padding * 3 + labelHeight * 2
+
+  canvas.width = width
+  canvas.height = height
+
+  const context = canvas.getContext("2d")
+  context.fillStyle = "#ffffff"
+  context.fillRect(0, 0, width, height)
+  context.fillStyle = "#111827"
+  context.font = "bold 24px Arial"
+  context.direction = "rtl"
+  context.textAlign = "right"
+
+  const labelX = width - padding
+  let currentY = padding
+
+  context.fillText("البطاقة - الوجه الأمامي", labelX, currentY + 28)
+  currentY += labelHeight
+  context.drawImage(front.image, (width - front.width) / 2, currentY)
+  currentY += front.height + padding
+
+  context.fillText("البطاقة - الوجه الخلفي", labelX, currentY + 28)
+  currentY += labelHeight
+  context.drawImage(back.image, (width - back.width) / 2, currentY)
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92))
+
+  URL.revokeObjectURL(front.url)
+  URL.revokeObjectURL(back.url)
+
+  if (!blob) {
+    throw new Error("تعذر تجهيز صور البطاقة للرفع.")
+  }
+
+  return new File([blob], "identity-front-back.jpg", { type: "image/jpeg" })
+}
+
+function FilePreview({ file, label, onClear }) {
+  const src = useMemo(() => previewUrl(file), [file])
+
+  if (!file) return null
+
+  return (
+    <div className="rounded-2xl border border-surface-200 bg-surface-50 p-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="text-xs font-black text-surface-700">{label}</span>
+        <button
+          type="button"
+          onClick={onClear}
+          className="inline-flex items-center gap-1 rounded-lg border border-surface-200 bg-white px-2 py-1 text-xs font-bold text-surface-500 hover:bg-surface-100"
+        >
+          <X size={12} />
+          إزالة
+        </button>
+      </div>
+      <img src={src} alt={label} className="h-40 w-full rounded-xl object-cover" />
+      <p className="mt-2 truncate text-xs font-bold text-surface-500">{file.name}</p>
+    </div>
+  )
+}
 
 const STATUS_LABELS = {
   PENDING: "قيد الانتظار",
@@ -42,11 +138,12 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
     salary: "",
     phoneNumber: "",
     address: "",
-    nationalIdNumber: "",
-    imageUrl: ""
+    nationalIdNumber: ""
   })
   const [workerImageFile, setWorkerImageFile] = useState(null)
-  const [workerDocumentFile, setWorkerDocumentFile] = useState(null)
+  const [identityFrontFile, setIdentityFrontFile] = useState(null)
+  const [identityBackFile, setIdentityBackFile] = useState(null)
+  const [workerProfileImageFailed, setWorkerProfileImageFailed] = useState(false)
   const isWorker = user?.role === "WORKER"
 
   const loadProfileData = useCallback(async () => {
@@ -98,10 +195,13 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
       salary: String(workerProfile.salary ?? ""),
       phoneNumber: workerProfile.phoneNumber || "",
       address: workerProfile.address || "",
-      nationalIdNumber: workerProfile.nationalIdNumber || "",
-      imageUrl: workerProfile.imageUrl || ""
+      nationalIdNumber: workerProfile.nationalIdNumber || ""
     })
   }, [workerProfile])
+
+  useEffect(() => {
+    setWorkerProfileImageFailed(false)
+  }, [workerProfile?.imageUrl])
 
   const publishMessage = (type, text) => setMsg({ type, text })
 
@@ -117,46 +217,7 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
     try {
       const updated = await updateProfile({ username, phone })
       onUpdate?.(updated)
-      publishMessage("success", "تم تحديث الملف الشخصي بنجاح.")
-    } catch (err) {
-      publishMessage("error", err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-
-    try {
-      await changePassword(currentPassword, newPassword)
-      setCurrentPassword("")
-      setNewPassword("")
-      publishMessage("success", "تم تغيير كلمة المرور بنجاح.")
-    } catch (err) {
-      publishMessage("error", err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDeleteAccount = async () => {
-    const confirmed = window.confirm("هل أنت متأكد من حذف الحساب نهائياً؟")
-    if (!confirmed) return
-
-    try {
-      await deleteAccount()
-      onLogout?.()
-    } catch (err) {
-      publishMessage("error", err.message)
-    }
-  }
-
-  const handleBookingAction = async (bookingId, action) => {
-    try {
-      await updateBookingStatus(bookingId, action)
-      publishMessage("success", "تم تحديث حالة الطلب.")
+      publishMessage("success", "تم تحديث معلومات الحساب بنجاح.")
       await refreshAll()
     } catch (err) {
       publishMessage("error", err.message)
@@ -166,7 +227,7 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
   const handleToggleAvailability = async () => {
     if (!workerProfile) return
     if (!workerProfile.verified) {
-      publishMessage("error", "يجب أن يكون حسابك موثقاً من الإدارة لتغيير حالتك.")
+      publishMessage("error", "يجب أن يكون حسابك موثقًا من الإدارة لتغيير حالتك.")
       return
     }
 
@@ -176,7 +237,7 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
     try {
       const updated = await updateWorkerAvailability(workerProfile.id, nextStatus)
       setWorkerProfile(updated)
-      publishMessage("success", `أنت الآن ${nextStatus === "AVAILABLE" ? "متاح للعمل" : "مشغول حالياً"}.`)
+      publishMessage("success", `أنت الآن ${nextStatus === "AVAILABLE" ? "متاح للعمل" : "مشغول حاليًا"}.`)
     } catch (err) {
       publishMessage("error", err.message)
     } finally {
@@ -201,12 +262,11 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
         salary: Number(workerForm.salary || 0),
         phoneNumber: workerForm.phoneNumber,
         address: workerForm.address,
-        nationalIdNumber: workerForm.nationalIdNumber,
-        imageUrl: workerForm.imageUrl
+        nationalIdNumber: workerForm.nationalIdNumber
       })
 
       setWorkerProfile(updated)
-      publishMessage("success", "تم تحديث الملف المهني وإرساله وفق قواعد الخلفية الحالية.")
+      publishMessage("success", "تم تحديث معلومات العامل بنجاح.")
       await refreshAll()
     } catch (err) {
       publishMessage("error", err.message)
@@ -218,26 +278,27 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
   const handleWorkerFileUpload = async (kind) => {
     if (!workerProfile?.id) return
 
-    const file = kind === "image" ? workerImageFile : workerDocumentFile
-    if (!file) {
-      publishMessage("error", kind === "image" ? "اختر صورة أولاً." : "اختر ملف الهوية أولاً.")
-      return
-    }
-
     setLoading(true)
 
     try {
-      const updated = kind === "image"
-        ? await uploadWorkerImage(workerProfile.id, file)
-        : await uploadIdentityDocument(workerProfile.id, file)
-
-      setWorkerProfile(updated)
       if (kind === "image") {
+        if (!workerImageFile) throw new Error("اختر صورة أولًا.")
+        const updated = await uploadWorkerImage(workerProfile.id, workerImageFile)
+        setWorkerProfile(updated)
         setWorkerImageFile(null)
+        publishMessage("success", "تم رفع صورة الملف المهني.")
       } else {
-        setWorkerDocumentFile(null)
+        if (!identityFrontFile && !identityBackFile) throw new Error("اختر صور البطاقة أولًا.")
+        
+        const combinedFile = await combineIdentityFiles(identityFrontFile, identityBackFile)
+        if (!combinedFile) throw new Error("تعذر معالجة صور البطاقة.")
+        
+        const updated = await uploadIdentityDocument(workerProfile.id, combinedFile)
+        setWorkerProfile(updated)
+        setIdentityFrontFile(null)
+        setIdentityBackFile(null)
+        publishMessage("success", "تم رفع وثيقة الهوية بنجاح (مدمجة من الوجهين).")
       }
-      publishMessage("success", kind === "image" ? "تم رفع صورة الملف المهني." : "تم رفع وثيقة الهوية بنجاح.")
       await refreshAll()
     } catch (err) {
       publishMessage("error", err.message)
@@ -271,6 +332,51 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
     }
   }
 
+  const handleChangePassword = async (event) => {
+    event.preventDefault()
+    setLoading(true)
+
+    try {
+      await changePassword(currentPassword, newPassword)
+      setCurrentPassword("")
+      setNewPassword("")
+      publishMessage("success", "تم تحديث كلمة المرور بنجاح.")
+    } catch (err) {
+      publishMessage("error", err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleBookingAction = async (bookingId, action) => {
+    setLoading(true)
+
+    try {
+      await updateBookingStatus(bookingId, action)
+      publishMessage("success", "تم تحديث حالة الحجز بنجاح.")
+      await refreshAll()
+    } catch (err) {
+      publishMessage("error", err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm("هل أنت متأكد من حذف الحساب نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.")
+    if (!confirmed) return
+
+    setLoading(true)
+
+    try {
+      await deleteAccount()
+      onLogout?.()
+    } catch (err) {
+      publishMessage("error", err.message)
+      setLoading(false)
+    }
+  }
+
   const updateRatingField = (bookingId, field, value) => {
     setRatingForm((current) => ({
       ...current,
@@ -287,7 +393,7 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
       <div className="mb-10">
         <h1 className="mb-2 text-4xl font-black tracking-tight text-surface-900">الملف الشخصي</h1>
         <p className="text-base font-bold text-surface-500">
-          حدّث بياناتك، راقب الطلبات، وادِر صلاحياتك حسب دورك الحالي في النظام.
+          حدّث بياناتك، راقب الطلبات، وأدِر صلاحياتك حسب دورك الحالي في النظام.
         </p>
       </div>
 
@@ -334,56 +440,10 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-saas btn-primary h-12 w-full text-sm"
-            >
+            <button type="submit" disabled={loading} className="btn-saas btn-primary h-12 w-full text-sm">
               <Save size={16} />
-              {loading ? "جاري الحفظ..." : "حفظ التغييرات"}
+              {loading ? "جاري الحفظ..." : "حفظ معلومات الحساب"}
             </button>
-
-            {isWorker && workerProfile && (
-              <div className="mt-8 border-t border-surface-100 pt-8">
-                <div className="mb-4 rounded-xl border border-surface-200 bg-surface-50 px-4 py-3 text-sm font-bold text-surface-700">
-                  حالة التوثيق: {workerProfile.verificationStatus || "PENDING"}
-                </div>
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-black text-surface-900">حالة التوفر المهني</h3>
-                    <p className="text-[10px] font-bold text-surface-400">
-                      حدد ما إذا كنت متاحاً لاستقبال طلبات جديدة الآن.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleToggleAvailability}
-                    disabled={loading || !workerProfile.verified}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      workerProfile.availability === "AVAILABLE" ? "bg-primary" : "bg-surface-200"
-                    } ${!workerProfile.verified ? "opacity-50 cursor-not-allowed" : ""}`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        workerProfile.availability === "AVAILABLE" ? "-translate-x-5" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
-                </div>
-                <div className={`rounded-xl p-3 text-center text-xs font-black transition-all ${
-                  workerProfile.availability === "AVAILABLE"
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                    : "bg-surface-50 text-surface-500 border border-surface-100"
-                }`}>
-                  {workerProfile.availability === "AVAILABLE" ? "✅ متاح للعمل الآن" : "⏳ مشغول أو غير متاح حالياً"}
-                </div>
-                {!workerProfile.verified && (
-                  <p className="mt-2 text-[10px] font-bold text-amber-600">
-                    * لا يمكنك تغيير حالتك حتى يتم توثيق حسابك من قبل الإدارة.
-                  </p>
-                )}
-              </div>
-            )}
           </form>
         </div>
 
@@ -416,13 +476,9 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-saas btn-secondary h-12 w-full border-surface-200 text-sm"
-            >
-              <KeyRound size={16} />
-              {loading ? "جاري التحديث..." : "تحديث كلمة المرور"}
+            <button type="submit" disabled={loading} className="btn-saas btn-primary h-12 w-full text-sm">
+              <Save size={16} />
+              {loading ? "جاري التحديث..." : "تغيير كلمة المرور"}
             </button>
           </form>
         </div>
@@ -433,12 +489,29 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
           <div className="saas-card border-surface-200 bg-white p-8">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-soft text-primary">
-                <FileBadge2 size={20} />
+                <Wrench size={20} />
               </div>
               <div>
-                <h2 className="text-xl font-black text-surface-900">الملف المهني</h2>
-                <p className="text-sm font-bold text-surface-400">
-                  هذه الحقول مرتبطة مباشرة مع `WorkerRequestDto` في الخلفية.
+                <h2 className="text-xl font-black text-surface-900">ملف العامل</h2>
+                <p className="text-sm font-bold text-surface-400">بعد التسجيل كعامل يمكنك تعديل المعلومات والصورة الشخصية فقط.</p>
+              </div>
+            </div>
+
+            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-surface-200 bg-surface-50 p-4">
+                <p className="mb-1 text-xs font-black uppercase tracking-widest text-surface-400">حالة التوثيق</p>
+                <p className="text-sm font-black text-surface-900">
+                  {workerProfile.verificationStatus === "VERIFIED"
+                    ? "موثق"
+                    : workerProfile.verificationStatus === "REJECTED"
+                      ? "مرفوض"
+                      : "قيد المراجعة"}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-surface-200 bg-surface-50 p-4">
+                <p className="mb-1 text-xs font-black uppercase tracking-widest text-surface-400">ملاحظات الإدارة</p>
+                <p className="text-sm font-bold leading-relaxed text-surface-600">
+                  {workerProfile.verificationNotes || "لا توجد ملاحظات حالياً."}
                 </p>
               </div>
             </div>
@@ -446,123 +519,106 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
             <form onSubmit={handleWorkerProfileSave} className="space-y-5">
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-surface-400">الاسم المهني</label>
-                  <input
-                    value={workerForm.name}
-                    onChange={(event) => updateWorkerFormField("name", event.target.value)}
-                    className="saas-input h-12 border-surface-200 pr-4"
-                  />
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-surface-400">الاسم</label>
+                  <input value={workerForm.name} onChange={(event) => updateWorkerFormField("name", event.target.value)} className="saas-input h-12 border-surface-200 pr-4" />
                 </div>
-
                 <div>
                   <label className="mb-2 block text-xs font-black uppercase tracking-widest text-surface-400">المهنة</label>
-                  <input
-                    value={workerForm.job}
-                    onChange={(event) => updateWorkerFormField("job", event.target.value)}
-                    className="saas-input h-12 border-surface-200 pr-4"
-                  />
+                  <input value={workerForm.job} onChange={(event) => updateWorkerFormField("job", event.target.value)} className="saas-input h-12 border-surface-200 pr-4" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-surface-400">الهاتف المهني</label>
-                  <input
-                    value={workerForm.phoneNumber}
-                    onChange={(event) => updateWorkerFormField("phoneNumber", event.target.value)}
-                    dir="ltr"
-                    className="saas-input h-12 border-surface-200 pr-4 text-left"
-                  />
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-surface-400">السعر</label>
+                  <input value={workerForm.salary} onChange={(event) => updateWorkerFormField("salary", event.target.value)} className="saas-input h-12 border-surface-200 pr-4" />
                 </div>
-
                 <div>
-                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-surface-400">الأجر</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={workerForm.salary}
-                    onChange={(event) => updateWorkerFormField("salary", event.target.value)}
-                    className="saas-input h-12 border-surface-200 pr-4"
-                  />
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-surface-400">رقم الهاتف المهني</label>
+                  <input value={workerForm.phoneNumber} onChange={(event) => updateWorkerFormField("phoneNumber", event.target.value)} className="saas-input h-12 border-surface-200 pr-4" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-surface-400">العنوان</label>
-                  <input
-                    value={workerForm.address}
-                    onChange={(event) => updateWorkerFormField("address", event.target.value)}
-                    className="saas-input h-12 border-surface-200 pr-4"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-surface-400">رابط الصورة</label>
-                  <input
-                    value={workerForm.imageUrl}
-                    onChange={(event) => updateWorkerFormField("imageUrl", event.target.value)}
-                    className="saas-input h-12 border-surface-200 pr-4"
-                  />
-                </div>
+              <div>
+                <label className="mb-2 block text-xs font-black uppercase tracking-widest text-surface-400">العنوان</label>
+                <input value={workerForm.address} onChange={(event) => updateWorkerFormField("address", event.target.value)} className="saas-input h-12 border-surface-200 pr-4" />
               </div>
 
               <div>
                 <label className="mb-2 block text-xs font-black uppercase tracking-widest text-surface-400">رقم الهوية الوطنية</label>
                 <input
                   value={workerForm.nationalIdNumber}
-                  onChange={(event) => updateWorkerFormField("nationalIdNumber", event.target.value)}
-                  placeholder="مطلوب عند تحديث الملف المهني"
-                  className="saas-input h-12 border-surface-200 pr-4"
+                  readOnly
+                  className="saas-input h-12 border-surface-200 pr-4 bg-surface-50 text-surface-500"
                 />
+                <p className="mt-2 text-[10px] font-bold text-surface-400">رقم الهوية ووثيقة التحقق يعتمدان عند فتح حساب العامل فقط.</p>
               </div>
 
               <button type="submit" disabled={loading} className="btn-saas btn-primary h-12 w-full text-sm">
                 <Save size={16} />
-                {loading ? "جاري حفظ الملف المهني..." : "حفظ الملف المهني"}
+                {loading ? "جاري حفظ ملف العامل..." : "حفظ معلومات العامل"}
               </button>
             </form>
 
-            <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div className="rounded-2xl border border-surface-200 p-5">
-                <div className="mb-3 flex items-center gap-2 text-sm font-black text-surface-900">
-                  <Upload size={16} />
-                  رفع صورة العامل
+            <div className="mt-8 grid grid-cols-1 gap-5 xl:grid-cols-2">
+              <div className="rounded-2xl border border-surface-200 p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-black text-surface-900">
+                    <Upload size={18} className="text-primary" />
+                    الصورة الشخصية
+                  </div>
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => setWorkerImageFile(event.target.files?.[0] || null)}
-                  className="mb-3 block w-full text-sm"
-                />
+                <p className="mb-4 text-xs font-bold text-surface-400">يمكنك تغيير الصورة الشخصية بعد التسجيل، دون إعادة رفع بطاقة الهوية.</p>
+                <div className="mb-4 flex items-center gap-4 rounded-2xl border border-surface-200 bg-surface-50 p-4">
+                  {workerProfile.imageUrl && !workerProfileImageFailed ? (
+                    <img
+                      src={resolveAssetUrl(workerProfile.imageUrl)}
+                      alt="الصورة الحالية"
+                      className="h-16 w-16 rounded-2xl object-cover border-2 border-primary-soft"
+                      onError={() => setWorkerProfileImageFailed(true)}
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-surface-300 bg-white text-xs font-black text-surface-400">
+                      لا صورة
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <label className="inline-flex cursor-pointer items-center rounded-xl bg-primary px-4 py-2 text-sm font-black text-white transition-all hover:bg-primary-hover">
+                      اختر صورة جديدة
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => setWorkerImageFile(event.target.files?.[0] || null)}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="mt-2 truncate text-xs font-bold text-surface-500">
+                      {workerImageFile ? workerImageFile.name : "لم يتم اختيار ملف جديد بعد."}
+                    </p>
+                    {workerProfile.imageUrl && workerProfileImageFailed && (
+                      <p className="mt-1 text-xs font-bold text-amber-600">تعذر تحميل الصورة الحالية، لكن يمكنك رفع صورة جديدة الآن.</p>
+                    )}
+                  </div>
+                </div>
+                <FilePreview file={workerImageFile} label="الصورة المختارة" onClear={() => setWorkerImageFile(null)} />
                 <button
                   type="button"
                   onClick={() => handleWorkerFileUpload("image")}
                   disabled={loading || !workerImageFile}
-                  className="btn-saas btn-secondary h-11 w-full border-surface-200 text-sm"
+                  className="btn-saas btn-primary mt-4 h-11 w-full text-sm"
                 >
-                  رفع الصورة
+                  {loading ? "جاري الرفع..." : "تحديث الصورة الشخصية"}
                 </button>
               </div>
 
-              <div className="rounded-2xl border border-surface-200 p-5">
-                <div className="mb-3 flex items-center gap-2 text-sm font-black text-surface-900">
-                  <FileBadge2 size={16} />
-                  رفع وثيقة الهوية
+              <div className="rounded-2xl border border-surface-200 bg-surface-50 p-6">
+                <div className="mb-4 flex items-center gap-2 text-sm font-black text-surface-900">
+                  <FileBadge2 size={18} className="text-amber-500" />
+                  وثيقة الهوية
                 </div>
-                <input
-                  type="file"
-                  onChange={(event) => setWorkerDocumentFile(event.target.files?.[0] || null)}
-                  className="mb-3 block w-full text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleWorkerFileUpload("document")}
-                  disabled={loading || !workerDocumentFile}
-                  className="btn-saas btn-secondary h-11 w-full border-surface-200 text-sm"
-                >
-                  رفع الوثيقة
-                </button>
+                <p className="text-sm font-bold leading-relaxed text-surface-500">
+                  توثيق الهوية يتم مرة واحدة فقط عند التسجيل كعامل. بعد فتح الحساب لا يمكن رفع البطاقة من هذه الصفحة، ويمكن تعديل المعلومات والصورة الشخصية فقط.
+                </p>
               </div>
             </div>
           </div>
@@ -804,3 +860,4 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
     </div>
   )
 }
+

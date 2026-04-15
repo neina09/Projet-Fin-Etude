@@ -47,6 +47,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByUserId(Long userId);
 
     @EntityGraph(attributePaths = {"user", "assignedWorker", "assignedWorker.user"})
+    List<Task> findByAssignedWorkerId(Long workerId);
+
+    @EntityGraph(attributePaths = {"user", "assignedWorker", "assignedWorker.user"})
     Optional<Task> findById(Long id);
 
     long countByStatus(TaskStatus status);
@@ -79,4 +82,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("keyword") String keyword,
             Pageable pageable
     );
+
+    @Modifying
+    @Query("UPDATE Task t SET t.assignedWorker = NULL WHERE t.assignedWorker.id = :workerId")
+    void clearAssignedWorkerByWorkerId(@Param("workerId") Long workerId);
+
+    @Modifying
+    void deleteByUserId(Long userId);
 }
