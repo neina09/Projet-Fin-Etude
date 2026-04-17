@@ -12,13 +12,18 @@ import java.util.*;
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, Long> {
     @Override
-    @EntityGraph(attributePaths = {"booking", "worker", "user"})
+    @EntityGraph(attributePaths = {"booking", "task", "worker", "user"})
     Optional<Rating> findById(Long id);
 
-    @EntityGraph(attributePaths = {"booking", "worker", "user"})
+    @EntityGraph(attributePaths = {"booking", "task", "worker", "user"})
     Optional<Rating> findByBookingId(Long bookingId);
 
-    @EntityGraph(attributePaths = {"booking", "worker", "user"})
+    @EntityGraph(attributePaths = {"booking", "task", "worker", "user"})
+    Optional<Rating> findByTaskId(Long taskId);
+
+    boolean existsByBookingId(Long bookingId);
+
+    @EntityGraph(attributePaths = {"booking", "task", "worker", "user"})
     List<Rating>     findByWorkerId(Long workerId);
 
     @Query("SELECT AVG(r.stars) FROM Rating r WHERE r.worker.id = :workerId")
@@ -35,4 +40,10 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
 
     @Modifying
     void deleteByBookingWorkerId(Long workerId);
+
+    @Modifying
+    void deleteByTaskUserId(Long userId);
+
+    @Modifying
+    void deleteByTaskAssignedWorkerId(Long workerId);
 }

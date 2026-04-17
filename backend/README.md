@@ -33,6 +33,23 @@ $env:SPRING_PROFILES_ACTIVE="prod"
 $env:DB_URL="jdbc:mysql://host:3306/db_backend"
 $env:DB_USERNAME="your_user"
 $env:DB_PASSWORD="your_password"
+$env:APP_SECURITY_ALLOWED_ORIGINS="https://your-frontend.com"
+```
+
+To deliver SMS to real phones through Twilio:
+
+```powershell
+$env:APP_SMS_ENABLED="true"
+$env:TWILIO_ACCOUNT_SID="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+$env:TWILIO_API_KEY="SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+$env:TWILIO_API_SECRET="your_api_secret"
+$env:TWILIO_FROM_NUMBER="+1xxxxxxxxxx"
+```
+
+If you use a Twilio Messaging Service instead of a direct sender number:
+
+```powershell
+$env:TWILIO_MESSAGING_SERVICE_SID="MGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
 Optional seeded admin values when `app.seed-admin=true`:
@@ -153,4 +170,10 @@ mvn test
 
 ## Current Limitation
 
-Verification and password reset still use logs as the delivery channel. Because the system now authenticates by phone, the next production step would be integrating an SMS provider instead of plain logs.
+When `APP_SMS_ENABLED=true`, the application now sends verification and password reset codes through Twilio. If SMS is disabled, messages still fall back to logs for local development.
+
+## Security Notes
+
+- Public uploads are limited to worker profile images only. Identity documents are no longer exposed under `/uploads/**`.
+- Swagger is disabled by default unless `APP_SECURITY_PUBLIC_DOCS_ENABLED=true`.
+- Authentication endpoints now have basic request throttling for login, verification, and password reset flows.

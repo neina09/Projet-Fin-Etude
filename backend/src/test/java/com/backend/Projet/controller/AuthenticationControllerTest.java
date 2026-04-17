@@ -2,6 +2,7 @@ package com.backend.Projet.controller;
 
 import com.backend.Projet.exception.GlobalExceptionHandler;
 import com.backend.Projet.model.User;
+import com.backend.Projet.service.AuthRateLimitService;
 import com.backend.Projet.service.AuthenticationService;
 import com.backend.Projet.service.FileStorageService;
 import com.backend.Projet.service.JwtService;
@@ -34,6 +35,9 @@ class AuthenticationControllerTest {
 
     @MockitoBean
     private AuthenticationService authenticationService;
+
+    @MockitoBean
+    private AuthRateLimitService authRateLimitService;
 
     @MockitoBean
     private FileStorageService fileStorageService;

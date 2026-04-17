@@ -46,19 +46,23 @@ function AuthPage() {
             { icon: Users, value: "+12K", label: "عامل نشط" },
             { icon: Wrench, value: "+850", label: "وظيفة منشورة" },
             { icon: Star, value: "4.8", label: "متوسط التقييم" },
-          ].map(({ icon: Icon, value, label }) => (
-            <div key={label} className="bg-white border border-[#FDE68A] rounded-xl p-4 shadow-sm">
-              <Icon size={16} className="text-[#F59E0B] mb-3" />
-              <p className="text-gray-900 text-xl font-bold"
-                style={{ fontFamily: "'Cairo', sans-serif" }}>
-                {value}
-              </p>
-              <p className="text-gray-400 text-xs mt-0.5"
-                style={{ fontFamily: "'Cairo', sans-serif" }}>
-                {label}
-              </p>
-            </div>
-          ))}
+          ].map((item) => {
+            const ItemIcon = item.icon
+
+            return (
+              <div key={item.label} className="bg-white border border-[#FDE68A] rounded-xl p-4 shadow-sm">
+                <ItemIcon size={16} className="text-[#F59E0B] mb-3" />
+                <p className="text-gray-900 text-xl font-bold"
+                  style={{ fontFamily: "'Cairo', sans-serif" }}>
+                  {item.value}
+                </p>
+                <p className="text-gray-400 text-xs mt-0.5"
+                  style={{ fontFamily: "'Cairo', sans-serif" }}>
+                  {item.label}
+                </p>
+              </div>
+            )
+          })}
         </div>
 
       </div>

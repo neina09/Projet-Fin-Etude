@@ -1,8 +1,15 @@
-import React, { useEffect, useState } from "react"
+import React, { useMemo, useState } from "react"
 import { Briefcase, ChevronDown, MapPin, Send, Sparkles, X } from "lucide-react"
 import LeafletMapPicker from "./LeafletMapPicker"
 
-const EMPTY_FORM = { title: "", description: "", address: "", profession: "" }
+const buildFormState = (initialData) => ({
+  title: initialData?.title || "",
+  description: initialData?.description || "",
+  address: initialData?.address || "",
+  profession: initialData?.profession || "",
+  latitude: initialData?.latitude ?? null,
+  longitude: initialData?.longitude ?? null
+})
 
 export default function ProblemForm({
   onAdd,
@@ -10,57 +17,38 @@ export default function ProblemForm({
   initialData = null,
   onCancel = null
 }) {
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [address, setAddress] = useState("")
-  const [profession, setProfession] = useState("")
-  const [latitude, setLatitude] = useState(null)
-  const [longitude, setLongitude] = useState(null)
-  const [locating, setLocating] = useState(false)
+  const initialFormState = useMemo(() => buildFormState(initialData), [initialData])
+  const [form, setForm] = useState(initialFormState)
   const [isMapOpen, setIsMapOpen] = useState(false)
 
-  useEffect(() => {
-    if (initialData) {
-      setTitle(initialData.title || "")
-      setDescription(initialData.description || "")
-      setAddress(initialData.address || "")
-      setProfession(initialData.profession || "")
-      setLatitude(initialData.latitude ?? null)
-      setLongitude(initialData.longitude ?? null)
-      setIsMapOpen(false)
-      return
-    }
-
-    setTitle(EMPTY_FORM.title)
-    setDescription(EMPTY_FORM.description)
-    setAddress(EMPTY_FORM.address)
-    setProfession(EMPTY_FORM.profession)
-    setLatitude(null)
-    setLongitude(null)
-    setIsMapOpen(false)
-  }, [initialData])
+  const updateField = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }))
+  }
 
   const handleLocationSelect = (location) => {
-    setLatitude(location.lat)
-    setLongitude(location.lng)
-    setAddress(location.address)
+    setForm((current) => ({
+      ...current,
+      latitude: location.lat,
+      longitude: location.lng,
+      address: location.address
+    }))
   }
 
   const handleSubmit = (event) => {
     event.preventDefault()
 
-    if (!title.trim() || !description.trim() || !address.trim() || !profession.trim()) {
+    if (!form.title.trim() || !form.description.trim() || !form.address.trim() || !form.profession.trim()) {
       return
     }
 
     onAdd({
       id: initialData?.id || Date.now(),
-      title,
-      description,
-      address,
-      profession,
-      latitude,
-      longitude,
+      title: form.title,
+      description: form.description,
+      address: form.address,
+      profession: form.profession,
+      latitude: form.latitude,
+      longitude: form.longitude,
       author: "أنت",
       time: "الآن",
       status: "PENDING_REVIEW",
@@ -68,19 +56,14 @@ export default function ProblemForm({
     })
 
     if (!initialData) {
-      setTitle("")
-      setDescription("")
-      setAddress("")
-      setProfession("")
-      setLatitude(null)
-      setLongitude(null)
+      setForm(buildFormState(null))
       setIsMapOpen(false)
     }
   }
 
-  const isFormValid = title.trim() && description.trim() && address.trim() && profession.trim()
+  const isFormValid = form.title.trim() && form.description.trim() && form.address.trim() && form.profession.trim()
   const isEditing = Boolean(initialData)
-  const hasSelectedLocation = latitude !== null && longitude !== null
+  const hasSelectedLocation = form.latitude !== null && form.longitude !== null
 
   return (
     <div className="rounded-2xl bg-white p-8">
@@ -118,8 +101,8 @@ export default function ProblemForm({
           <div className="space-y-2">
             <label className="block text-xs font-black uppercase tracking-widest text-surface-400">عنوان المهمة</label>
             <input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
+              value={form.title}
+              onChange={(event) => updateField("title", event.target.value)}
               placeholder="مثال: إصلاح تسرب مياه في المطبخ"
               className="saas-input h-12 border-surface-200 pr-4 focus:bg-white"
             />
@@ -132,10 +115,10 @@ export default function ProblemForm({
                 <MapPin className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={16} />
                 <input
                   type="text"
-                  value={address}
-                  onChange={(event) => setAddress(event.target.value)}
-                  placeholder={locating ? "جاري تحديد الموقع..." : "الموقع المحدد أو اكتب هنا..."}
-                  className={`saas-input h-12 border-surface-200 pr-11 ${locating ? "animate-pulse bg-surface-50" : "bg-white"}`}
+                  value={form.address}
+                  onChange={(event) => updateField("address", event.target.value)}
+                  placeholder="الموقع المحدد أو اكتب هنا..."
+                  className="saas-input h-12 border-surface-200 bg-white pr-11"
                 />
               </div>
             </div>
@@ -173,7 +156,7 @@ export default function ProblemForm({
                 <div className="mt-4">
                   <LeafletMapPicker
                     onLocationSelect={handleLocationSelect}
-                    initialLocation={hasSelectedLocation ? { lat: latitude, lng: longitude } : null}
+                    initialLocation={hasSelectedLocation ? { lat: form.latitude, lng: form.longitude } : null}
                   />
                 </div>
               )}
@@ -185,8 +168,8 @@ export default function ProblemForm({
             <div className="relative">
               <Briefcase className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={16} />
               <select
-                value={profession}
-                onChange={(event) => setProfession(event.target.value)}
+                value={form.profession}
+                onChange={(event) => updateField("profession", event.target.value)}
                 className="saas-input h-12 border-surface-200 pr-11 focus:bg-white"
               >
                 <option value="">اختر المهنة</option>
@@ -204,8 +187,8 @@ export default function ProblemForm({
         <div className="space-y-2">
           <label className="block text-xs font-black uppercase tracking-widest text-surface-400">تفاصيل الطلب</label>
           <textarea
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
+            value={form.description}
+            onChange={(event) => updateField("description", event.target.value)}
             placeholder="صف المشكلة أو المهمة بدقة حتى تصلك عروض مناسبة..."
             rows="4"
             className="saas-input resize-none border-surface-200 px-4 py-4 focus:bg-white"

@@ -33,6 +33,11 @@ public class DataInitializer implements CommandLineRunner {
         if (!seedAdmin) {
             return;
         }
+        if (adminPhone == null || adminPhone.isBlank()
+                || adminUsername == null || adminUsername.isBlank()
+                || adminPassword == null || adminPassword.isBlank()) {
+            throw new IllegalStateException("Seed admin is enabled but admin credentials are not fully configured");
+        }
 
         if (userRepository.findByPhone(adminPhone).isPresent()) {
             return;

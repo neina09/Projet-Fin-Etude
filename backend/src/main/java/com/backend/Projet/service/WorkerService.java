@@ -14,6 +14,7 @@ import com.backend.Projet.repository.WorkerRepository;
 import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.util.MauritaniaPhoneUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -65,7 +66,7 @@ public class WorkerService {
                 com.backend.Projet.model.NotificationType.ADMIN_WORKER_REVIEW
         );
 
-        return workerMapper.toDto(savedWorker);
+        return workerMapper.toDto(savedWorker, true);
     }
 
     @Transactional
@@ -96,20 +97,20 @@ public class WorkerService {
                 .verificationNotes("Verified by admin")
                 .build();
 
-        return workerMapper.toDto(workerRepository.save(worker));
+        return workerMapper.toDto(workerRepository.save(worker), true);
     }
 
     public List<WorkerResponseDto> getAllWorkers() {
         return workerRepository.findByVerificationStatus(WorkerVerificationStatus.VERIFIED)
                 .stream()
-                .map(workerMapper::toDto)
+                .map(worker -> workerMapper.toDto(worker, false))
                 .toList();
     }
 
     public Page<WorkerResponseDto> getAllWorkersPaged(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         return workerRepository.findByVerificationStatus(WorkerVerificationStatus.VERIFIED, pageable)
-                .map(workerMapper::toDto);
+                .map(worker -> workerMapper.toDto(worker, false));
     }
 
     public WorkerResponseDto getWorkerById(Long id) {
@@ -118,7 +119,7 @@ public class WorkerService {
         if (worker.getVerificationStatus() != WorkerVerificationStatus.VERIFIED) {
             throw new ResourceNotFoundException("Worker not found");
         }
-        return workerMapper.toDto(worker);
+        return workerMapper.toDto(worker, false);
     }
 
     public WorkerResponseDto getWorkerForOwnerOrAdmin(Long id, User currentUser) {
@@ -129,13 +130,13 @@ public class WorkerService {
         if (!isAdmin && !isOwner) {
             throw new UnauthorizedException("Not authorized");
         }
-        return workerMapper.toDto(worker);
+        return workerMapper.toDto(worker, true);
     }
 
     public WorkerResponseDto getMyWorkerProfile(User currentUser) {
         Worker worker = workerRepository.findByUserId(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Worker profile not found for this user"));
-        return workerMapper.toDto(worker);
+        return workerMapper.toDto(worker, true);
     }
 
     @Transactional
@@ -164,7 +165,7 @@ public class WorkerService {
         if (isAdmin) {
             worker.setNationalIdNumber(dto.getNationalIdNumber().trim());
         }
-        return workerMapper.toDto(workerRepository.save(worker));
+        return workerMapper.toDto(workerRepository.save(worker), true);
     }
 
     @Transactional
@@ -182,7 +183,7 @@ public class WorkerService {
         }
 
         worker.setAvailability(availability);
-        return workerMapper.toDto(workerRepository.save(worker));
+        return workerMapper.toDto(workerRepository.save(worker), true);
     }
 
     @Transactional
@@ -208,7 +209,7 @@ public class WorkerService {
         return workerRepository.findByAddress(address)
                 .stream()
                 .filter(worker -> worker.getVerificationStatus() == WorkerVerificationStatus.VERIFIED)
-                .map(workerMapper::toDto)
+                .map(worker -> workerMapper.toDto(worker, false))
                 .toList();
     }
 
@@ -216,7 +217,7 @@ public class WorkerService {
         return workerRepository.findByJob(job)
                 .stream()
                 .filter(worker -> worker.getVerificationStatus() == WorkerVerificationStatus.VERIFIED)
-                .map(workerMapper::toDto)
+                .map(worker -> workerMapper.toDto(worker, false))
                 .toList();
     }
 
@@ -224,19 +225,35 @@ public class WorkerService {
         return workerRepository.findByAvailabilityAndVerificationStatus(
                         WorkerAvailability.AVAILABLE,
                         WorkerVerificationStatus.VERIFIED)
-                .stream().map(workerMapper::toDto).toList();
+                .stream().map(worker -> workerMapper.toDto(worker, false)).toList();
     }
 
     public List<WorkerResponseDto> getWorkersPendingVerification() {
         return workerRepository.findByVerificationStatus(WorkerVerificationStatus.PENDING)
-                .stream().map(workerMapper::toDto).toList();
+                .stream().map(worker -> workerMapper.toDto(worker, true)).toList();
+    }
+
+    public Resource getIdentityDocumentResource(Long id, User currentUser) {
+        Worker worker = getOwnedOrManagedWorker(id, currentUser);
+        if (worker.getIdentityDocumentUrl() == null || worker.getIdentityDocumentUrl().isBlank()) {
+            throw new ResourceNotFoundException("Identity document not found");
+        }
+        return fileStorageService.loadAsResource(worker.getIdentityDocumentUrl());
+    }
+
+    public String getIdentityDocumentContentType(Long id, User currentUser) {
+        Worker worker = getOwnedOrManagedWorker(id, currentUser);
+        if (worker.getIdentityDocumentUrl() == null || worker.getIdentityDocumentUrl().isBlank()) {
+            throw new ResourceNotFoundException("Identity document not found");
+        }
+        return fileStorageService.detectContentType(worker.getIdentityDocumentUrl());
     }
 
     @Transactional
     public WorkerResponseDto uploadWorkerImage(Long id, MultipartFile file, User currentUser) {
         Worker worker = getOwnedOrManagedWorker(id, currentUser);
         worker.setImageUrl(fileStorageService.storeWorkerImage(file));
-        return workerMapper.toDto(workerRepository.save(worker));
+        return workerMapper.toDto(workerRepository.save(worker), true);
     }
 
     @Transactional
@@ -260,7 +277,7 @@ public class WorkerService {
                 com.backend.Projet.model.NotificationType.ADMIN_WORKER_REVIEW
         );
 
-        return workerMapper.toDto(savedWorker);
+        return workerMapper.toDto(savedWorker, true);
     }
 
     @Transactional
@@ -290,7 +307,7 @@ public class WorkerService {
                 com.backend.Projet.model.NotificationType.WORKER_VERIFIED
         );
 
-        return workerMapper.toDto(savedWorker);
+        return workerMapper.toDto(savedWorker, true);
     }
 
     @Transactional
@@ -313,7 +330,7 @@ public class WorkerService {
                 com.backend.Projet.model.NotificationType.WORKER_REJECTED
         );
 
-        return workerMapper.toDto(savedWorker);
+        return workerMapper.toDto(savedWorker, true);
     }
 
     private void validateWorkerIdentity(String nationalIdNumber, String phoneNumber, Long currentWorkerId) {

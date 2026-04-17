@@ -4,6 +4,7 @@ import com.backend.Projet.mapper.TaskMapper;
 import com.backend.Projet.mapper.WorkerMapper;
 import com.backend.Projet.model.BookingStatus;
 import com.backend.Projet.model.TaskStatus;
+import com.backend.Projet.model.User;
 import com.backend.Projet.model.Worker;
 import com.backend.Projet.model.WorkerVerificationStatus;
 import com.backend.Projet.repository.BookingRepository;
@@ -65,17 +66,20 @@ class AdminServiceTest {
         when(bookingRepository.countByStatus(BookingStatus.PENDING)).thenReturn(4L);
         when(bookingRepository.countByStatus(BookingStatus.ACCEPTED)).thenReturn(2L);
         when(bookingRepository.countByStatus(BookingStatus.COMPLETED)).thenReturn(6L);
-        when(notificationRepository.count()).thenReturn(30L);
+        User currentUser = new User();
+        currentUser.setId(99L);
+        when(notificationRepository.countByUserIdAndIsReadFalse(99L)).thenReturn(30L);
         when(workerRepository.findTop5ByVerificationStatusOrderByIdDesc(WorkerVerificationStatus.PENDING))
                 .thenReturn(List.of(Worker.builder().id(1L).name("Ahmed").build()));
         when(taskRepository.findTop5ByStatusOrderByIdDesc(TaskStatus.PENDING_REVIEW))
                 .thenReturn(List.of());
 
-        var response = adminService.getDashboard();
+        var response = adminService.getDashboard(currentUser);
 
         assertEquals(20L, response.getTotalUsers());
         assertEquals(5L, response.getVerifiedWorkers());
         assertEquals(4L, response.getPendingTasks());
         assertEquals(1, response.getLatestPendingWorkers().size());
+        assertEquals(30L, response.getTotalNotifications());
     }
 }

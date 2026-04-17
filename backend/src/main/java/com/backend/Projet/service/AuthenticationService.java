@@ -7,7 +7,6 @@ import com.backend.Projet.model.Role;
 import com.backend.Projet.model.User;
 import com.backend.Projet.model.Worker;
 import com.backend.Projet.repository.BookingRepository;
-import com.backend.Projet.repository.ChatMessageRepository;
 import com.backend.Projet.repository.NotificationRepository;
 import com.backend.Projet.repository.OfferRepository;
 import com.backend.Projet.repository.RatingRepository;
@@ -17,20 +16,21 @@ import com.backend.Projet.repository.WorkerRepository;
 import com.backend.Projet.util.MauritaniaPhoneUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
 
 @Service
 public class AuthenticationService {
     private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -43,7 +43,7 @@ public class AuthenticationService {
     private final RatingRepository ratingRepository;
     private final TaskRepository taskRepository;
     private final NotificationRepository notificationRepository;
-    private final ChatMessageRepository chatMessageRepository;
+    private final FileStorageService fileStorageService;
 
     public AuthenticationService(
             UserRepository userRepository,
@@ -57,7 +57,7 @@ public class AuthenticationService {
             RatingRepository ratingRepository,
             TaskRepository taskRepository,
             NotificationRepository notificationRepository,
-            ChatMessageRepository chatMessageRepository
+            FileStorageService fileStorageService
     ) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
@@ -70,7 +70,7 @@ public class AuthenticationService {
         this.ratingRepository = ratingRepository;
         this.taskRepository = taskRepository;
         this.notificationRepository = notificationRepository;
-        this.chatMessageRepository = chatMessageRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     @Transactional
@@ -92,7 +92,7 @@ public class AuthenticationService {
     public User authenticate(LoginUserDto input) {
         String normalizedPhone = MauritaniaPhoneUtils.normalize(input.getPhone());
         User user = userRepository.findByPhone(normalizedPhone)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new BadCredentialsException("Invalid phone or password"));
         if (!user.isEnabled()) {
             throw new BusinessException("Account not verified. Please verify your account.");
         }
@@ -106,7 +106,7 @@ public class AuthenticationService {
     public void verifyUser(VerifyUserDto input) {
         String normalizedPhone = MauritaniaPhoneUtils.normalize(input.getPhone());
         User user = userRepository.findByPhone(normalizedPhone)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new BusinessException("Invalid verification code or phone"));
 
         if (user.getVerificationCode() == null || user.getVerificationCodeExpiresAt() == null) {
             throw new BusinessException("No verification code found for this account");
@@ -153,7 +153,7 @@ public class AuthenticationService {
         }
 
         User user = optionalUser.get();
-        String token = UUID.randomUUID().toString();
+        String token = generateVerificationCode();
         user.setResetPasswordToken(token);
         user.setResetPasswordExpiresAt(LocalDateTime.now().plusMinutes(15));
         userRepository.save(user);
@@ -201,13 +201,14 @@ public class AuthenticationService {
 
     @Transactional
     public void deleteAccount(User currentUser) {
-        Long userId = currentUser.getId();
+        User managedUser = userRepository.findById(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Long userId = managedUser.getId();
 
         log.info("Starting account deletion for user ID: {}", userId);
 
         // 1. Independent child records
         notificationRepository.deleteByUserId(userId);
-        chatMessageRepository.deleteByParticipantId(userId);
 
         // 2. Worker-related data (if applicable)
         Worker worker = workerRepository.findByUserId(userId).orElse(null);
@@ -215,11 +216,14 @@ public class AuthenticationService {
             Long workerId = worker.getId();
             log.info("User is a worker (ID: {}). Cleaning up worker data.", workerId);
 
+            ratingRepository.deleteByTaskAssignedWorkerId(workerId);
             taskRepository.clearAssignedWorkerByWorkerId(workerId);
             ratingRepository.deleteByBookingWorkerId(workerId); // Delete ratings of bookings the worker performed
             ratingRepository.deleteByWorkerId(workerId);        // Delete general ratings for this worker
             offerRepository.deleteByWorkerId(workerId);
             bookingRepository.deleteByWorkerId(workerId);
+            fileStorageService.deleteStoredFile(worker.getImageUrl());
+            fileStorageService.deleteStoredFile(worker.getIdentityDocumentUrl());
             workerRepository.delete(worker);
         }
 
@@ -239,7 +243,7 @@ public class AuthenticationService {
         taskRepository.deleteByUserId(userId);
 
         // 4. Finally delete the user
-        userRepository.delete(currentUser);
+        userRepository.delete(managedUser);
         log.info("Successfully deleted user ID: {}", userId);
     }
 
@@ -250,8 +254,7 @@ public class AuthenticationService {
     }
 
     private String generateVerificationCode() {
-        Random random = new Random();
-        int code = random.nextInt(900000) + 100000;
+        int code = SECURE_RANDOM.nextInt(900000) + 100000;
         return String.valueOf(code);
     }
 }

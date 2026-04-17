@@ -10,7 +10,6 @@ import {
   updateBookingStatus,
   updateProfile,
   getMyWorkerProfile,
-  updateWorkerAvailability,
   updateWorkerProfile,
   resolveAssetUrl,
   uploadIdentityDocument,
@@ -91,6 +90,12 @@ async function combineIdentityFiles(frontFile, backFile) {
 function FilePreview({ file, label, onClear }) {
   const src = useMemo(() => previewUrl(file), [file])
 
+  useEffect(() => {
+    return () => {
+      if (src) URL.revokeObjectURL(src)
+    }
+  }, [src])
+
   if (!file) return null
 
   return (
@@ -149,7 +154,7 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
   const loadProfileData = useCallback(async () => {
     const [bookingsResult, requestsResult, workerProfileResult] = await Promise.allSettled([
       getMyBookings(),
-      getMyBookingRequests(),
+      isWorker ? getMyBookingRequests() : Promise.resolve([]),
       isWorker ? getMyWorkerProfile() : Promise.resolve(null)
     ])
 
@@ -221,27 +226,6 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
       await refreshAll()
     } catch (err) {
       publishMessage("error", err.message)
-    }
-  }
-
-  const handleToggleAvailability = async () => {
-    if (!workerProfile) return
-    if (!workerProfile.verified) {
-      publishMessage("error", "يجب أن يكون حسابك موثقًا من الإدارة لتغيير حالتك.")
-      return
-    }
-
-    const nextStatus = workerProfile.availability === "AVAILABLE" ? "BUSY" : "AVAILABLE"
-    setLoading(true)
-
-    try {
-      const updated = await updateWorkerAvailability(workerProfile.id, nextStatus)
-      setWorkerProfile(updated)
-      publishMessage("success", `أنت الآن ${nextStatus === "AVAILABLE" ? "متاح للعمل" : "مشغول حاليًا"}.`)
-    } catch (err) {
-      publishMessage("error", err.message)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -326,8 +310,23 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
         delete next[bookingId]
         return next
       })
+      setBookings((current) =>
+        current.map((booking) =>
+          booking.id === bookingId ? { ...booking, isRated: true, rated: true } : booking
+        )
+      )
       await refreshAll()
     } catch (err) {
+      if (err.message === "You already rated this booking") {
+        setBookings((current) =>
+          current.map((booking) =>
+            booking.id === bookingId ? { ...booking, isRated: true, rated: true } : booking
+          )
+        )
+        publishMessage("error", "لقد قيّمت هذا الحجز مسبقاً.")
+        return
+      }
+
       publishMessage("error", err.message)
     }
   }
@@ -654,6 +653,7 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
               {bookings.length ? bookings.map((booking) => {
                 const bookingStatus = String(booking.status || "").toUpperCase()
                 const isCompleted = bookingStatus === "COMPLETED"
+                const isRated = Boolean(booking.isRated ?? booking.rated)
                 const ratingValues = ratingForm[booking.id] || { stars: 0, comment: "" }
 
                 return (
@@ -668,7 +668,7 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
                       </span>
                     </div>
 
-                    {isCompleted && (
+                    {isCompleted && !isRated && (
                       <div className="rounded-2xl bg-surface-50 p-4">
                         <div className="mb-3 flex items-center gap-2 text-sm font-black text-surface-700">
                           <Star size={16} className="text-amber-500" />
@@ -708,6 +708,12 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
                           <Star size={16} />
                           إرسال التقييم
                         </button>
+                      </div>
+                    )}
+
+                    {isCompleted && isRated && (
+                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-black text-emerald-700">
+                        تم تقييم هذا الحجز بالفعل.
                       </div>
                     )}
 

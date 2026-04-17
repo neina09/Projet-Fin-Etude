@@ -1,5 +1,11 @@
 package com.backend.Projet.service;
 
+import com.backend.Projet.exception.BusinessException;
+import com.twilio.Twilio;
+import com.twilio.exception.ApiException;
+import com.twilio.rest.api.v2010.account.Message;
+import com.twilio.type.PhoneNumber;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +22,35 @@ public class SmsService {
     @Value("${app.sms.sender-name:Khadamat MR}")
     private String senderName;
 
+    @Value("${app.sms.twilio.account-sid:}")
+    private String accountSid;
+
+    @Value("${app.sms.twilio.api-key:}")
+    private String apiKey;
+
+    @Value("${app.sms.twilio.api-secret:}")
+    private String apiSecret;
+
+    @Value("${app.sms.twilio.from-number:}")
+    private String fromNumber;
+
+    @Value("${app.sms.twilio.messaging-service-sid:}")
+    private String messagingServiceSid;
+
+    @PostConstruct
+    void initializeTwilio() {
+        if (!smsEnabled) {
+            return;
+        }
+
+        if (isBlank(accountSid) || isBlank(apiKey) || isBlank(apiSecret)) {
+            throw new IllegalStateException("SMS is enabled but Twilio credentials are incomplete");
+        }
+
+        Twilio.init(apiKey, apiSecret, accountSid);
+        log.info("Twilio SMS service initialized successfully");
+    }
+
     public void sendVerificationCode(String phone, String verificationCode) {
         sendSms(phone, "Your verification code is: " + verificationCode);
     }
@@ -30,7 +65,30 @@ public class SmsService {
             return;
         }
 
-        // Hook point for a real SMS provider integration.
-        log.info("SMS provider integration pending. Message to {} from {}: {}", phone, senderName, message);
+        try {
+            var creator = isBlank(messagingServiceSid)
+                    ? Message.creator(new PhoneNumber(phone), resolveFromNumber(), message)
+                    : Message.creator(new PhoneNumber(phone), messagingServiceSid, message);
+
+            creator.create();
+            log.info("SMS sent successfully to {}", phone);
+        } catch (ApiException ex) {
+            log.error("Twilio rejected SMS to {}: {}", phone, ex.getMessage(), ex);
+            throw new BusinessException("Failed to send SMS");
+        } catch (Exception ex) {
+            log.error("Unexpected SMS error for {}: {}", phone, ex.getMessage(), ex);
+            throw new BusinessException("Failed to send SMS");
+        }
+    }
+
+    private PhoneNumber resolveFromNumber() {
+        if (isBlank(fromNumber)) {
+            throw new BusinessException("Twilio sender number is not configured");
+        }
+        return new PhoneNumber(fromNumber);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

@@ -1,8 +1,43 @@
-import React, { useMemo } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, Legend
 } from "recharts"
+
+function ChartFrame({ children }) {
+  const containerRef = useRef(null)
+  const [size, setSize] = useState({ width: 0, height: 288 })
+
+  useEffect(() => {
+    const element = containerRef.current
+    if (!element) return undefined
+
+    const updateSize = () => {
+      const { width, height } = element.getBoundingClientRect()
+      setSize({
+        width: Math.max(Math.round(width), 0),
+        height: Math.max(Math.round(height), 288)
+      })
+    }
+
+    updateSize()
+
+    const observer = new ResizeObserver(() => {
+      updateSize()
+    })
+
+    observer.observe(element)
+    window.requestAnimationFrame(updateSize)
+
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={containerRef} className="h-72 w-full min-h-[288px] min-w-0">
+      {size.width > 0 ? children(size) : <div className="h-full w-full animate-pulse rounded-2xl bg-surface-50" />}
+    </div>
+  )
+}
 
 export default function TaskStatsCharts({ tasks = [] }) {
   const areaData = useMemo(() => {
@@ -44,16 +79,16 @@ export default function TaskStatsCharts({ tasks = [] }) {
   }, [tasks])
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-      <div className="saas-card p-8 bg-white border-surface-200">
+    <div className="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <div className="saas-card min-w-0 border-surface-200 bg-white p-8">
         <div className="mb-6">
           <h3 className="text-lg font-black text-surface-900 font-alexandria">نشاط المهام الأسبوعي</h3>
           <p className="text-xs font-bold text-surface-400 mt-1 uppercase tracking-widest">مقارنة المهام الجديدة خلال الأسبوع</p>
         </div>
 
-        <div className="h-72 w-full min-h-[288px]">
-          <ResponsiveContainer width="100%" height="100%" minHeight={288}>
-            <AreaChart data={areaData}>
+        <ChartFrame>
+          {({ width, height }) => (
+            <AreaChart width={width} height={height} data={areaData}>
               <defs>
                 <linearGradient id="colorTasks" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1} />
@@ -86,19 +121,19 @@ export default function TaskStatsCharts({ tasks = [] }) {
                 fill="url(#colorTasks)"
               />
             </AreaChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </ChartFrame>
       </div>
 
-      <div className="saas-card p-8 bg-white border-surface-200">
+      <div className="saas-card min-w-0 border-surface-200 bg-white p-8">
         <div className="mb-6">
           <h3 className="text-lg font-black text-surface-900 font-alexandria">توزيع حالة المهام</h3>
           <p className="text-xs font-bold text-surface-400 mt-1 uppercase tracking-widest">نسبة المهام حسب الحالة الحالية</p>
         </div>
 
-        <div className="h-72 w-full min-h-[288px]">
-          <ResponsiveContainer width="100%" height="100%" minHeight={288}>
-            <PieChart>
+        <ChartFrame>
+          {({ width, height }) => (
+            <PieChart width={width} height={height}>
               <Pie
                 data={pieData}
                 cx="50%"
@@ -121,8 +156,8 @@ export default function TaskStatsCharts({ tasks = [] }) {
                 formatter={(value) => <span className="text-xs font-bold text-surface-600 font-alexandria ml-2">{value}</span>}
               />
             </PieChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </ChartFrame>
       </div>
     </div>
   )

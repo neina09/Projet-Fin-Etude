@@ -50,7 +50,9 @@ function ClickHandler({ onPick, isListView = false }) {
           const data = await response.json()
           address = data?.display_name?.trim() || address
         }
-      } catch {}
+      } catch {
+        // Keep the raw coordinates when reverse geocoding is unavailable.
+      }
 
       onPick?.({ lat, lng, address })
     }
@@ -79,27 +81,35 @@ export default function LeafletMapPicker({
   const [locationError, setLocationError] = useState("")
   const [routePath, setRoutePath] = useState([])
   const [routeDurationMinutes, setRouteDurationMinutes] = useState(null)
+  const taskPosition = useMemo(
+    () => (taskLocation?.lat && taskLocation?.lng ? [taskLocation.lat, taskLocation.lng] : null),
+    [taskLocation]
+  )
+
+  const syncSelectedPosition = useMemo(
+    () => (initialLocation?.lat && initialLocation?.lng ? [initialLocation.lat, initialLocation.lng] : null),
+    [initialLocation]
+  )
 
   useEffect(() => {
-    if (initialLocation?.lat && initialLocation?.lng) {
-      setSelectedPosition([initialLocation.lat, initialLocation.lng])
-    }
-  }, [initialLocation])
+    if (!syncSelectedPosition) return
+
+    const timeoutId = setTimeout(() => {
+      setSelectedPosition((current) => {
+        if (current?.[0] === syncSelectedPosition[0] && current?.[1] === syncSelectedPosition[1]) {
+          return current
+        }
+
+        return syncSelectedPosition
+      })
+    }, 0)
+
+    return () => clearTimeout(timeoutId)
+  }, [syncSelectedPosition])
 
   useEffect(() => {
-    if (!showCurrentLocation) {
-      setUserPosition(null)
-      setLocationError("")
-      setRoutePath([])
-      setRouteDurationMinutes(null)
-    }
-  }, [showCurrentLocation])
-
-  useEffect(() => {
-    if (!showCurrentLocation || !userPosition || !taskLocation?.lat || !taskLocation?.lng) {
+    if (!showCurrentLocation || !userPosition || !taskPosition) {
       onDistanceChange?.(null)
-      setRoutePath([])
-      setRouteDurationMinutes(null)
       return
     }
 
@@ -108,8 +118,8 @@ export default function LeafletMapPicker({
     getRoadRoute({
       startLat: userPosition[0],
       startLng: userPosition[1],
-      endLat: taskLocation.lat,
-      endLng: taskLocation.lng
+      endLat: taskPosition[0],
+      endLng: taskPosition[1]
     })
       .then((route) => {
         if (cancelled) return
@@ -131,7 +141,7 @@ export default function LeafletMapPicker({
     return () => {
       cancelled = true
     }
-  }, [onDistanceChange, showCurrentLocation, taskLocation, userPosition])
+  }, [onDistanceChange, showCurrentLocation, taskPosition, userPosition])
 
   useEffect(() => {
     const shouldAutoLocate =
@@ -140,9 +150,11 @@ export default function LeafletMapPicker({
 
     if (!shouldAutoLocate) return
 
-    setIsLocating(true)
-    setLocationError("")
     const timeoutId = setTimeout(() => setIsLocating(false), 10000)
+    const startLocatingTimeoutId = setTimeout(() => {
+      setIsLocating(true)
+      setLocationError("")
+    }, 0)
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -169,7 +181,9 @@ export default function LeafletMapPicker({
             const data = await response.json()
             address = data?.display_name?.trim() || address
           }
-        } catch {}
+        } catch {
+          // Keep the raw coordinates when reverse geocoding is unavailable.
+        }
 
         clearTimeout(timeoutId)
         setIsLocating(false)
@@ -187,11 +201,12 @@ export default function LeafletMapPicker({
       },
       { timeout: 8000 }
     )
-  }, [initialLocation, isListView, onLocationSelect, showCurrentLocation])
 
-  const taskPosition = taskLocation?.lat && taskLocation?.lng
-    ? [taskLocation.lat, taskLocation.lng]
-    : null
+    return () => {
+      clearTimeout(startLocatingTimeoutId)
+      clearTimeout(timeoutId)
+    }
+  }, [initialLocation, isListView, onLocationSelect, showCurrentLocation])
 
   const center = useMemo(() => {
     if (showCurrentLocation && userPosition) return userPosition
@@ -207,6 +222,11 @@ export default function LeafletMapPicker({
   }, [isListView, markers, selectedPosition, showCurrentLocation, taskPosition, userPosition])
 
   const zoom = selectedPosition || showCurrentLocation || taskPosition ? 15 : 12
+  const visibleUserPosition = showCurrentLocation ? userPosition : null
+  const visibleRoutePath = showCurrentLocation ? routePath : []
+  const visibleRouteDurationMinutes = showCurrentLocation ? routeDurationMinutes : null
+  const visibleLocationError = showCurrentLocation ? locationError : ""
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-surface-200">
       <MapContainer
@@ -242,15 +262,15 @@ export default function LeafletMapPicker({
           </Marker>
         )}
 
-        {showCurrentLocation && userPosition && (
-          <Marker position={userPosition}>
+        {visibleUserPosition && (
+          <Marker position={visibleUserPosition}>
             <Popup>{userLabel}</Popup>
           </Marker>
         )}
 
-        {showCurrentLocation && routePath.length > 1 && (
+        {visibleRoutePath.length > 1 && (
           <Polyline
-            positions={routePath}
+            positions={visibleRoutePath}
             pathOptions={{ color: "#2563eb", weight: 5, opacity: 0.9 }}
           />
         )}
@@ -287,23 +307,23 @@ export default function LeafletMapPicker({
 
       {showCurrentLocation && (
         <div className="pointer-events-none absolute right-3 top-3 z-[1000] flex max-w-[280px] flex-col gap-2">
-          {routePath.length > 1 && (
+          {visibleRoutePath.length > 1 && (
             <div className="rounded-2xl border border-blue-100 bg-white/95 px-4 py-3 text-right shadow-lg backdrop-blur-sm">
               <p className="text-[11px] font-black uppercase tracking-widest text-blue-500">مسافة الطريق</p>
               <p className="mt-1 text-sm font-bold text-surface-900">
                 {onDistanceChange ? "تم حساب الطريق إلى المهمة" : "المسار جاهز"}
               </p>
-              {routeDurationMinutes !== null && (
+              {visibleRouteDurationMinutes !== null && (
                 <p className="mt-1 text-xs font-bold text-surface-500">
-                  زمن تقريبي: {routeDurationMinutes} دقيقة
+                  زمن تقريبي: {visibleRouteDurationMinutes} دقيقة
                 </p>
               )}
             </div>
           )}
 
-          {locationError && (
+          {visibleLocationError && (
             <div className="rounded-2xl border border-amber-200 bg-white/95 px-4 py-3 text-right text-xs font-bold text-amber-700 shadow-lg backdrop-blur-sm">
-              {locationError}
+              {visibleLocationError}
             </div>
           )}
         </div>

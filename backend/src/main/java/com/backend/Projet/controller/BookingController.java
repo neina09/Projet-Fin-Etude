@@ -6,6 +6,7 @@ import com.backend.Projet.model.User;
 import com.backend.Projet.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -31,10 +32,26 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getMyBookings(currentUser));
     }
 
+    @GetMapping("/my-bookings/paged")
+    public ResponseEntity<Page<BookingResponseDto>> getMyBookingsPaged(
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(bookingService.getMyBookingsPaged(currentUser, page, size));
+    }
+
     @GetMapping("/my-requests")
     public ResponseEntity<List<BookingResponseDto>> getMyRequests(
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(bookingService.getMyRequests(currentUser));
+    }
+
+    @GetMapping("/my-requests/paged")
+    public ResponseEntity<Page<BookingResponseDto>> getMyRequestsPaged(
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(bookingService.getMyRequestsPaged(currentUser, page, size));
     }
 
     @PatchMapping("/{id}/accept")

@@ -1,104 +1,12 @@
-import React, { useMemo, useState } from "react"
-import { ArrowLeft, BadgeCheck, CheckCircle, Clock, MapPin, Shield, Sparkles, TrendingUp, Upload, X, Zap } from "lucide-react"
+import React, { useState } from "react"
+import { ArrowLeft, BadgeCheck, CheckCircle, Clock, MapPin, Shield, Sparkles, TrendingUp, Upload, Zap } from "lucide-react"
 import { createWorkerProfile, getMyWorkerProfile, uploadIdentityDocument, uploadWorkerImage } from "../api"
+import FilePreview from "./FilePreview"
+import { combineIdentityFiles } from "../utils/imageFiles"
+import { storeSessionToken } from "../utils/auth"
 
 const SPECIALTIES = ["سباك", "كهربائي", "دهان", "تنظيف"]
 const SPEC_ICON = { "سباك": "🔧", "كهربائي": "⚡", "دهان": "🎨", "تنظيف": "🧹" }
-
-function previewUrl(file) {
-  return file ? URL.createObjectURL(file) : ""
-}
-
-function readImageDimensions(file) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file)
-    const image = new Image()
-
-    image.onload = () => {
-      resolve({ image, url, width: image.width, height: image.height })
-    }
-
-    image.onerror = () => {
-      URL.revokeObjectURL(url)
-      reject(new Error("تعذر قراءة الصورة المختارة."))
-    }
-
-    image.src = url
-  })
-}
-
-async function combineIdentityFiles(frontFile, backFile) {
-  if (!frontFile && !backFile) return null
-  if (frontFile && !backFile) return frontFile
-  if (!frontFile && backFile) return backFile
-
-  const front = await readImageDimensions(frontFile)
-  const back = await readImageDimensions(backFile)
-
-  const padding = 32
-  const labelHeight = 48
-  const canvas = document.createElement("canvas")
-  const width = Math.max(front.width, back.width) + padding * 2
-  const height = front.height + back.height + padding * 3 + labelHeight * 2
-
-  canvas.width = width
-  canvas.height = height
-
-  const context = canvas.getContext("2d")
-  context.fillStyle = "#ffffff"
-  context.fillRect(0, 0, width, height)
-  context.fillStyle = "#111827"
-  context.font = "bold 24px Arial"
-  context.direction = "rtl"
-  context.textAlign = "right"
-
-  const labelX = width - padding
-  let currentY = padding
-
-  context.fillText("البطاقة - الوجه الأمامي", labelX, currentY + 28)
-  currentY += labelHeight
-  context.drawImage(front.image, (width - front.width) / 2, currentY)
-  currentY += front.height + padding
-
-  context.fillText("البطاقة - الوجه الخلفي", labelX, currentY + 28)
-  currentY += labelHeight
-  context.drawImage(back.image, (width - back.width) / 2, currentY)
-
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92))
-
-  URL.revokeObjectURL(front.url)
-  URL.revokeObjectURL(back.url)
-
-  if (!blob) {
-    throw new Error("تعذر تجهيز صور البطاقة للرفع.")
-  }
-
-  return new File([blob], "identity-front-back.jpg", { type: "image/jpeg" })
-}
-
-function FilePreview({ file, label, onClear }) {
-  const src = useMemo(() => previewUrl(file), [file])
-
-  if (!file) return null
-
-  return (
-    <div className="rounded-2xl border border-surface-200 bg-surface-50 p-3">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <span className="text-xs font-black text-surface-700">{label}</span>
-        <button
-          type="button"
-          onClick={onClear}
-          className="inline-flex items-center gap-1 rounded-lg border border-surface-200 bg-white px-2 py-1 text-xs font-bold text-surface-500 hover:bg-surface-100"
-        >
-          <X size={12} />
-          إزالة
-        </button>
-      </div>
-      <img src={src} alt={label} className="h-40 w-full rounded-xl object-cover" />
-      <p className="mt-2 truncate text-xs font-bold text-surface-500">{file.name}</p>
-    </div>
-  )
-}
 
 export default function BecomeWorker({ onSuccess }) {
   const [form, setForm] = useState({
@@ -140,7 +48,7 @@ export default function BecomeWorker({ onSuccess }) {
       })
 
       if (response?.token) {
-        localStorage.setItem("token", response.token)
+        storeSessionToken(response.token)
       }
 
       const workerProfile = await getMyWorkerProfile()
@@ -252,17 +160,21 @@ export default function BecomeWorker({ onSuccess }) {
               { icon: Shield, title: "توثيق وأمان", text: "كل ملف يمر على مراجعة الإدارة قبل الظهور للعملاء." },
               { icon: Clock, title: "مرونة في التوفر", text: "بعد قبولك يمكنك إدارة أعمالك وحجوزاتك من نفس المنصة." },
               { icon: TrendingUp, title: "نمو تدريجي", text: "تقييمات العملاء وإحصاءات الأداء تساعدك على بناء سمعتك." }
-            ].map(({ icon: Icon, title, text }) => (
-              <div key={title} className="group flex items-start gap-5 p-2">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[1rem] bg-surface-50 text-surface-400 transition-all duration-300 group-hover:bg-primary group-hover:text-white">
-                  <Icon size={22} />
+            ].map((item) => {
+              const ItemIcon = item.icon
+
+              return (
+                <div key={item.title} className="group flex items-start gap-5 p-2">
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[1rem] bg-surface-50 text-surface-400 transition-all duration-300 group-hover:bg-primary group-hover:text-white">
+                    <ItemIcon size={22} />
+                  </div>
+                  <div>
+                    <h4 className="mb-2 text-lg font-bold text-surface-900">{item.title}</h4>
+                    <p className="text-sm font-medium leading-relaxed text-surface-500">{item.text}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="mb-2 text-lg font-bold text-surface-900">{title}</h4>
-                  <p className="text-sm font-medium leading-relaxed text-surface-500">{text}</p>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 // BookingResponseDto.java
 package com.backend.Projet.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.backend.Projet.model.BookingStatus;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -20,5 +21,7 @@ public class BookingResponseDto {
     private String address;
     private LocalDateTime bookingDate;
     private Double price;
+    @JsonProperty("isRated")
+    private boolean isRated;
     private LocalDateTime createdAt;
 }

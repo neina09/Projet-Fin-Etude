@@ -1,6 +1,7 @@
 package com.backend.Projet.service;
 
 import com.backend.Projet.dto.NotificationResponseDto;
+import com.backend.Projet.dto.NotificationUnreadCountDto;
 import com.backend.Projet.exception.ResourceNotFoundException;
 import com.backend.Projet.exception.UnauthorizedException;
 import com.backend.Projet.model.Notification;
@@ -11,6 +12,7 @@ import com.backend.Projet.repository.NotificationRepository;
 import com.backend.Projet.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
@@ -21,6 +23,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final com.backend.Projet.mapper.NotificationMapper notificationMapper;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public void sendNotification(User target, String msg, NotificationType type) {
@@ -33,7 +36,10 @@ public class NotificationService {
                 .message(msg)
                 .type(type)
                 .build();
-        notificationRepository.save(notification);
+        Notification savedNotification = notificationRepository.save(notification);
+        NotificationResponseDto notificationDto = notificationMapper.toDto(savedNotification);
+        messagingTemplate.convertAndSend("/topic/notifications/" + target.getId(), notificationDto);
+        pushUnreadCount(target.getId());
     }
 
     @Transactional
@@ -48,6 +54,13 @@ public class NotificationService {
                 .stream().map(notificationMapper::toDto).toList();
     }
 
+    @Transactional(readOnly = true)
+    public NotificationUnreadCountDto getUnreadCount(User currentUser) {
+        return new NotificationUnreadCountDto(
+                notificationRepository.countByUserIdAndIsReadFalse(currentUser.getId())
+        );
+    }
+
     @Transactional
     public void markAsRead(Long notificationId, User currentUser) {
         Notification notification = notificationRepository.findById(notificationId)
@@ -60,5 +73,19 @@ public class NotificationService {
 
         notification.setRead(true);
         notificationRepository.save(notification);
+        pushUnreadCount(currentUser.getId());
+    }
+
+    @Transactional
+    public void markAllAsRead(User currentUser) {
+        notificationRepository.markAllAsReadByUserId(currentUser.getId());
+        pushUnreadCount(currentUser.getId());
+    }
+
+    private void pushUnreadCount(Long userId) {
+        NotificationUnreadCountDto unreadCountDto = new NotificationUnreadCountDto(
+                notificationRepository.countByUserIdAndIsReadFalse(userId)
+        );
+        messagingTemplate.convertAndSend("/topic/notifications/" + userId + "/count", unreadCountDto);
     }
 }

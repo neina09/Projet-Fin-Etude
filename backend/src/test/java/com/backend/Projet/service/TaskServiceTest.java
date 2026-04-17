@@ -16,6 +16,7 @@ import com.backend.Projet.model.Worker;
 import com.backend.Projet.model.WorkerVerificationStatus;
 import com.backend.Projet.repository.OfferRepository;
 import com.backend.Projet.repository.TaskRepository;
+import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,9 @@ class TaskServiceTest {
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private UserRepository userRepository;
+
     private TaskService taskService;
 
     @BeforeEach
@@ -53,6 +57,7 @@ class TaskServiceTest {
                 taskRepository,
                 offerRepository,
                 workerRepository,
+                userRepository,
                 notificationService,
                 new TaskMapper(),
                 new OfferMapper()
@@ -87,6 +92,7 @@ class TaskServiceTest {
                 .address("Sale")
                 .salary(300)
                 .user(workerUser)
+                .availability(com.backend.Projet.model.WorkerAvailability.AVAILABLE)
                 .verificationStatus(WorkerVerificationStatus.VERIFIED)
                 .build();
 
@@ -143,6 +149,7 @@ class TaskServiceTest {
                 .address("Sale")
                 .salary(300)
                 .user(workerUser)
+                .availability(com.backend.Projet.model.WorkerAvailability.AVAILABLE)
                 .verificationStatus(WorkerVerificationStatus.VERIFIED)
                 .build();
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState, useEffect } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { GoogleMap, Marker, Autocomplete, useJsApiLoader } from "@react-google-maps/api"
 import { Search, Navigation } from "lucide-react"
 
@@ -32,16 +32,29 @@ export default function GoogleMapPicker({
   const [autocomplete, setAutocomplete] = useState(null)
   const [isLocating, setIsLocating] = useState(false)
 
-  // Sync with external location updates (e.g. from ProblemForm auto-detection)
-  useEffect(() => {
-    if (initialLocation && (!marker || (initialLocation.lat !== marker.lat || initialLocation.lng !== marker.lng))) {
-      setMarker(initialLocation)
-      if (map) {
-        map.panTo(initialLocation)
-        map.setZoom(15)
+  const syncMarkerFromProps = useCallback(() => {
+    if (!initialLocation) return
+
+    setMarker((current) => {
+      if (current && initialLocation.lat === current.lat && initialLocation.lng === current.lng) {
+        return current
       }
+
+      return initialLocation
+    })
+
+    if (map) {
+      map.panTo(initialLocation)
+      map.setZoom(15)
     }
   }, [initialLocation, map])
+
+  // Sync with external location updates (e.g. from ProblemForm auto-detection)
+  useEffect(() => {
+    const timeoutId = setTimeout(syncMarkerFromProps, 0)
+
+    return () => clearTimeout(timeoutId)
+  }, [syncMarkerFromProps])
 
   // Auto-detect location on load
   const loadUserLocation = useCallback((mapInstance) => {

@@ -4,7 +4,6 @@ import {
   ClipboardList,
   LayoutDashboard,
   LogOut,
-  MessageSquare,
   ShieldCheck,
   User,
   UserPlus,
@@ -22,7 +21,6 @@ export default function Sidebar({ page, onNavigate, user, onLogout, isOpen, onCl
       { id: "dashboard", label: "الرئيسية", icon: LayoutDashboard },
       { id: "workers", label: "العمال", icon: Users },
       { id: "tasks", label: isWorker ? "المهام والعروض" : "المهام", icon: ClipboardList },
-      { id: "chat", label: "الرسائل", icon: MessageSquare },
       { id: "profile", label: "الملف الشخصي", icon: User }
     ]
 

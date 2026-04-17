@@ -4,6 +4,7 @@ import {
   acceptOffer,
   cancelTaskRequest,
   createOffer,
+  createTaskRating,
   createTask,
   deleteTask,
   getMyOffers,
@@ -74,6 +75,8 @@ export default function ProblemBoard({ currentUser }) {
   const [pendingDelete, setPendingDelete] = useState(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchType, setSearchType] = useState("keyword")
+  const [taskRatingForm, setTaskRatingForm] = useState({})
+  const [ratedTaskIds, setRatedTaskIds] = useState([])
 
   const isWorker = currentUser?.role === "WORKER"
   const isAdmin = currentUser?.role === "ADMIN"
@@ -251,6 +254,46 @@ export default function ProblemBoard({ currentUser }) {
     await fetchTasks()
   }
 
+  const updateTaskRatingField = (taskId, field, value) => {
+    setTaskRatingForm((current) => ({
+      ...current,
+      [taskId]: {
+        stars: current[taskId]?.stars || 0,
+        comment: current[taskId]?.comment || "",
+        [field]: value
+      }
+    }))
+  }
+
+  const handleTaskRatingSubmit = async (taskId) => {
+    const payload = taskRatingForm[taskId]
+
+    if (!payload?.stars) {
+      setError("اختر عدد النجوم قبل إرسال تقييم المهمة.")
+      return
+    }
+
+    setFeedback("")
+    setError("")
+
+    try {
+      await createTaskRating(taskId, {
+        stars: payload.stars,
+        comment: payload.comment || ""
+      })
+
+      setRatedTaskIds((current) => current.includes(taskId) ? current : [...current, taskId])
+      setTaskRatingForm((current) => {
+        const next = { ...current }
+        delete next[taskId]
+        return next
+      })
+      setFeedback("تم إرسال تقييم العامل المرتبط بالمهمة بنجاح.")
+    } catch (err) {
+      setError(err.message || "تعذر إرسال تقييم المهمة.")
+    }
+  }
+
   const previousTasks = myTasks.filter((task) => {
     const status = String(task.status || "").toUpperCase()
     return status === "COMPLETED" || status === "CLOSED" || status === "CANCELLED"
@@ -376,6 +419,7 @@ export default function ProblemBoard({ currentUser }) {
         <section className="mb-16">
           <div className="saas-card border-surface-200 bg-surface-50 p-1">
             <ProblemForm
+              key={editingTask?.id || "new-task"}
               onAdd={addProblem}
               submitting={submitting}
               initialData={editingTask}
@@ -598,21 +642,73 @@ export default function ProblemBoard({ currentUser }) {
                       <h3 className="text-lg font-black text-surface-900">السجل السابق</h3>
                       <span className="text-xs font-bold text-surface-400">{previousTasks.length} مهمة</span>
                     </div>
-                    {previousTasks.map((problem) => (
-                      <ProblemCard
-                        key={problem.id}
-                        problem={problem}
-                        currentUser={currentUser}
-                        onEdit={setEditingTask}
-                        onDelete={(task) => setPendingDelete(task)}
-                        onStatusChange={handleStatusChange}
-                        workerOffer={myOffersByTaskId[problem.id]}
-                        currentWorkerStatus={currentWorkerProfile?.availability}
-                        onSubmitOffer={handleOfferSubmit}
-                        onSelectOffer={handleOfferSelect}
-                        onWorkerDecision={handleWorkerDecision}
-                      />
-                    ))}
+                    {previousTasks.map((problem) => {
+                      const canRateTask =
+                        String(problem.status || "").toUpperCase() === "COMPLETED" &&
+                        Boolean(problem.assignedWorkerId) &&
+                        !ratedTaskIds.includes(problem.id)
+                      const ratingValues = taskRatingForm[problem.id] || { stars: 0, comment: "" }
+
+                      return (
+                        <div key={problem.id} className="space-y-3">
+                          <ProblemCard
+                            problem={problem}
+                            currentUser={currentUser}
+                            onEdit={setEditingTask}
+                            onDelete={(task) => setPendingDelete(task)}
+                            onStatusChange={handleStatusChange}
+                            workerOffer={myOffersByTaskId[problem.id]}
+                            currentWorkerStatus={currentWorkerProfile?.availability}
+                            onSubmitOffer={handleOfferSubmit}
+                            onSelectOffer={handleOfferSelect}
+                            onWorkerDecision={handleWorkerDecision}
+                          />
+
+                          {canRateTask && (
+                            <div className="rounded-[1.75rem] border border-amber-100 bg-amber-50/60 p-5">
+                              <div className="mb-3 flex items-center gap-2 text-sm font-black text-amber-800">
+                                <Star size={16} className="text-amber-500" />
+                                تقييم العامل: {problem.assignedWorkerName || "العامل المعيّن"}
+                              </div>
+
+                              <div className="mb-3 flex flex-wrap gap-2">
+                                {[1, 2, 3, 4, 5].map((value) => (
+                                  <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => updateTaskRatingField(problem.id, "stars", value)}
+                                    className={`rounded-xl px-3 py-2 text-sm font-black transition-all ${
+                                      ratingValues.stars >= value
+                                        ? "bg-amber-500 text-white"
+                                        : "border border-surface-200 bg-white text-surface-400"
+                                    }`}
+                                  >
+                                    {value}
+                                  </button>
+                                ))}
+                              </div>
+
+                              <textarea
+                                value={ratingValues.comment}
+                                onChange={(event) => updateTaskRatingField(problem.id, "comment", event.target.value)}
+                                rows={3}
+                                placeholder="اكتب ملاحظتك على تنفيذ هذه المهمة..."
+                                className="saas-input min-h-[96px] border-surface-200 bg-white p-4"
+                              />
+
+                              <button
+                                type="button"
+                                onClick={() => handleTaskRatingSubmit(problem.id)}
+                                className="btn-saas btn-primary mt-3 h-11 text-sm"
+                              >
+                                <Star size={16} />
+                                إرسال تقييم المهمة
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </>
               ) : tab === "previous" ? (

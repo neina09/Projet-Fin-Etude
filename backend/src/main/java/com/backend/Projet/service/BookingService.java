@@ -7,9 +7,14 @@ import com.backend.Projet.exception.ResourceNotFoundException;
 import com.backend.Projet.exception.UnauthorizedException;
 import com.backend.Projet.model.*;
 import com.backend.Projet.repository.BookingRepository;
+import com.backend.Projet.repository.RatingRepository;
 import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +25,7 @@ import java.util.List;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
+    private final RatingRepository ratingRepository;
     private final WorkerRepository workerRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
@@ -74,9 +80,23 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
+    public Page<BookingResponseDto> getMyBookingsPaged(User currentUser, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("bookingDate").descending());
+        return bookingRepository.findByUserId(currentUser.getId(), pageable)
+                .map(this::toBookingDto);
+    }
+
+    @Transactional(readOnly = true)
     public List<BookingResponseDto> getMyRequests(User currentUser) {
         return bookingRepository.findByWorkerUserId(currentUser.getId())
                 .stream().map(bookingMapper::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BookingResponseDto> getMyRequestsPaged(User currentUser, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("bookingDate").descending());
+        return bookingRepository.findByWorkerUserId(currentUser.getId(), pageable)
+                .map(this::toBookingDto);
     }
 
     @Transactional
@@ -160,7 +180,15 @@ public class BookingService {
         worker.setAvailability(WorkerAvailability.AVAILABLE);
         workerRepository.save(worker);
 
-        return toBookingDto(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+
+        notificationService.sendNotification(
+                booking.getUser(),
+                "Your booking with " + booking.getWorker().getName() + " has been completed",
+                NotificationType.BOOKING_COMPLETED
+        );
+
+        return toBookingDto(saved);
     }
 
     @Transactional
@@ -183,6 +211,8 @@ public class BookingService {
     private BookingResponseDto toBookingDto(Booking booking) {
         Booking hydratedBooking = bookingRepository.findById(booking.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
-        return bookingMapper.toDto(hydratedBooking);
+        BookingResponseDto dto = bookingMapper.toDto(hydratedBooking);
+        dto.setRated(ratingRepository.existsByBookingId(hydratedBooking.getId()));
+        return dto;
     }
 }

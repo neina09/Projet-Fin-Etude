@@ -1,16 +1,106 @@
-# React + Vite
+# شغلني - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+واجهة مشروع تربط بين العميل والعامل داخل منصة واحدة لإدارة المهام، العروض، الحجوزات، المحادثات، والملف المهني للعامل.
 
-Currently, two official plugins are available:
+## الفكرة
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+المشروع يحل مشكلة الوصول السريع إلى عمّال خدمات موثوقين مع وجود دورة واضحة لإدارة الطلب:
+- العميل ينشئ مهمة أو يحجز عاملًا.
+- العامل يرسل عرضًا أو يستقبل طلب حجز.
+- المدير يراجع الطلبات الحساسة مثل المهام الجديدة وطلبات التحول إلى عامل.
+- المنصة تعرض التقييمات، المحادثات، والحالة الحالية لكل طرف.
 
-## React Compiler
+## الأدوار
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `USER`: ينشر المهام، يحجز العمال، ويقيّم بعد اكتمال الخدمة.
+- `WORKER`: ينشئ ملفًا مهنيًا، يتلقى الطلبات، يرسل عروضًا، ويتابع تقييماته.
+- `ADMIN`: يراجع المهام والملفات المهنية ويضبط جودة المحتوى داخل المنصة.
 
-## Expanding the ESLint configuration
+## أهم الميزات
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- تسجيل الدخول والتحقق من الجلسة.
+- لوحة تحكم حسب دور المستخدم.
+- نشر المهام مع تحديد الموقع على الخريطة.
+- استعراض العمال والحجز المباشر.
+- إرسال العروض على المهام وقبولها أو رفضها.
+- محادثات داخلية بين أطراف المهمة أو الحجز.
+- تقييمات للعمال بعد اكتمال الحجز أو المهمة.
+- ملف مهني للعامل مع رفع صورة شخصية ووثيقة هوية.
+
+## التقنيات المستخدمة
+
+- `React 19`
+- `Vite`
+- `React Router`
+- `Tailwind CSS`
+- `Leaflet`
+- `Framer Motion`
+- `Lucide React`
+
+## تشغيل المشروع
+
+### المتطلبات
+
+- `Node.js 20+`
+- خادم Backend يعمل محليًا
+
+### التثبيت
+
+```bash
+npm install
+```
+
+### التشغيل في التطوير
+
+```bash
+npm run dev
+```
+
+### فحص جودة الكود
+
+```bash
+npm run lint
+```
+
+### البناء للإنتاج
+
+```bash
+npm run build
+```
+
+## إعداد البيئة
+
+أنشئ ملف `.env` داخل الواجهة إذا أردت تحديد عنوان صريح للخادم:
+
+```env
+VITE_API_URL=http://localhost:8080
+VITE_OPENROUTESERVICE_API_KEY=
+VITE_GOOGLE_MAPS_API_KEY=
+```
+
+إذا لم تضف `VITE_API_URL` فالمشروع يعتمد المسارات النسبية ويستفيد من إعدادات `vite.config.js` أثناء التطوير.
+
+## بنية مختصرة للمجلدات
+
+```text
+src/
+  components/     مكونات الواجهة الرئيسية
+  pages/          الصفحات العليا
+  hooks/          هوكات مخصصة
+  utils/          أدوات مساعدة مشتركة
+  assets/         الصور والملفات الثابتة
+  api.js          طبقة الاتصال مع الـ backend
+```
+
+## ملاحظات مهمة
+
+- تم تحسين التحقق من الجلسة في الواجهة حتى لا يعتمد الدخول فقط على وجود `token` في `localStorage`.
+- تم تقليل التكرار في رفع الصور ومعاينتها عبر أدوات ومكونات مشتركة.
+- ينصح بإضافة اختبارات واجهة لاحقًا لسيناريوهات الدخول، إنشاء مهمة، والحجوزات.
+
+## تحسينات مستقبلية
+
+- WebSocket بدل polling في المحادثات.
+- اختبارات تلقائية للواجهات الحرجة.
+- تقسيم إضافي للملفات الكبيرة مثل `ProblemBoard` و`ProfileSettings`.
+- Dashboard أكثر تفصيلًا للمدير والعامل.

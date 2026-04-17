@@ -21,6 +21,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,11 +37,20 @@ class WorkerServiceTest {
     @Mock
     private FileStorageService fileStorageService;
 
+    @Mock
+    private NotificationService notificationService;
+
     private WorkerService workerService;
 
     @BeforeEach
     void setUp() {
-        workerService = new WorkerService(workerRepository, userRepository, new WorkerMapper(), fileStorageService);
+        workerService = new WorkerService(
+                workerRepository,
+                userRepository,
+                new WorkerMapper(),
+                fileStorageService,
+                notificationService
+        );
     }
 
     @Test
@@ -68,6 +79,7 @@ class WorkerServiceTest {
 
         assertEquals("22123456", response.getPhoneNumber());
         assertEquals(WorkerVerificationStatus.PENDING, response.getVerificationStatus());
+        verify(notificationService).sendNotificationToRole(eq(Role.ADMIN), any(), any());
     }
 
     @Test
@@ -99,5 +111,6 @@ class WorkerServiceTest {
 
         assertEquals(WorkerVerificationStatus.PENDING, response.getVerificationStatus());
         assertEquals("/uploads/workers/documents/demo.pdf", response.getIdentityDocumentUrl());
+        verify(notificationService).sendNotificationToRole(eq(Role.ADMIN), any(), any());
     }
 }

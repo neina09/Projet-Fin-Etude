@@ -8,7 +8,14 @@ import com.backend.Projet.dto.VerifyUserDto;
 import com.backend.Projet.exception.BusinessException;
 import com.backend.Projet.mapper.UserMapper;
 import com.backend.Projet.model.User;
+import com.backend.Projet.model.Worker;
+import com.backend.Projet.repository.BookingRepository;
+import com.backend.Projet.repository.NotificationRepository;
+import com.backend.Projet.repository.OfferRepository;
+import com.backend.Projet.repository.RatingRepository;
+import com.backend.Projet.repository.TaskRepository;
 import com.backend.Projet.repository.UserRepository;
+import com.backend.Projet.repository.WorkerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +48,27 @@ class AuthenticationServiceTest {
     @Mock
     private SmsService smsService;
 
+    @Mock
+    private WorkerRepository workerRepository;
+
+    @Mock
+    private OfferRepository offerRepository;
+
+    @Mock
+    private BookingRepository bookingRepository;
+
+    @Mock
+    private RatingRepository ratingRepository;
+
+    @Mock
+    private TaskRepository taskRepository;
+
+    @Mock
+    private NotificationRepository notificationRepository;
+
+    @Mock
+    private FileStorageService fileStorageService;
+
     private AuthenticationService authenticationService;
 
     @BeforeEach
@@ -50,7 +78,14 @@ class AuthenticationServiceTest {
                 authenticationManager,
                 passwordEncoder,
                 new UserMapper(),
-                smsService
+                smsService,
+                workerRepository,
+                offerRepository,
+                bookingRepository,
+                ratingRepository,
+                taskRepository,
+                notificationRepository,
+                fileStorageService
         );
     }
 
@@ -154,5 +189,49 @@ class AuthenticationServiceTest {
 
         assertEquals("Reset token has expired", exception.getMessage());
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void forgotPasswordShouldSendSixDigitResetCodeBySms() {
+        User user = new User();
+        user.setPhone("22123456");
+
+        when(userRepository.findByPhone("22123456")).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        authenticationService.forgotPassword("22123456");
+
+        assertNotNull(user.getResetPasswordToken());
+        assertEquals(6, user.getResetPasswordToken().length());
+        verify(smsService).sendPasswordResetToken(eq("22123456"), eq(user.getResetPasswordToken()));
+    }
+
+    @Test
+    void deleteAccountShouldCleanWorkerFilesAndDeleteManagedUser() {
+        User currentUser = new User();
+        currentUser.setId(7L);
+
+        User managedUser = new User();
+        managedUser.setId(7L);
+        managedUser.setPhone("22123456");
+
+        Worker worker = new Worker();
+        worker.setId(3L);
+        worker.setUser(managedUser);
+        worker.setImageUrl("/uploads/workers/images/profile.png");
+        worker.setIdentityDocumentUrl("/uploads/workers/documents/id.pdf");
+
+        when(userRepository.findById(7L)).thenReturn(Optional.of(managedUser));
+        when(workerRepository.findByUserId(7L)).thenReturn(Optional.of(worker));
+
+        authenticationService.deleteAccount(currentUser);
+
+        verify(notificationRepository).deleteByUserId(7L);
+        verify(ratingRepository).deleteByTaskAssignedWorkerId(3L);
+        verify(taskRepository).clearAssignedWorkerByWorkerId(3L);
+        verify(fileStorageService).deleteStoredFile("/uploads/workers/images/profile.png");
+        verify(fileStorageService).deleteStoredFile("/uploads/workers/documents/id.pdf");
+        verify(workerRepository).delete(worker);
+        verify(userRepository).delete(managedUser);
     }
 }

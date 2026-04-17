@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react"
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react"
 import { AnimatePresence } from "framer-motion"
 import { ArrowUpRight, Briefcase, ClipboardList, Clock, Eye, FileText } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -14,20 +14,37 @@ import {
 } from "../api"
 import Sidebar from "./Sidebar"
 import DashboardHeader from "./DashboardHeader"
-import WorkersSection from "./WorkersSection"
-import ProblemBoard from "./ProblemBoard"
-import BecomeWorker from "./BecomeWorker"
-import ChatSystem from "./ChatSystem"
-import AdminDashboard from "./AdminDashboard"
-import TaskStatsCharts from "./TaskStatsCharts"
-import ProfileSettings from "./ProfileSettings"
+
+const WorkersSection = lazy(() => import("./WorkersSection"))
+const ProblemBoard = lazy(() => import("./ProblemBoard"))
+const BecomeWorker = lazy(() => import("./BecomeWorker"))
+
+const AdminDashboard = lazy(() => import("./AdminDashboard"))
+const TaskStatsCharts = lazy(() => import("./TaskStatsCharts"))
+const ProfileSettings = lazy(() => import("./ProfileSettings"))
+
+function SectionLoader({ message = "جاري تحميل القسم..." }) {
+  return (
+    <div className="flex min-h-[260px] items-center justify-center px-6 py-12">
+      <div className="rounded-3xl border border-surface-200 bg-white px-8 py-6 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="h-9 w-9 animate-spin rounded-full border-4 border-surface-100 border-t-primary" />
+          <div>
+            <p className="text-sm font-black text-surface-900">{message}</p>
+            <p className="text-xs font-bold text-surface-400">لحظات ونجهز المحتوى.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const DASHBOARD_ROUTES = {
   dashboard: "/dashboard",
   workers: "/dashboard/workers",
   tasks: "/dashboard/tasks",
   becomeWorker: "/dashboard/become-worker",
-  chat: "/dashboard/chat",
+
   profile: "/dashboard/profile",
   admin: "/dashboard/admin"
 }
@@ -37,7 +54,7 @@ const PAGE_TITLES = {
   workers: "العمال",
   tasks: "المهام",
   becomeWorker: "التسجيل كعامل",
-  chat: "الرسائل",
+
   profile: "الملف الشخصي",
   admin: "لوحة الإدارة"
 }
@@ -76,13 +93,13 @@ export default function Dashboard({ onLogout }) {
     setSidebarOpen(false)
   }
 
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     const currentUser = await getMe()
     setUser(currentUser)
     return currentUser
-  }
+  }, [])
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     const [workersResult, tasksResult, assignedTasksResult, bookingsResult, requestsResult, offersResult, workerProfileResult] = await Promise.allSettled([
       getWorkers(),
       getMyTasks(),
@@ -124,7 +141,7 @@ export default function Dashboard({ onLogout }) {
     if (workerProfileResult.status === "fulfilled" && workerProfileResult.value) {
       setWorkerProfile(workerProfileResult.value)
     }
-  }
+  }, [isWorker])
 
 
   useEffect(() => {
@@ -144,7 +161,7 @@ export default function Dashboard({ onLogout }) {
     return () => {
       active = false
     }
-  }, [onLogout])
+  }, [loadUser, onLogout])
 
   useEffect(() => {
     if (!user) return
@@ -160,7 +177,7 @@ export default function Dashboard({ onLogout }) {
     return () => {
       active = false
     }
-  }, [user])
+  }, [loadDashboardData, user])
 
   useEffect(() => {
     if (isAdmin && page === "dashboard") {
@@ -319,7 +336,9 @@ export default function Dashboard({ onLogout }) {
                     </div>
                   </div>
 
-                  <TaskStatsCharts tasks={isWorker ? assignedTasks : myTasks} />
+                  <Suspense fallback={<SectionLoader message="جاري تحميل الإحصائيات..." />}>
+                    <TaskStatsCharts tasks={isWorker ? assignedTasks : myTasks} />
+                  </Suspense>
 
                   <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-3">
                     {dashboardCards.map((stat, index) => (
@@ -363,14 +382,14 @@ export default function Dashboard({ onLogout }) {
 
                     <div
                       className="saas-card group flex cursor-pointer items-center gap-8 rounded-[2.5rem] border-surface-200 bg-white p-10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
-                      onClick={() => setPage(isAdmin ? "admin" : isWorker ? "chat" : "profile")}
+                      onClick={() => setPage(isAdmin ? "admin" : "profile")}
                     >
                       <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-surface-50 text-4xl transition-all duration-500 group-hover:bg-indigo-50">
-                        {isWorker ? "💬" : "👤"}
+                        👤
                       </div>
                       <div className="flex-1">
                         <h3 className="mb-2 font-alexandria text-xl font-black text-surface-900">
-                          {isWorker ? "الرسائل والإشعارات" : "الملف الشخصي"}
+                          الملف الشخصي
                         </h3>
                         <p className="text-sm font-bold leading-relaxed text-surface-500">
                           {isWorker
@@ -386,32 +405,44 @@ export default function Dashboard({ onLogout }) {
                 </div>
               )}
 
-              {page === "workers" && <WorkersSection currentUser={user} />}
-              {page === "tasks" && <ProblemBoard currentUser={user} />}
+              {page === "workers" && (
+                <Suspense fallback={<SectionLoader message="جاري تحميل قائمة العمال..." />}>
+                  <WorkersSection currentUser={user} />
+                </Suspense>
+              )}
+              {page === "tasks" && (
+                <Suspense fallback={<SectionLoader message="جاري تحميل المهام..." />}>
+                  <ProblemBoard currentUser={user} />
+                </Suspense>
+              )}
               {page === "becomeWorker" && !isAdmin && !isWorker && (
-                <BecomeWorker
-                  onSuccess={async () => {
-                    await loadUser()
-                    await loadDashboardData()
-                    setPage("dashboard")
-                  }}
-                />
+                <Suspense fallback={<SectionLoader message="جاري تحميل التسجيل المهني..." />}>
+                  <BecomeWorker
+                    onSuccess={async () => {
+                      await loadUser()
+                      await loadDashboardData()
+                      setPage("dashboard")
+                    }}
+                  />
+                </Suspense>
               )}
-              {page === "chat" && (
-                <div className="p-4 sm:p-8">
-                  <ChatSystem currentUser={user} />
-                </div>
-              )}
+
               {page === "profile" && (
-                <ProfileSettings
-                  user={user}
-                  onUpdate={(updatedUser) => setUser(updatedUser)}
-                  onRefresh={loadDashboardData}
-                  onBecomeWorker={() => setPage("becomeWorker")}
-                  onLogout={onLogout}
-                />
+                <Suspense fallback={<SectionLoader message="جاري تحميل الملف الشخصي..." />}>
+                  <ProfileSettings
+                    user={user}
+                    onUpdate={(updatedUser) => setUser(updatedUser)}
+                    onRefresh={loadDashboardData}
+                    onBecomeWorker={() => setPage("becomeWorker")}
+                    onLogout={onLogout}
+                  />
+                </Suspense>
               )}
-              {page === "admin" && <AdminDashboard />}
+              {page === "admin" && (
+                <Suspense fallback={<SectionLoader message="جاري تحميل لوحة الإدارة..." />}>
+                  <AdminDashboard />
+                </Suspense>
+              )}
 
               {page === "becomeWorker" && (isAdmin || isWorker) && (
                 <div className="mx-auto max-w-3xl px-6 py-16">

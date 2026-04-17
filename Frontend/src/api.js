@@ -1,4 +1,4 @@
-const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8081").replace(/\/$/, "")
+const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "")
 const OPENROUTESERVICE_API_KEY = import.meta.env.VITE_OPENROUTESERVICE_API_KEY || ""
 
 export const resolveAssetUrl = (value) => {
@@ -66,22 +66,114 @@ const getErrorMessage = (payload) => {
   return "حدث خطأ غير متوقع"
 }
 
+export const isAuthenticationError = (error) => {
+  const message = String(error?.message || "").toLowerCase()
+
+  return Boolean(
+    error?.status === 401 ||
+    message.includes("jwt") ||
+    message.includes("signature") ||
+    message.includes("unauthorized") ||
+    message.includes("forbidden") ||
+    message.includes("token")
+  )
+}
+
 const request = async (path, options = {}) => {
   let response
 
   try {
     response = await fetch(`${BASE_URL}${path}`, options)
-  } catch (error) {
+  } catch {
     throw new Error("تعذر الاتصال بالخادم. تأكد من تشغيل الواجهة الخلفية وإعداد عنوان API بشكل صحيح.")
   }
 
   const payload = await parseResponseBody(response)
 
   if (!response.ok) {
-    throw new Error(getErrorMessage(payload))
+    const error = new Error(getErrorMessage(payload))
+    error.status = response.status
+
+    if (response.status === 401) {
+      localStorage.removeItem("token")
+    }
+
+    throw error
   }
 
   return payload
+}
+
+const normalizeWorker = (worker) => {
+  if (!worker || typeof worker !== "object") return worker
+
+  const verificationStatus = worker.verificationStatus || (worker.verified ? "VERIFIED" : undefined)
+
+  return {
+    ...worker,
+    verificationStatus,
+    verified: Boolean(worker.verified ?? verificationStatus === "VERIFIED"),
+    available: Boolean(worker.available ?? worker.availability === "AVAILABLE"),
+    imageUrl: resolveAssetUrl(worker.imageUrl),
+    identityDocumentUrl: resolveAssetUrl(worker.identityDocumentUrl)
+  }
+}
+
+const normalizeBooking = (booking) => {
+  if (!booking || typeof booking !== "object") return booking
+
+  return {
+    ...booking,
+    isRated: Boolean(booking.isRated ?? booking.rated),
+    rated: Boolean(booking.rated ?? booking.isRated)
+  }
+}
+
+const normalizeTask = (task) => {
+  if (!task || typeof task !== "object") return task
+  return { ...task }
+}
+
+const normalizeNotification = (notification) => {
+  if (!notification || typeof notification !== "object") return notification
+  return {
+    ...notification,
+    isRead: Boolean(notification.isRead ?? notification.read),
+    read: Boolean(notification.read ?? notification.isRead)
+  }
+}
+
+
+
+const normalizePage = (payload, itemNormalizer = (item) => item) => {
+  if (Array.isArray(payload)) {
+    return {
+      content: payload.map(itemNormalizer),
+      page: 0,
+      size: payload.length,
+      totalElements: payload.length,
+      totalPages: 1,
+      first: true,
+      last: true
+    }
+  }
+
+  if (payload && Array.isArray(payload.content)) {
+    return {
+      ...payload,
+      content: payload.content.map(itemNormalizer)
+    }
+  }
+
+  return {
+    content: [],
+    page: 0,
+    size: 0,
+    totalElements: 0,
+    totalPages: 0,
+    first: true,
+    last: true
+  }
 }
 
 export const registerUser = async (username, phone, password) =>
@@ -151,9 +243,12 @@ export const deleteAccount = async () =>
   })
 
 export const getOpenTasks = async () =>
-  request("/api/tasks/open", {
-    headers: buildHeaders({}, true)
-  })
+  normalizePage(
+    await request("/api/tasks/open", {
+      headers: buildHeaders()
+    }),
+    normalizeTask
+  )
 
 export const searchOpenTasks = async ({ keyword = "", address = "", profession = "" } = {}) => {
   const params = new URLSearchParams()
@@ -164,15 +259,21 @@ export const searchOpenTasks = async ({ keyword = "", address = "", profession =
 
   const query = params.toString()
 
-  return request(`/api/tasks/open/search${query ? `?${query}` : ""}`, {
-    headers: buildHeaders({}, true)
-  })
+  return normalizePage(
+    await request(`/api/tasks/open/search${query ? `?${query}` : ""}`, {
+      headers: buildHeaders()
+    }),
+    normalizeTask
+  )
 }
 
 export const getMyTasks = async () =>
-  request("/api/tasks/my-tasks", {
-    headers: buildHeaders({}, true)
-  })
+  normalizePage(
+    await request("/api/tasks/my-tasks", {
+      headers: buildHeaders({}, true)
+    }),
+    normalizeTask
+  )
 
 export const getTasksAssignedToMe = async () =>
   request("/api/tasks/assigned-to-me", {
@@ -247,9 +348,12 @@ export const rejectTask = async (taskId) =>
   })
 
 export const getPendingTasks = async () =>
-  request("/api/tasks/admin/pending", {
-    headers: buildHeaders({}, true)
-  })
+  normalizePage(
+    await request("/api/tasks/admin/pending", {
+      headers: buildHeaders({}, true)
+    }),
+    normalizeTask
+  )
 
 export const acceptOffer = async (offerId) =>
   request(`/api/tasks/offers/${offerId}/worker-accept`, {
@@ -264,83 +368,109 @@ export const refuseOffer = async (offerId) =>
   })
 
 export const getWorkers = async () =>
-  request("/api/workers", {
-    headers: buildHeaders({}, true)
-  })
+  (await request("/api/workers", {
+    headers: buildHeaders()
+  })).map(normalizeWorker)
 
 export const getWorkerById = async (workerId) =>
-  request(`/api/workers/${workerId}`, {
-    headers: buildHeaders({}, true)
-  })
+  normalizeWorker(
+    await request(`/api/workers/${workerId}`, {
+      headers: buildHeaders()
+    })
+  )
 
 export const getMyWorkerProfile = async () =>
-  request("/api/workers/me", {
-    headers: buildHeaders({}, true)
-  })
+  normalizeWorker(
+    await request("/api/workers/me", {
+      headers: buildHeaders({}, true)
+    })
+  )
 
-export const createWorkerProfile = async (workerData) =>
-  request("/api/workers/register", {
+export const createWorkerProfile = async (workerData) => {
+  const payload = await request("/api/workers/register", {
     method: "POST",
     headers: buildHeaders({ "Content-Type": "application/json" }, true),
     body: JSON.stringify(workerData)
   })
 
+  const worker = normalizeWorker(payload?.worker || payload)
+
+  return {
+    ...worker,
+    worker,
+    token: payload?.token,
+    expiresIn: payload?.expiresIn
+  }
+}
+
 export const updateWorkerProfile = async (workerId, workerData) =>
-  request(`/api/workers/${workerId}`, {
-    method: "PUT",
-    headers: buildHeaders({ "Content-Type": "application/json" }, true),
-    body: JSON.stringify(workerData)
-  })
+  normalizeWorker(
+    await request(`/api/workers/${workerId}`, {
+      method: "PUT",
+      headers: buildHeaders({ "Content-Type": "application/json" }, true),
+      body: JSON.stringify(workerData)
+    })
+  )
 
 export const updateWorkerAvailability = async (workerId, availability) =>
-  request(`/api/workers/${workerId}/availability?availability=${encodeURIComponent(availability)}`, {
-    method: "PATCH",
-    headers: buildHeaders({}, true)
-  })
+  normalizeWorker(
+    await request(`/api/workers/${workerId}/availability?availability=${encodeURIComponent(availability)}`, {
+      method: "PATCH",
+      headers: buildHeaders({}, true)
+    })
+  )
 
 export const uploadWorkerImage = async (workerId, file) => {
   const formData = new FormData()
   formData.append("file", file)
 
-  return request(`/api/workers/${workerId}/upload-image`, {
-    method: "POST",
-    headers: buildHeaders({}, true),
-    body: formData
-  })
+  return normalizeWorker(
+    await request(`/api/workers/${workerId}/upload-image`, {
+      method: "POST",
+      headers: buildHeaders({}, true),
+      body: formData
+    })
+  )
 }
 
 export const uploadIdentityDocument = async (workerId, file) => {
   const formData = new FormData()
   formData.append("file", file)
 
-  return request(`/api/workers/${workerId}/upload-identity-document`, {
-    method: "POST",
-    headers: buildHeaders({}, true),
-    body: formData
-  })
+  return normalizeWorker(
+    await request(`/api/workers/${workerId}/upload-identity-document`, {
+      method: "POST",
+      headers: buildHeaders({}, true),
+      body: formData
+    })
+  )
 }
 
 export const verifyWorker = async (workerId) =>
-  request(`/api/workers/admin/${workerId}/verify`, {
-    method: "PATCH",
-    headers: buildHeaders({}, true)
-  })
+  normalizeWorker(
+    await request(`/api/workers/admin/${workerId}/verify`, {
+      method: "PATCH",
+      headers: buildHeaders({}, true)
+    })
+  )
 
 export const rejectWorker = async (workerId) =>
-  request(`/api/workers/admin/${workerId}/reject`, {
-    method: "PATCH",
-    headers: buildHeaders({}, true)
-  })
+  normalizeWorker(
+    await request(`/api/workers/admin/${workerId}/reject`, {
+      method: "PATCH",
+      headers: buildHeaders({}, true)
+    })
+  )
 
 export const getMyBookings = async () =>
-  request("/api/bookings/my-bookings", {
+  (await request("/api/bookings/my-bookings", {
     headers: buildHeaders({}, true)
-  })
+  })).map(normalizeBooking)
 
 export const getMyBookingRequests = async () =>
-  request("/api/bookings/my-requests", {
+  (await request("/api/bookings/my-requests", {
     headers: buildHeaders({}, true)
-  })
+  })).map(normalizeBooking)
 
 export const createBooking = async (bookingData) =>
   request("/api/bookings", {
@@ -362,15 +492,22 @@ export const createRating = async (bookingId, ratingData) =>
     body: JSON.stringify(ratingData)
   })
 
+export const createTaskRating = async (taskId, ratingData) =>
+  request(`/api/ratings/task/${taskId}`, {
+    method: "POST",
+    headers: buildHeaders({ "Content-Type": "application/json" }, true),
+    body: JSON.stringify(ratingData)
+  })
+
 export const getWorkerRatings = async (workerId) =>
-  request(`/api/ratings/worker/${workerId}`, {
-    headers: buildHeaders({}, true)
+  await request(`/api/ratings/worker/${workerId}`, {
+    headers: buildHeaders()
   })
 
 export const getMyNotifications = async () =>
-  request("/api/notifications", {
+  (await request("/api/notifications", {
     headers: buildHeaders({}, true)
-  })
+  })).map(normalizeNotification)
 
 export const markNotificationRead = async (notificationId) =>
   request(`/api/notifications/${notificationId}/read`, {
@@ -388,17 +525,8 @@ export const getAllUsers = async () =>
     headers: buildHeaders({}, true)
   })
 
-export const getChatMessages = async (recipientId) =>
-  request(`/api/chat/history/${recipientId}`, {
-    headers: buildHeaders({}, true)
-  })
 
-export const sendChatMessage = async (recipientId, content) =>
-  request("/api/chat/send", {
-    method: "POST",
-    headers: buildHeaders({ "Content-Type": "application/json" }, true),
-    body: JSON.stringify({ recipientId, content })
-  })
+
 
 export const getRoadRoute = async ({ startLat, startLng, endLat, endLng }) => {
   if (![startLat, startLng, endLat, endLng].every((value) => Number.isFinite(Number(value)))) {

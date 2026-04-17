@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
 @Table(name = "ratings", indexes = {
         @Index(name = "idx_rating_worker_id",  columnList = "worker_id"),
         @Index(name = "idx_rating_user_id",    columnList = "user_id"),
-        @Index(name = "idx_rating_booking_id", columnList = "booking_id")
+        @Index(name = "idx_rating_booking_id", columnList = "booking_id"),
+        @Index(name = "idx_rating_task_id",    columnList = "task_id")
 })
 public class Rating {
 
@@ -28,8 +29,12 @@ public class Rating {
     private User user;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "booking_id", nullable = false, unique = true)
+    @JoinColumn(name = "booking_id", unique = true)
     private Booking booking;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "task_id", unique = true)
+    private Task task;
 
     @Min(1) @Max(5)
     @Column(nullable = false)

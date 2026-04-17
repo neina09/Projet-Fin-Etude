@@ -8,6 +8,7 @@ import com.backend.Projet.exception.UnauthorizedException;
 import com.backend.Projet.model.*;
 import com.backend.Projet.repository.BookingRepository;
 import com.backend.Projet.repository.RatingRepository;
+import com.backend.Projet.repository.TaskRepository;
 import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class RatingService {
 
     private final RatingRepository ratingRepository;
     private final BookingRepository bookingRepository;
+    private final TaskRepository taskRepository;
     private final WorkerRepository workerRepository;
     private final UserRepository userRepository;
     private final com.backend.Projet.mapper.RatingMapper ratingMapper;
@@ -51,6 +53,7 @@ public class RatingService {
                 .worker(booking.getWorker())
                 .user(managedUser)
                 .booking(booking)
+                .task(null)
                 .stars(input.getStars())
                 .comment(input.getComment())
                 .build();
@@ -66,9 +69,54 @@ public class RatingService {
         return toRatingDto(saved);
     }
 
+    @Transactional
+    public RatingResponseDto addTaskRating(Long taskId, RatingRequestDto input, User currentUser) {
+        User managedUser = userRepository.findById(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        if (!task.getUser().getId().equals(currentUser.getId())) {
+            throw new UnauthorizedException("You can only rate your own tasks");
+        }
+
+        if (task.getStatus() != TaskStatus.COMPLETED) {
+            throw new BusinessException("You can only rate completed tasks");
+        }
+
+        if (task.getAssignedWorker() == null) {
+            throw new BusinessException("This task has no assigned worker");
+        }
+
+        if (ratingRepository.findByTaskId(taskId).isPresent()) {
+            throw new BusinessException("You already rated this task");
+        }
+
+        Rating rating = Rating.builder()
+                .worker(task.getAssignedWorker())
+                .user(managedUser)
+                .booking(null)
+                .task(task)
+                .stars(input.getStars())
+                .comment(input.getComment())
+                .build();
+
+        Rating saved = ratingRepository.save(rating);
+        updateWorkerAverageRating(task.getAssignedWorker());
+
+        return toRatingDto(saved);
+    }
+
     public List<RatingResponseDto> getWorkerRatings(Long workerId) {
         return ratingRepository.findByWorkerId(workerId)
                 .stream().map(ratingMapper::toDto).toList();
+    }
+
+    private void updateWorkerAverageRating(Worker worker) {
+        Double avg = ratingRepository.calculateAverageRating(worker.getId());
+        worker.setAverageRating(avg != null ? avg : 0.0);
+        workerRepository.save(worker);
     }
 
     private RatingResponseDto toRatingDto(Rating rating) {

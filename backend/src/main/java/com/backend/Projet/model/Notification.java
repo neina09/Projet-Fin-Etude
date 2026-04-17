@@ -23,7 +23,7 @@ public class Notification {
     private String message;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 32)
     private NotificationType type;
 
     @Column(nullable = false)

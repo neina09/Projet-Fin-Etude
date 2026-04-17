@@ -27,6 +27,14 @@ public class RatingController {
         return ResponseEntity.ok(ratingService.addRating(bookingId, input, currentUser));
     }
 
+    @PostMapping("/task/{taskId}")
+    public ResponseEntity<RatingResponseDto> rateTask(
+            @PathVariable Long taskId,
+            @Valid @RequestBody RatingRequestDto input,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ratingService.addTaskRating(taskId, input, currentUser));
+    }
+
     @GetMapping("/worker/{workerId}")
     public ResponseEntity<List<RatingResponseDto>> getWorkerRatings(
             @PathVariable Long workerId) {

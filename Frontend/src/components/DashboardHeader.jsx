@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { Bell, Menu, Search } from "lucide-react"
 import NotificationList from "./NotificationList"
-import { getMyNotifications, markNotificationRead } from "../api"
+import { getMyNotifications, isAuthenticationError, markNotificationRead } from "../api"
 
 const normalizeNotification = (notification) => ({
   ...notification,
@@ -12,8 +12,11 @@ export default function DashboardHeader({ user, title, onToggleSidebar }) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [hiddenNotificationIds, setHiddenNotificationIds] = useState([])
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
 
   const fetchNotifications = useCallback(async () => {
+    if (!notificationsEnabled) return
+
     try {
       const data = await getMyNotifications()
       const list = (Array.isArray(data) ? data : []).map(normalizeNotification)
@@ -27,11 +30,19 @@ export default function DashboardHeader({ user, title, onToggleSidebar }) {
           .filter((notification) => !notification.isRead)
       )
     } catch (error) {
+      if (isAuthenticationError(error)) {
+        setNotificationsEnabled(false)
+        setNotifications([])
+        return
+      }
+
       console.error("Failed to fetch notifications:", error)
     }
-  }, [hiddenNotificationIds])
+  }, [hiddenNotificationIds, notificationsEnabled])
 
   useEffect(() => {
+    if (!notificationsEnabled) return undefined
+
     const initialTimer = setTimeout(() => {
       fetchNotifications()
     }, 0)
@@ -40,7 +51,7 @@ export default function DashboardHeader({ user, title, onToggleSidebar }) {
       clearTimeout(initialTimer)
       clearInterval(interval)
     }
-  }, [fetchNotifications])
+  }, [fetchNotifications, notificationsEnabled])
 
   const handleMarkRead = async (id) => {
     try {
@@ -48,6 +59,12 @@ export default function DashboardHeader({ user, title, onToggleSidebar }) {
       setHiddenNotificationIds((current) => (current.includes(id) ? current : [...current, id]))
       setNotifications((current) => current.filter((notification) => notification.id !== id))
     } catch (error) {
+      if (isAuthenticationError(error)) {
+        setNotificationsEnabled(false)
+        setNotifications([])
+        return
+      }
+
       console.error("Failed to mark notification as read:", error)
     }
   }

@@ -8,7 +8,9 @@ import com.backend.Projet.service.JwtService;
 import com.backend.Projet.service.WorkerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -140,6 +142,18 @@ public class WorkerController {
             @RequestPart("file") MultipartFile file,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(workerService.uploadIdentityDocument(id, file, currentUser));
+    }
+
+    @GetMapping("/{id}/identity-document")
+    public ResponseEntity<Resource> getIdentityDocument(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        Resource resource = workerService.getIdentityDocumentResource(id, currentUser);
+        String contentType = workerService.getIdentityDocumentContentType(id, currentUser);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(resource);
     }
 
     @DeleteMapping("/{id}")

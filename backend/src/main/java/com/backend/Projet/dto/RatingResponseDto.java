@@ -11,6 +11,7 @@ public class RatingResponseDto {
     private Long userId;
     private String userName;
     private Long bookingId;
+    private Long taskId;
     private int stars;
     private String comment;
     private LocalDateTime createdAt;

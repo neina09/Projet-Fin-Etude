@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 public class WorkerMapper {
 
     public WorkerResponseDto toDto(Worker worker) {
+        return toDto(worker, false);
+    }
+
+    public WorkerResponseDto toDto(Worker worker, boolean includeSensitiveDetails) {
         if (worker == null) {
             return null;
         }
@@ -19,7 +23,7 @@ public class WorkerMapper {
                 .address(worker.getAddress())
                 .salary(worker.getSalary())
                 .imageUrl(worker.getImageUrl())
-                .identityDocumentUrl(worker.getIdentityDocumentUrl())
+                .identityDocumentUrl(includeSensitiveDetails ? worker.getIdentityDocumentUrl() : null)
                 .phoneNumber(worker.getPhoneNumber())
                 .availability(worker.getAvailability())
                 .averageRating(worker.getAverageRating())

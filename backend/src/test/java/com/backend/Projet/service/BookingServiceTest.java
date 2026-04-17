@@ -11,6 +11,8 @@ import com.backend.Projet.model.Worker;
 import com.backend.Projet.model.WorkerAvailability;
 import com.backend.Projet.model.WorkerVerificationStatus;
 import com.backend.Projet.repository.BookingRepository;
+import com.backend.Projet.repository.RatingRepository;
+import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,13 +41,21 @@ class BookingServiceTest {
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private RatingRepository ratingRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
     private BookingService bookingService;
 
     @BeforeEach
     void setUp() {
         bookingService = new BookingService(
                 bookingRepository,
+                ratingRepository,
                 workerRepository,
+                userRepository,
                 notificationService,
                 new BookingMapper()
         );
@@ -86,6 +96,7 @@ class BookingServiceTest {
 
         when(bookingRepository.findById(5L)).thenReturn(Optional.of(booking));
         when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(ratingRepository.existsByBookingId(5L)).thenReturn(false);
 
         BookingResponseDto response = bookingService.acceptBooking(5L, workerAccount);
 
