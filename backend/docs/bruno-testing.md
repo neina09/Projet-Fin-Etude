@@ -28,4 +28,4 @@ This is the fastest way to generate a Bruno collection that stays aligned with t
 
 - Verification codes and reset tokens are logged by the backend.
 - In `prod`, JWT and database credentials must come from environment variables.
-- Swagger UI is available at `http://localhost:8081/swagger-ui.html`.
+- Swagger UI is available at `http://localhost:8081/swagger-ui/index.html`.

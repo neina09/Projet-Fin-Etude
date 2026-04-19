@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from "react"
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom"
 import AuthForm from "./components/AuthForm"
+import AuthPage from "./pages/AuthPage"
 import ProtectedRoute from "./components/ProtectedRoute"
 import { getMe } from "./api"
 import authBg from "./assets/worker-bg.jpg"
@@ -114,20 +115,5 @@ function App() {
   )
 }
 
-function AuthPage({ onLoginSuccess }) {
-  return (
-    <div className="relative flex min-h-screen w-full overflow-hidden" dir="rtl">
-      <img src={authBg} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      <div className="absolute inset-0 bg-slate-950/55" />
-      <div className="absolute inset-0 bg-linear-to-l from-blue-900/45 via-slate-900/40 to-slate-900/45" />
-
-      <div className="relative z-10 flex w-full items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md rounded-3xl border border-white/35 bg-white/90 p-2 backdrop-blur-md shadow-[0_25px_60px_-25px_rgba(15,23,42,0.7)]">
-          <AuthForm onLoginSuccess={onLoginSuccess} />
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default App

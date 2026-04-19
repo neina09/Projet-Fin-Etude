@@ -16,6 +16,7 @@ public class UserMapper {
                 .username(user.getName())
                 .phone(user.getPhone())
                 .role(user.getRole() == null ? null : user.getRole().toString())
+                .imageUrl(user.getImageUrl())
                 .build();
     }
 }

@@ -21,6 +21,9 @@ public class StorageConfiguration implements WebMvcConfigurer {
             return;
         }
 
+        registry.addResourceHandler("/uploads/users/images/**")
+                .addResourceLocations(uploadRoot.resolve("users/images").toUri().toString() + "/");
+
         registry.addResourceHandler("/uploads/workers/images/**")
                 .addResourceLocations(uploadRoot.resolve("workers/images").toUri().toString() + "/");
     }

@@ -1,43 +1,46 @@
 import React, { useEffect, useMemo, useState } from "react"
-import { MapPin, Search, Star, X } from "lucide-react"
-import { createBooking, getWorkerRatings, getWorkers } from "../api"
+import { CalendarClock, MapPin, Search, ShieldCheck, Star, UserRound, Wrench, X } from "lucide-react"
+import { createBooking, getWorkerRatings, getWorkers, resolveAssetUrl } from "../api"
 import WorkerCard from "./WorkerCard"
-import WorkerRequestModal from "./WorkerRequestModal"
 
-const getProximityLabel = (workerAddress, userArea) => {
-  if (!userArea.trim()) return "أدخل مكانك لمعرفة القرب"
+const defaultBookingForm = {
+  bookingDate: "",
+  address: "",
+  description: ""
+}
 
-  const normalizedWorker = workerAddress.trim().toLowerCase()
-  const normalizedUser = userArea.trim().toLowerCase()
+function statusLabel(availability) {
+  return availability === "BUSY" ? "مشغول" : "متاح"
+}
 
-  if (!normalizedWorker) return "الموقع غير مكتمل"
-  if (normalizedWorker === normalizedUser) return "قريب جدًا منك"
-  if (normalizedWorker.includes(normalizedUser) || normalizedUser.includes(normalizedWorker)) return "غالبًا قريب منك"
-  return "قد يكون أبعد عنك"
+function statusClass(availability) {
+  return availability === "BUSY"
+    ? "bg-amber-50 text-amber-700 border-amber-200"
+    : "bg-emerald-50 text-emerald-700 border-emerald-200"
 }
 
 export default function WorkersSection({ currentUser }) {
-  const [search, setSearch] = useState("")
-  const [myArea, setMyArea] = useState("")
-  const [filter, setFilter] = useState("الكل")
-  const [selectedWorker, setSelectedWorker] = useState(null)
-  const [detailsWorker, setDetailsWorker] = useState(null)
-  const [ratings, setRatings] = useState([])
   const [workers, setWorkers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [search, setSearch] = useState("")
+  const [filter, setFilter] = useState("الكل")
+  const [selectedWorker, setSelectedWorker] = useState(null)
+  const [ratings, setRatings] = useState([])
+  const [ratingsLoading, setRatingsLoading] = useState(false)
+  const [bookingForm, setBookingForm] = useState(defaultBookingForm)
+  const [bookingLoading, setBookingLoading] = useState(false)
 
-  const canHire = currentUser?.role !== "ADMIN"
+  const canRequestWorker = Boolean(currentUser)
 
   useEffect(() => {
     const loadWorkers = async () => {
       setLoading(true)
       setError("")
-
       try {
-        const data = await getWorkers()
-        setWorkers(Array.isArray(data) ? data : [])
+        const payload = await getWorkers()
+        setWorkers(Array.isArray(payload) ? payload : [])
       } catch (err) {
         setError(err.message || "تعذر تحميل قائمة العمال.")
       } finally {
@@ -49,73 +52,118 @@ export default function WorkersSection({ currentUser }) {
   }, [])
 
   useEffect(() => {
-    if (!detailsWorker) return
+    if (!selectedWorker?.id) {
+      setRatings([])
+      return
+    }
 
-    getWorkerRatings(detailsWorker.id)
-      .then((data) => setRatings(Array.isArray(data) ? data : []))
-      .catch((err) => setError(err.message || "تعذر تحميل تقييمات العامل."))
-  }, [detailsWorker])
+    const loadRatings = async () => {
+      setRatingsLoading(true)
+      try {
+        const payload = await getWorkerRatings(selectedWorker.id)
+        setRatings(Array.isArray(payload) ? payload : [])
+      } catch {
+        setRatings([])
+      } finally {
+        setRatingsLoading(false)
+      }
+    }
+
+    loadRatings()
+  }, [selectedWorker?.id])
 
   const specialties = useMemo(() => {
-    const jobs = workers.map((worker) => worker.job).filter(Boolean)
-    return ["الكل", ...new Set(jobs)]
+    const items = workers.map((worker) => worker.job).filter(Boolean)
+    return ["الكل", ...new Set(items)]
   }, [workers])
 
-  const filtered = useMemo(() => {
+  const filteredWorkers = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
 
     return workers.filter((worker) => {
-      const haystack = [worker.name, worker.job, worker.address]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-
+      const haystack = [worker.name, worker.job, worker.address].filter(Boolean).join(" ").toLowerCase()
       const matchesSearch = !normalizedSearch || haystack.includes(normalizedSearch)
       const matchesFilter = filter === "الكل" || worker.job === filter
-
       return matchesSearch && matchesFilter
     })
-  }, [workers, search, filter])
+  }, [filter, search, workers])
 
-  const handleHireSubmit = async (bookingData) => {
-    await createBooking(bookingData)
-    setSuccess(`تم إرسال طلب الحجز إلى ${selectedWorker?.name || "العامل"} بنجاح.`)
+  const closeModal = () => {
     setSelectedWorker(null)
+    setRatings([])
+    setBookingForm(defaultBookingForm)
+  }
+
+  const handleOpenWorker = (worker) => {
+    setSelectedWorker(worker)
+    setBookingForm((current) => ({
+      ...current,
+      address: worker.address || ""
+    }))
+  }
+
+  const handleBookingSubmit = async (event) => {
+    event.preventDefault()
+    if (!selectedWorker) return
+
+    setBookingLoading(true)
+    setError("")
+
+    try {
+      const hourlyPrice = Number(selectedWorker.salary || 0)
+      await createBooking({
+        workerId: selectedWorker.id,
+        bookingDate: bookingForm.bookingDate,
+        address: bookingForm.address,
+        description: bookingForm.description,
+        price: hourlyPrice > 0 ? hourlyPrice : 1
+      })
+      setSuccess(`تم إرسال طلب مباشر إلى العامل ${selectedWorker.name} بنجاح.`)
+      closeModal()
+      setTimeout(() => setSuccess(""), 5000)
+    } catch (err) {
+      setError(err.message || "تعذر إرسال الطلب المباشر لهذا العامل.")
+    } finally {
+      setBookingLoading(false)
+    }
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-10">
-      <div className="mb-10 flex flex-col justify-between gap-6">
-        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div>
-            <h2 className="mb-2 font-alexandria text-3xl font-black text-surface-900">العمال المحترفون</h2>
-            <p className="text-sm font-bold uppercase tracking-widest text-surface-500">
-              {filtered.length} عامل متاح حاليًا
-            </p>
-          </div>
-          <div className="w-full md:w-96">
-            <div className="group relative">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-surface-400 transition-colors group-focus-within:text-primary" size={18} />
-              <input
-                type="text"
-                placeholder="ابحث باسم أو مهنة أو مكان..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="saas-input h-12 border-surface-200 pr-11 focus:bg-white"
-              />
-            </div>
-          </div>
+    <div className="mx-auto max-w-7xl px-6 py-10 lg:px-12" dir="rtl">
+      <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="mb-3 text-xs font-black uppercase tracking-[0.3em] text-[#1d4ed8]">سوق العمال</p>
+          <h2 className="text-4xl font-black text-slate-950">اختر العامل المناسب لمهمتك</h2>
+          <p className="mt-3 text-sm font-bold text-slate-500">
+            يمكن للمستخدم إرسال طلب مباشر للعامل، ويمكن للعامل إظهار حالته الحالية وتقييماته وتعليقات العملاء.
+          </p>
         </div>
 
-        <div className="relative max-w-md">
-          <MapPin className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={18} />
-          <input
-            type="text"
-            placeholder="أدخل مكانك لمعرفة قرب العامل منك"
-            value={myArea}
-            onChange={(event) => setMyArea(event.target.value)}
-            className="saas-input h-12 border-surface-200 pr-11 focus:bg-white"
-          />
+        <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[420px]">
+          <div className="relative">
+            <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="ابحث بالاسم أو المهنة أو العنوان"
+              className="h-14 w-full rounded-2xl border border-slate-200 bg-white pr-12 pl-4 text-sm font-bold text-slate-900 outline-none transition-all focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {specialties.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setFilter(item)}
+                className={`rounded-full px-4 py-2 text-xs font-black transition-all ${filter === item
+                    ? "bg-[#1d4ed8] text-white"
+                    : "border border-slate-200 bg-white text-slate-600"
+                  }`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -131,125 +179,180 @@ export default function WorkersSection({ currentUser }) {
         </div>
       )}
 
-      <div className="mb-12 flex flex-wrap gap-3">
-        {specialties.map((job) => (
-          <button
-            key={job}
-            onClick={() => setFilter(job)}
-            className={`rounded-2xl border px-6 py-3 text-sm font-black transition-all duration-300 ${
-              filter === job
-                ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
-                : "border-surface-200 bg-white text-surface-500 hover:border-primary/30 hover:text-primary"
-            }`}
-          >
-            {job}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {loading ? (
-          <div className="saas-card col-span-full border-dashed border-surface-200 bg-surface-50 py-28 text-center">
-            <div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-surface-200 border-t-primary" />
-            <h3 className="mb-2 font-alexandria text-xl font-black text-surface-900">جارٍ تحميل العمال</h3>
-            <p className="text-sm font-bold text-surface-400">نقوم بجلب البيانات الحقيقية من الخادم الآن.</p>
-          </div>
-        ) : filtered.length ? (
-          filtered.map((worker) => (
-            <div key={worker.id} className="space-y-3">
-              <WorkerCard
-                worker={worker}
-                canHire={canHire}
-                onHire={() => setSelectedWorker(worker)}
-                onViewDetails={() => {
-                  setDetailsWorker(worker)
-                  setRatings([])
-                }}
-              />
-              <div className="rounded-2xl border border-surface-200 bg-surface-50 px-4 py-3 text-xs font-black text-surface-500">
-                {getProximityLabel(worker.address || "", myArea)}
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="saas-card col-span-full border-dashed border-surface-200 bg-surface-50 py-28 text-center">
-            <div className="mb-6 text-6xl opacity-30 grayscale">🛠</div>
-            <h3 className="mb-2 font-alexandria text-xl font-black text-surface-900">لا توجد نتائج</h3>
-            <p className="text-sm font-bold text-surface-400">جرّب البحث بكلمات مختلفة أو تغيير التخصص.</p>
-          </div>
-        )}
-      </div>
-
-      {selectedWorker && (
-        <WorkerRequestModal
-          worker={selectedWorker}
-          onClose={() => setSelectedWorker(null)}
-          onSubmit={handleHireSubmit}
-        />
+      {loading ? (
+        <div className="rounded-[2rem] border border-dashed border-slate-200 bg-white p-16 text-center text-sm font-bold text-slate-400">
+          جاري تحميل قائمة العمال...
+        </div>
+      ) : filteredWorkers.length ? (
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
+          {filteredWorkers.map((worker) => (
+            <WorkerCard
+              key={worker.id}
+              worker={worker}
+              canHire={canRequestWorker}
+              onViewDetails={() => handleOpenWorker(worker)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-[2rem] border border-dashed border-slate-200 bg-white p-16 text-center text-sm font-bold text-slate-400">
+          لا يوجد عمال مطابقون لبحثك حالياً.
+        </div>
       )}
 
-      {detailsWorker && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-surface-900/50 p-6 backdrop-blur-sm">
-          <div className="w-full max-w-3xl rounded-[2rem] border border-surface-200 bg-white p-8 shadow-2xl" dir="rtl">
-            <div className="mb-6 flex items-start justify-between gap-4">
+      {selectedWorker && (
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+          <div className="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-[2.5rem] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
               <div>
-                <h3 className="text-2xl font-black text-surface-900">{detailsWorker.name}</h3>
-                <p className="text-sm font-bold text-surface-500">{detailsWorker.job || "خدمة عامة"} - {detailsWorker.address || "غير محدد"}</p>
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-[#1d4ed8]">ملف العامل</p>
+                <h3 className="mt-2 text-2xl font-black text-slate-950">{selectedWorker.name}</h3>
               </div>
               <button
                 type="button"
-                onClick={() => setDetailsWorker(null)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-surface-200 text-surface-400"
-                aria-label="إغلاق التفاصيل"
+                onClick={closeModal}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
-            <div className="mb-6 grid grid-cols-2 gap-4">
-              <div className="rounded-2xl bg-surface-50 p-5 text-center">
-                <div className="mb-1 text-3xl font-black text-surface-900">{detailsWorker.averageRating || 0}</div>
-                <div className="text-xs font-black uppercase tracking-widest text-surface-400">متوسط التقييم</div>
-              </div>
-              <div className="rounded-2xl bg-surface-50 p-5 text-center">
-                <div className="mb-1 text-3xl font-black text-surface-900">{ratings.length}</div>
-                <div className="text-xs font-black uppercase tracking-widest text-surface-400">عدد التقييمات</div>
-              </div>
-            </div>
-
-            <div className="mb-6 overflow-hidden rounded-2xl border border-surface-200">
-              <iframe
-                title={`خريطة ${detailsWorker.name}`}
-                src={`https://www.google.com/maps?q=${encodeURIComponent(detailsWorker.address || "")}&output=embed`}
-                className="h-64 w-full border-0"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
-
-            <div className="mb-6 rounded-2xl border border-surface-200 bg-surface-50 px-4 py-3 text-sm font-bold text-surface-600">
-              {getProximityLabel(detailsWorker.address || "", myArea)}
-            </div>
-
-            <div className="space-y-4">
-              {ratings.length ? ratings.map((rating) => (
-                <div key={rating.id} className="rounded-2xl border border-surface-200 p-4">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <span className="text-sm font-black text-surface-900">{rating.userName || "عميل"}</span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-600">
-                      <Star size={12} className="fill-current" />
-                      {rating.stars}/5
-                    </span>
+            <div className="grid max-h-[calc(92vh-88px)] grid-cols-1 overflow-y-auto lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="space-y-6 p-6 lg:p-8">
+                <div className="flex flex-col gap-5 rounded-[2rem] border border-slate-200 bg-slate-50 p-5 sm:flex-row sm:items-center">
+                  <div className="h-24 w-24 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white">
+                    {selectedWorker.imageUrl ? (
+                      <img src={resolveAssetUrl(selectedWorker.imageUrl)} alt={selectedWorker.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-slate-300">
+                        <UserRound size={36} />
+                      </div>
+                    )}
                   </div>
-                  <p className="text-sm font-medium leading-relaxed text-surface-500">
-                    {rating.comment || "لا توجد ملاحظة نصية مع هذا التقييم."}
+                  <div className="flex-1">
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-700">{selectedWorker.job || "عامل"}</span>
+                      <span className={`rounded-full border px-3 py-1 text-xs font-black ${statusClass(selectedWorker.availability)}`}>
+                        {statusLabel(selectedWorker.availability)}
+                      </span>
+                      {selectedWorker.verificationStatus === "VERIFIED" && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+                          <ShieldCheck size={12} /> موثق
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-2 text-sm font-bold text-slate-600">
+                      <div className="flex items-center gap-2"><MapPin size={15} className="text-[#1d4ed8]" />{selectedWorker.address || "غير محدد"}</div>
+                      <div className="flex items-center gap-2"><Wrench size={15} className="text-[#1d4ed8]" />السعر الحالي: {selectedWorker.salary || 0} MRU</div>
+                      <div className="flex items-center gap-2"><Star size={15} className="text-amber-500" />التقييم: {Number(selectedWorker.averageRating || 0).toFixed(1)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[2rem] border border-slate-200 bg-white p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h4 className="text-lg font-black text-slate-900">آراء العملاء</h4>
+                    <span className="text-xs font-black text-slate-400">{ratings.length} تقييم</span>
+                  </div>
+
+                  {ratingsLoading ? (
+                    <p className="text-sm font-bold text-slate-400">جاري تحميل التقييمات...</p>
+                  ) : ratings.length ? (
+                    <div className="space-y-3">
+                      {ratings.map((rating) => (
+                        <div key={rating.id} className="rounded-2xl bg-slate-50 p-4">
+                          <div className="mb-2 flex items-center justify-between gap-3">
+                            <span className="text-sm font-black text-slate-900">{rating.userName || "عميل"}</span>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((value) => (
+                                <Star
+                                  key={value}
+                                  size={13}
+                                  className={value <= rating.stars ? "fill-amber-400 text-amber-400" : "text-slate-200"}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <p className="text-sm font-bold leading-relaxed text-slate-600">{rating.comment || "لا يوجد تعليق مكتوب."}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-bold text-slate-400">
+                      لا توجد تقييمات لهذا العامل بعد.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 bg-slate-50 p-6 lg:border-r lg:border-t-0 lg:p-8">
+                <div className="mb-5">
+                  <p className="text-xs font-black uppercase tracking-[0.3em] text-[#1d4ed8]">طلب مباشر</p>
+                  <h4 className="mt-2 text-xl font-black text-slate-950">أرسل طلبك للعامل مباشرة</h4>
+                  <p className="mt-2 text-sm font-bold text-slate-500">
+                    بعد إنهاء العمل سيتمكن المستخدم من تقييم العامل، وسيظهر هذا التقييم في ملفه الشخصي.
                   </p>
                 </div>
-              )) : (
-                <div className="rounded-2xl border border-dashed border-surface-200 bg-surface-50 p-8 text-center text-sm font-bold text-surface-400">
-                  لا توجد تقييمات منشورة لهذا العامل بعد.
-                </div>
-              )}
+
+                {canRequestWorker && currentUser?.id !== selectedWorker.userId ? (
+                  <form onSubmit={handleBookingSubmit} className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-xs font-black uppercase tracking-widest text-slate-400">تاريخ ووقت التنفيذ</label>
+                      <div className="relative">
+                        <CalendarClock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                        <input
+                          type="datetime-local"
+                          value={bookingForm.bookingDate}
+                          min={new Date().toISOString().slice(0, 16)}
+                          onChange={(event) => setBookingForm((current) => ({ ...current, bookingDate: event.target.value }))}
+                          className="h-12 w-full rounded-xl border border-slate-200 bg-white pr-12 pl-4 text-sm font-bold text-slate-900 outline-none"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-black uppercase tracking-widest text-slate-400">العنوان</label>
+                      <input
+                        value={bookingForm.address}
+                        onChange={(event) => setBookingForm((current) => ({ ...current, address: event.target.value }))}
+                        className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-black uppercase tracking-widest text-slate-400">وصف المهمة</label>
+                      <textarea
+                        rows={6}
+                        value={bookingForm.description}
+                        onChange={(event) => setBookingForm((current) => ({ ...current, description: event.target.value }))}
+                        placeholder="اكتب تفاصيل المهمة التي تريد تنفيذها"
+                        className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold text-slate-900 outline-none"
+                        required
+                      />
+                    </div>
+
+                    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-bold text-blue-800">
+                      السعر المرسل في الطلب يعتمد على سعر العامل الحالي: {selectedWorker.salary || 0} MRU
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={bookingLoading || selectedWorker.availability === "BUSY"}
+                      className="h-12 w-full rounded-xl bg-[#1d4ed8] text-sm font-black text-white transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {bookingLoading ? "جاري إرسال الطلب..." : selectedWorker.availability === "BUSY" ? "العامل مشغول حالياً" : "إرسال طلب مباشر"}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-bold text-slate-400">
+                    {currentUser?.role === "ADMIN"
+                      ? "حساب المدير لا يرسل طلبات مباشرة للعمال."
+                      : "لا يمكنك إرسال طلب مباشر إلى ملفك كعامل."}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

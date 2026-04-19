@@ -1,21 +1,23 @@
 import React, { useState } from "react"
-import { ArrowLeft, BadgeCheck, CheckCircle, Clock, MapPin, Shield, Sparkles, TrendingUp, Upload, Zap } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Lock, User, Briefcase, Camera, ShieldCheck, Upload, HelpCircle, Share2, Info } from "lucide-react"
 import { createWorkerProfile, getMyWorkerProfile, uploadIdentityDocument, uploadWorkerImage } from "../api"
-import FilePreview from "./FilePreview"
 import { combineIdentityFiles } from "../utils/imageFiles"
 import { storeSessionToken } from "../utils/auth"
+import NotificationList from "./NotificationList" // if needed, else ignore
 
-const SPECIALTIES = ["سباك", "كهربائي", "دهان", "تنظيف"]
-const SPEC_ICON = { "سباك": "🔧", "كهربائي": "⚡", "دهان": "🎨", "تنظيف": "🧹" }
+const SPECIALTIES = ["سباك", "كهربائي", "دهان", "تنظيف", "نجار", "حداد", "بناء"]
+const SPEC_ICON = { "سباك": "🔧", "كهربائي": "⚡", "دهان": "🎨", "تنظيف": "🧹", "نجار": "🪚", "حداد": "⚒️", "بناء": "🧱" }
 
 export default function BecomeWorker({ onSuccess }) {
   const [form, setForm] = useState({
     name: "",
     job: "",
-    salary: "",
+    yearsOfExperience: "",
     phoneNumber: "",
     address: "",
-    nationalIdNumber: ""
+    nationalIdNumber: "",
+    bio: "",
+    isAvailable: true,
   })
   const [workerImageFile, setWorkerImageFile] = useState(null)
   const [identityFrontFile, setIdentityFrontFile] = useState(null)
@@ -25,7 +27,11 @@ export default function BecomeWorker({ onSuccess }) {
   const [error, setError] = useState("")
 
   const setField = (event) => {
-    setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
+    const { name, value, type, checked } = event.target
+    setForm((current) => ({
+      ...current,
+      [name]: type === "checkbox" ? checked : value
+    }))
   }
 
   const handleSubmit = async (event) => {
@@ -42,17 +48,22 @@ export default function BecomeWorker({ onSuccess }) {
         throw new Error("يجب إضافة صورة البطاقة من الأمام والخلف قبل إرسال الطلب.")
       }
 
+      // Ensure backward compatibility with existing API expectations
       const response = await createWorkerProfile({
         ...form,
-        salary: Number(form.salary)
+        salary: 100 // default dummy salary, since UI removed it
       })
 
       if (response?.token) {
         storeSessionToken(response.token)
       }
 
-      const workerProfile = await getMyWorkerProfile()
-      const workerId = workerProfile?.id || response?.id || response?.workerId || response?.worker?.id
+      let workerId = response?.id || response?.workerId || response?.worker?.id
+      if (!workerId) {
+        // Fallback to fetching profile
+        const workerProfile = await getMyWorkerProfile()
+        workerId = workerProfile?.id
+      }
 
       if (!workerId) {
         throw new Error("تم إنشاء الحساب لكن لم أستطع معرفة معرف العامل لرفع الملفات.")
@@ -78,20 +89,20 @@ export default function BecomeWorker({ onSuccess }) {
 
   if (done) {
     return (
-      <div className="relative flex min-h-[80vh] items-center justify-center p-6">
-        <div className="saas-card relative z-10 w-full max-w-lg border-surface-200 bg-white p-12 text-center">
-          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-600">
-            <CheckCircle size={40} />
+      <div className="relative flex min-h-[80vh] items-center justify-center p-6 bg-slate-50">
+        <div className="relative z-10 w-full max-w-lg rounded-[2.5rem] bg-white p-12 text-center shadow-xl border border-slate-100">
+          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-[#1d4ed8]/10 text-[#1d4ed8]">
+            <CheckCircle2 size={40} />
           </div>
-          <h2 className="mb-4 text-3xl font-black tracking-tight text-surface-900">تم استلام طلبك بنجاح</h2>
-          <p className="mb-10 font-medium leading-relaxed text-surface-500">
-            أُرسل ملفك المهني إلى الخلفية بنجاح، مع الصورة الشخصية وصور البطاقة التي اخترتها من جهازك، وسيبقى الحساب في انتظار مراجعة الإدارة قبل نشره للعميل.
+          <h2 className="mb-4 text-3xl font-black tracking-tight text-slate-900">تم استلام طلبك بنجاح</h2>
+          <p className="mb-10 text-sm font-medium leading-relaxed text-slate-500">
+            أُرسل طلبك للمراجعة. سيتم تنبيهك فور موافقة الإدارة على طلب انضمامك.
           </p>
           <button
-            onClick={() => window.location.reload()}
-            className="btn-saas btn-primary h-14 w-full text-base shadow-lg shadow-primary/20"
+            onClick={() => window.location.href = '/'}
+            className="h-14 w-full rounded-2xl bg-[#1d4ed8] text-sm font-black text-white shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
           >
-            العودة إلى المنصة
+            العودة للرئيسية
           </button>
         </div>
       </div>
@@ -99,217 +110,307 @@ export default function BecomeWorker({ onSuccess }) {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-12 lg:px-10">
-      <div className="relative mb-20 overflow-hidden rounded-[3rem] bg-surface-900 p-10 text-white shadow-2xl shadow-surface-900/10 lg:p-20">
-        <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-primary/20 to-transparent" />
-        <div className="pointer-events-none absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-primary/10 blur-[100px]" />
-
-        <div className="relative z-10 grid items-center gap-16 lg:grid-cols-2">
-          <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary-soft backdrop-blur-md">
-              <Sparkles size={14} />
-              Worker Onboarding
-            </div>
-            <h1 className="text-4xl font-black leading-[1.05] tracking-tight lg:text-7xl">
-              ابدأ مسيرتك
-              <br />
-              كعامل <span className="italic text-primary">موثوق</span>
-            </h1>
-            <p className="max-w-xl text-xl font-medium leading-relaxed text-surface-300">
-              هذا النموذج متصل مباشرة بالـ backend عندك، لذلك أي طلب يرسل من هنا يدخل نفس دورة التحقق والإدارة المعتمدة في المنصة.
-            </p>
-
-            <div className="flex flex-wrap gap-6 pt-4">
-              {[
-                { label: "دخل مباشر", sub: "بدون وسيط" },
-                { label: "مرونة كاملة", sub: "حدد وقتك" },
-                { label: "نمو مهني", sub: "ابنِ سمعتك" }
-              ].map(({ label, sub }) => (
-                <div key={label} className="flex flex-col gap-1 border-r border-white/10 pr-6">
-                  <div className="text-lg font-black text-white">{label}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-primary">{sub}</div>
-                </div>
-              ))}
-            </div>
+    <div className="min-h-screen bg-slate-50/50 pt-20 pb-24 font-sans" dir="rtl">
+      <div className="max-w-[1200px] mx-auto px-6">
+        
+        {/* Header Section */}
+        <div className="flex flex-col items-center text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-black mb-6">
+            <ShieldCheck size={16} />
+            مجمع النخبة المهنية
           </div>
-
-          <div className="relative hidden justify-center lg:flex">
-            <div className="saas-card rotate-3 scale-105 rounded-[2.5rem] border-white/10 bg-white/5 p-10 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:rotate-0">
-              <BadgeCheck size={80} className="mb-6 text-primary drop-shadow-sm" />
-              <h3 className="mb-2 text-3xl font-black text-white">شغلني PRO</h3>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-surface-400">هوية مهنية معتمدة</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid items-start gap-16 lg:grid-cols-12">
-        <div className="space-y-12 lg:col-span-12 xl:col-span-5">
-          <div className="space-y-4">
-            <h3 className="text-3xl font-black leading-tight tracking-tight text-surface-900 md:text-4xl">
-              لماذا منصة <span className="text-primary">شغلني</span>؟
-            </h3>
-            <p className="max-w-md text-lg font-medium text-surface-500">
-              الواجهة ترسل البيانات المطلوبة من الخلفية كما هي: التخصص، الهوية الوطنية، الهاتف، العنوان، والأجر.
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-1">
-            {[
-              { icon: Zap, title: "إشعارات فورية", text: "تصلك الطلبات والتحديثات فور اعتماد الملف المهني." },
-              { icon: Shield, title: "توثيق وأمان", text: "كل ملف يمر على مراجعة الإدارة قبل الظهور للعملاء." },
-              { icon: Clock, title: "مرونة في التوفر", text: "بعد قبولك يمكنك إدارة أعمالك وحجوزاتك من نفس المنصة." },
-              { icon: TrendingUp, title: "نمو تدريجي", text: "تقييمات العملاء وإحصاءات الأداء تساعدك على بناء سمعتك." }
-            ].map((item) => {
-              const ItemIcon = item.icon
-
-              return (
-                <div key={item.title} className="group flex items-start gap-5 p-2">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[1rem] bg-surface-50 text-surface-400 transition-all duration-300 group-hover:bg-primary group-hover:text-white">
-                    <ItemIcon size={22} />
-                  </div>
-                  <div>
-                    <h4 className="mb-2 text-lg font-bold text-surface-900">{item.title}</h4>
-                    <p className="text-sm font-medium leading-relaxed text-surface-500">{item.text}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">
+            حول مهارتك إلى <span className="text-[#1d4ed8]">مسيرة مهنية</span> ناجحة
+          </h1>
+          <p className="max-w-2xl text-slate-500 text-sm md:text-base font-bold leading-relaxed">
+            انضم إلى أكبر منصة للمحترفين في المنطقة. نحن نربط أفضل العمال المهرة بالعملاء الذين يقدرون الجودة والإتقان.
+          </p>
         </div>
 
-        <div className="lg:col-span-12 xl:col-span-7">
-          <div className="saas-card border-surface-200 bg-white p-8 shadow-xl shadow-surface-900/[0.03] md:p-12">
-            <div className="mb-10">
-              <h3 className="mb-2 text-2xl font-black text-surface-900">نموذج التسجيل المهني</h3>
-              <p className="text-sm font-medium text-surface-500">
-                ارفع الصورة الشخصية وصور الهوية مباشرة من جهازك، وسيشاهدها المدير بوضوح عند مراجعة طلب التوثيق.
-              </p>
-            </div>
+        {/* Global Error message */}
+        {error && (
+          <div className="mb-8 rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm font-bold text-red-700 shadow-sm">
+            {error}
+          </div>
+        )}
 
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="grid gap-8 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="block text-xs font-black uppercase tracking-widest text-surface-400">الاسم الكامل</label>
-                  <input name="name" required value={form.name} onChange={setField} placeholder="مثال: محمد سالم" className="saas-input h-12 border-surface-100 pr-4 focus:bg-white" />
+        <form onSubmit={handleSubmit} className="space-y-8">
+          
+          {/* Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            {/* Right Column (First in RTL) */}
+            <div className="space-y-8">
+              
+              {/* Personal Info Card */}
+              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#1d4ed8]">
+                    <User size={20} />
+                  </div>
+                  <h2 className="text-xl font-black text-slate-900">المعلومات الشخصية</h2>
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-xs font-black uppercase tracking-widest text-surface-400">التخصص الرئيسي</label>
-                  <select name="job" required value={form.job} onChange={setField} className="saas-input h-12 cursor-pointer border-surface-100 pr-4 focus:bg-white">
-                    <option value="">اختر تخصصك...</option>
-                    {SPECIALTIES.map((specialty) => (
-                      <option key={specialty} value={specialty}>{SPEC_ICON[specialty]} {specialty}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
 
-              <div className="grid gap-8 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="block text-xs font-black uppercase tracking-widest text-surface-400">أجر الساعة (MRU)</label>
-                  <input name="salary" type="number" min="1" required value={form.salary} onChange={setField} placeholder="التكلفة التقديرية" className="saas-input h-12 border-surface-100 pr-4 focus:bg-white" />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-xs font-black uppercase tracking-widest text-surface-400">رقم الهاتف</label>
-                  <input name="phoneNumber" type="tel" required value={form.phoneNumber} onChange={setField} placeholder="+222 23243247" dir="ltr" className="saas-input h-12 border-surface-100 pr-4 text-left focus:bg-white" />
-                </div>
-              </div>
+                <div className="space-y-6">
+                  {/* Full Name */}
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-500">الاسم الكامل</label>
+                    <input
+                      name="name"
+                      required
+                      value={form.name}
+                      onChange={setField}
+                      placeholder="أدخل اسمك كما هو في الهوية"
+                      className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-bold focus:bg-white focus:border-[#1d4ed8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                    />
+                  </div>
 
-              <div className="grid gap-8 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="block text-xs font-black uppercase tracking-widest text-surface-400">العنوان أو الحي</label>
-                  <div className="relative">
-                    <MapPin className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-300" size={18} />
-                    <input name="address" required value={form.address} onChange={setField} placeholder="تفرغ زينة، تيارت، لكصر..." className="saas-input h-12 border-surface-100 pr-11 focus:bg-white" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Phone Number */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-500">رقم الهاتف</label>
+                      <input
+                        name="phoneNumber"
+                        type="tel"
+                        required
+                        value={form.phoneNumber}
+                        onChange={setField}
+                        placeholder="05xxxxxxxxx"
+                        dir="ltr"
+                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-bold text-left focus:bg-white focus:border-[#1d4ed8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                      />
+                    </div>
+                    {/* ID Number */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-500">رقم الهوية الوطنية</label>
+                      <input
+                        name="nationalIdNumber"
+                        required
+                        value={form.nationalIdNumber}
+                        onChange={setField}
+                        placeholder="10xxxxxxx"
+                        dir="ltr"
+                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-bold text-left focus:bg-white focus:border-[#1d4ed8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-500">العنوان بالتفصيل</label>
+                    <input
+                      name="address"
+                      required
+                      value={form.address}
+                      onChange={setField}
+                      placeholder="المدينة، الحي، الشارع"
+                      className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-bold focus:bg-white focus:border-[#1d4ed8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                    />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-xs font-black uppercase tracking-widest text-surface-400">رقم الهوية الوطنية</label>
-                  <input name="nationalIdNumber" required value={form.nationalIdNumber} onChange={setField} placeholder="أدخل رقم الهوية" className="saas-input h-12 border-surface-100 pr-4 focus:bg-white" />
-                </div>
               </div>
 
-              <div className="rounded-2xl border border-surface-200 bg-surface-50 p-5">
-                <div className="mb-4 flex items-center gap-2 text-sm font-black text-surface-900">
-                  <Upload size={16} />
-                  الصورة الشخصية من جهازك
+              {/* Profile Picture Card */}
+              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#1d4ed8]">
+                    <User size={20} />
+                  </div>
+                  <h2 className="text-xl font-black text-slate-900">الصورة الشخصية</h2>
                 </div>
-                <label className="mb-4 inline-flex cursor-pointer items-center rounded-xl bg-primary px-4 py-2 text-sm font-black text-white transition-all hover:bg-primary-hover">
-                  اختر الصورة الشخصية
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(event) => setWorkerImageFile(event.target.files?.[0] || null)}
-                    className="hidden"
-                  />
-                </label>
-                <p className="mb-4 truncate text-xs font-bold text-surface-500">
-                  {workerImageFile ? workerImageFile.name : "لم يتم اختيار صورة بعد."}
-                </p>
-                <FilePreview file={workerImageFile} label="الصورة الشخصية" onClear={() => setWorkerImageFile(null)} />
-                <p className="mt-3 text-xs font-bold text-surface-500">هذه الصورة ستظهر للمدير أثناء المراجعة، ثم للعملاء بعد قبول التوثيق.</p>
-              </div>
 
-              <div className="rounded-2xl border border-surface-200 bg-surface-50 p-5">
-                <div className="mb-2 flex items-center gap-2 text-sm font-black text-surface-900">
-                  <Shield size={16} />
-                  صور البطاقة من جهازك
-                </div>
-                <p className="mb-4 text-xs font-bold text-surface-500">اختر صورة الوجه الأمامي وصورة الوجه الخلفي. الواجهة ستدمجهما تلقائيًا وترفعهما كوثيقة هوية واحدة لأن الخلفية الحالية تستقبل ملفًا واحدًا فقط.</p>
-
-                <div className="grid gap-5 md:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-xs font-black text-surface-500">البطاقة - الوجه الأمامي</label>
+                <div className="flex flex-col items-center justify-center">
+                  <label className="relative cursor-pointer group flex flex-col items-center">
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(event) => setIdentityFrontFile(event.target.files?.[0] || null)}
-                      className="mb-4 block w-full text-sm"
+                      onChange={(e) => setWorkerImageFile(e.target.files?.[0] || null)}
+                      className="hidden"
                     />
-                    <FilePreview file={identityFrontFile} label="الوجه الأمامي" onClear={() => setIdentityFrontFile(null)} />
+                    <div className="w-32 h-32 rounded-full border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 group-hover:border-[#1d4ed8] group-hover:text-[#1d4ed8] transition-all overflow-hidden mb-4">
+                      {workerImageFile ? (
+                        <img src={URL.createObjectURL(workerImageFile)} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <div className="bg-slate-200 w-12 h-12 rounded-full flex items-center justify-center mb-2 group-hover:bg-blue-100 transition-colors">
+                            <Camera size={24} className="text-slate-500 group-hover:text-[#1d4ed8]" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-sm font-black text-slate-900 mb-1">رفع الصورة الشخصية</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">JPG, PNG UP TO 5MB</span>
+                  </label>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Left Column (Second in RTL) */}
+            <div className="space-y-8">
+              
+              {/* Professional Info Card */}
+              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#1d4ed8]">
+                    <Briefcase size={20} />
+                  </div>
+                  <h2 className="text-xl font-black text-slate-900">المعلومات المهنية</h2>
+                </div>
+
+                <div className="space-y-6">
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Specialty */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-500">التخصص المهني</label>
+                      <select
+                        name="job"
+                        required
+                        value={form.job}
+                        onChange={setField}
+                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-bold text-slate-700 focus:bg-white focus:border-[#1d4ed8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none appearance-none"
+                      >
+                        <option value="">اختر المهنة</option>
+                        {SPECIALTIES.map((spec) => (
+                          <option key={spec} value={spec}>{spec}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Years of Experience */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-500">سنوات الخبرة</label>
+                      <input
+                        name="yearsOfExperience"
+                        type="number"
+                        min="0"
+                        value={form.yearsOfExperience}
+                        onChange={setField}
+                        placeholder="0"
+                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-bold text-center focus:bg-white focus:border-[#1d4ed8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                      />
+                    </div>
                   </div>
 
+                  {/* Availability */}
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-slate-900">حالة التوفر</span>
+                        <div className="w-5 h-5 rounded-md bg-blue-100 flex items-center justify-center text-[#1d4ed8]">
+                          <CheckCircle2 size={12} />
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-500">هل يمكنك استقبال طلبات الآن؟</span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-black text-[#1d4ed8]">متاح الآن</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="isAvailable"
+                          checked={form.isAvailable}
+                          onChange={setField}
+                          className="sr-only peer"
+                        />
+                        <div className="w-12 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#1d4ed8]"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Bio */}
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-500">نبذة عن خبرتك</label>
+                    <textarea
+                      name="bio"
+                      value={form.bio}
+                      onChange={setField}
+                      placeholder="تحدث عن أهم المشاريع والمهارات التي تتقنها..."
+                      className="w-full min-h-[140px] bg-slate-50 border border-slate-100 rounded-2xl p-5 text-sm font-bold resize-none focus:bg-white focus:border-[#1d4ed8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none leading-relaxed"
+                    />
+                  </div>
+
+                </div>
+              </div>
+
+              {/* National ID Card */}
+              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#1d4ed8]">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <h2 className="text-xl font-black text-slate-900">الهوية الوطنية</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Front ID */}
                   <div>
-                    <label className="mb-2 block text-xs font-black text-surface-500">البطاقة - الوجه الخلفي</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(event) => setIdentityBackFile(event.target.files?.[0] || null)}
-                      className="mb-4 block w-full text-sm"
-                    />
-                    <FilePreview file={identityBackFile} label="الوجه الخلفي" onClear={() => setIdentityBackFile(null)} />
+                    <label className="cursor-pointer block h-32 w-full rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:border-[#1d4ed8] hover:bg-white transition-all overflow-hidden relative group">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setIdentityFrontFile(e.target.files?.[0] || null)}
+                        className="hidden"
+                      />
+                      {identityFrontFile ? (
+                        <img src={URL.createObjectURL(identityFrontFile)} alt="Front ID" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400 group-hover:text-[#1d4ed8]">
+                          <Upload size={20} />
+                          <span className="text-[11px] font-black">الوجه الأمامي</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                  {/* Back ID */}
+                  <div>
+                    <label className="cursor-pointer block h-32 w-full rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:border-[#1d4ed8] hover:bg-white transition-all overflow-hidden relative group">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setIdentityBackFile(e.target.files?.[0] || null)}
+                        className="hidden"
+                      />
+                      {identityBackFile ? (
+                        <img src={URL.createObjectURL(identityBackFile)} alt="Back ID" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400 group-hover:text-[#1d4ed8]">
+                          <Upload size={20} />
+                          <span className="text-[11px] font-black">الوجه الخلفي</span>
+                        </div>
+                      )}
+                    </label>
                   </div>
                 </div>
               </div>
 
-              {error && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
-                  {error}
-                </div>
-              )}
+            </div>
 
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-saas btn-primary h-14 w-full text-sm font-black shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-60"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-3">
-                      <Clock className="animate-spin" size={20} />
-                      جاري معالجة بياناتك...
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-3">
-                      إرسال الملف المهني
-                      <ArrowLeft size={20} className="translate-x-1" />
-                    </span>
-                  )}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
+
+          {/* Submit Area */}
+          <div className="flex flex-col items-center mt-12 gap-6">
+            <div className="flex items-center gap-2 px-6 py-3 bg-slate-100/50 rounded-full border border-slate-200">
+              <Lock size={14} className="text-[#1d4ed8]" />
+              <span className="text-xs font-bold text-slate-500">جميع البيانات محمية وتستخدم فقط للتحقق من الهوية</span>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative flex h-16 w-[300px] md:w-[400px] items-center justify-center gap-3 overflow-hidden rounded-full bg-[#1d4ed8] text-lg font-black text-white shadow-xl shadow-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/40 active:scale-95 disabled:pointer-events-none disabled:opacity-60"
+            >
+              {loading ? "جاري الإرسال..." : "إرسال طلب الانضمام"}
+              <ArrowLeft size={20} className="transition-transform group-hover:-translate-x-2" />
+            </button>
+            <p className="text-[10px] font-bold text-slate-400">
+              بالضغط على ارسال، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بمنصة العمال.
+            </p>
+          </div>
+        </form>
+
       </div>
     </div>
   )

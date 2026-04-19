@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -233,5 +234,29 @@ class AuthenticationServiceTest {
         verify(fileStorageService).deleteStoredFile("/uploads/workers/documents/id.pdf");
         verify(workerRepository).delete(worker);
         verify(userRepository).delete(managedUser);
+    }
+
+    @Test
+    void uploadProfileImageShouldAlsoPopulateWorkerImageWhenMissing() {
+        User currentUser = new User();
+        currentUser.setId(7L);
+
+        Worker worker = new Worker();
+        worker.setId(3L);
+        worker.setUser(currentUser);
+        worker.setImageUrl(null);
+
+        MockMultipartFile file = new MockMultipartFile("file", "avatar.png", "image/png", "demo".getBytes());
+
+        when(fileStorageService.storeUserImage(file)).thenReturn("/uploads/users/images/avatar.png");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(workerRepository.findByUserId(7L)).thenReturn(Optional.of(worker));
+        when(workerRepository.save(any(Worker.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        UserResponseDto response = authenticationService.uploadProfileImage(currentUser, file);
+
+        assertEquals("/uploads/users/images/avatar.png", response.getImageUrl());
+        assertEquals("/uploads/users/images/avatar.png", worker.getImageUrl());
+        verify(workerRepository).save(worker);
     }
 }

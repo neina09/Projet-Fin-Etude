@@ -22,6 +22,7 @@ public class UserService {
                         .username(user.getName())
                         .phone(user.getPhone())
                         .role(user.getRole() == null ? null : user.getRole().name())
+                        .imageUrl(user.getImageUrl())
                         .build())
                 .toList();
     }

@@ -46,6 +46,10 @@ public class FileStorageService {
         return store(file, "workers/images", ALLOWED_IMAGE_EXTENSIONS);
     }
 
+    public String storeUserImage(MultipartFile file) {
+        return store(file, "users/images", ALLOWED_IMAGE_EXTENSIONS);
+    }
+
     public String storeWorkerDocument(MultipartFile file) {
         return store(file, "workers/documents", ALLOWED_DOCUMENT_EXTENSIONS);
     }

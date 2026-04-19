@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { forgotPassword, loginUser, registerUser, resendCode, resetPassword, verifyUser } from "../api"
 import ForgotPassword from "./auth/ForgotPassword"
 import LoginForm from "./auth/LoginForm"
@@ -6,7 +6,7 @@ import ResetPassword from "./auth/ResetPassword"
 import SignupForm from "./auth/SignupForm"
 import VerifyScreen from "./auth/VerifyScreen"
 
-export default function AuthForm({ onLoginSuccess }) {
+export default function AuthForm({ onLoginSuccess, onViewChange }) {
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [showVerify, setShowVerify] = useState(false)
@@ -16,11 +16,22 @@ export default function AuthForm({ onLoginSuccess }) {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
-  const [formData, setFormData] = useState({ name: "", phone: "", password: "", confirmPassword: "" })
+  const [formData, setFormData] = useState({ name: "", phone: "", password: "", confirmPassword: "", userType: "CLIENT" })
   const [verificationCode, setVerificationCode] = useState("")
   const [forgotPhone, setForgotPhone] = useState("")
   const [resetToken, setResetToken] = useState("")
   const [newPassword, setNewPassword] = useState("")
+
+  // Sync internal state with parent view state
+  useEffect(() => {
+    if (!onViewChange) return;
+    
+    if (showVerify) onViewChange("verify")
+    else if (showForgot) onViewChange("forgot")
+    else if (showReset) onViewChange("reset")
+    else if (isLogin) onViewChange("login")
+    else onViewChange("signup")
+  }, [isLogin, showVerify, showForgot, showReset, onViewChange])
 
   const clearMessages = () => {
     setError("")
@@ -28,7 +39,8 @@ export default function AuthForm({ onLoginSuccess }) {
   }
 
   const handleChange = (event) => {
-    setFormData((current) => ({ ...current, [event.target.name]: event.target.value }))
+    const { name, value } = event.target
+    setFormData((current) => ({ ...current, [name]: value }))
     clearMessages()
   }
 
@@ -50,7 +62,7 @@ export default function AuthForm({ onLoginSuccess }) {
     clearMessages()
 
     try {
-      await registerUser(formData.name, formData.phone, formData.password)
+      await registerUser(formData.name, formData.phone, formData.password, formData.userType)
       setSuccess("تم إنشاء الحساب. أدخل رمز التحقق الذي وصلك عبر الهاتف.")
       setShowVerify(true)
     } catch (err) {
@@ -176,7 +188,7 @@ export default function AuthForm({ onLoginSuccess }) {
   }
 
   const handleSubmit = (event) => {
-    event.preventDefault()
+    if (event) event.preventDefault()
     if (isLogin) handleLogin()
     else handleSignup()
   }
@@ -271,6 +283,7 @@ export default function AuthForm({ onLoginSuccess }) {
   return (
     <SignupForm
       formData={formData}
+      setFormData={setFormData}
       handleChange={handleChange}
       handleSubmit={handleSubmit}
       onSwitch={() => {

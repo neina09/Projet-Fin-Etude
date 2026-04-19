@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -53,6 +54,13 @@ public class UserController {
             @AuthenticationPrincipal User currentUser) {
         UserResponseDto updatedUser = authenticationService.updateProfile(currentUser, input);
         return ResponseEntity.ok(updatedUser);
+    }
+
+    @PostMapping("/upload-image")
+    public ResponseEntity<UserResponseDto> uploadProfileImage(
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(authenticationService.uploadProfileImage(currentUser, file));
     }
 
     @DeleteMapping("/delete")

@@ -14,6 +14,7 @@ public class WorkerResponseDto {
     private int salary;
     private String imageUrl;
     private String identityDocumentUrl;
+    private String nationalIdNumber;
     private String phoneNumber;
     private WorkerAvailability availability;
     private double averageRating;

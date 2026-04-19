@@ -15,9 +15,11 @@ public class TaskResponseDto {
     private TaskStatus    status;
     private Long          userId;
     private String        userName;
+    private String        userImageUrl;
     private Long          assignedWorkerId;
     private Long          assignedWorkerUserId;
     private String        assignedWorkerName;
+    private String        assignedWorkerImageUrl;
     private LocalDateTime createdAt;
     private Double        latitude;
     private Double        longitude;

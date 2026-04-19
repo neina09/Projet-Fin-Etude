@@ -200,6 +200,22 @@ public class AuthenticationService {
     }
 
     @Transactional
+    public UserResponseDto uploadProfileImage(User currentUser, org.springframework.web.multipart.MultipartFile file) {
+        if (currentUser.getImageUrl() != null && !currentUser.getImageUrl().isBlank()) {
+            fileStorageService.deleteStoredFile(currentUser.getImageUrl());
+        }
+        currentUser.setImageUrl(fileStorageService.storeUserImage(file));
+        User saved = userRepository.save(currentUser);
+        workerRepository.findByUserId(saved.getId()).ifPresent(worker -> {
+            if (worker.getImageUrl() == null || worker.getImageUrl().isBlank()) {
+                worker.setImageUrl(saved.getImageUrl());
+                workerRepository.save(worker);
+            }
+        });
+        return userMapper.toDto(saved);
+    }
+
+    @Transactional
     public void deleteAccount(User currentUser) {
         User managedUser = userRepository.findById(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -243,6 +259,7 @@ public class AuthenticationService {
         taskRepository.deleteByUserId(userId);
 
         // 4. Finally delete the user
+        fileStorageService.deleteStoredFile(managedUser.getImageUrl());
         userRepository.delete(managedUser);
         log.info("Successfully deleted user ID: {}", userId);
     }

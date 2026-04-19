@@ -49,6 +49,9 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     public User(String username, String phone, String password) {
         this.username = username;
         this.phone = phone;

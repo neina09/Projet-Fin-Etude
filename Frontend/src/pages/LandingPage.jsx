@@ -4,27 +4,26 @@ import Hero from "../components/Hero"
 import ServicesCards from "../components/ServicesCards"
 import FeaturedWorkers from "../components/FeaturedWorkers"
 import HowItWorks from "../components/HowItWorks"
-import BecomeTasker from "../components/BecomeTasker"
-import AboutUs from "../components/AboutUs"
-import Footer from "../components/Footer"
 import Testimonials from "../components/Testimonials"
-
+import CtaSection from "../components/CtaSection"
+import Footer from "../components/Footer"
 
 function LandingPage() {
   const navigate = useNavigate()
 
   return (
-    <>
+    <div className="landing-wrapper min-h-screen">
       <Navbar onLogin={() => navigate("/auth")} />
-      <Hero />
-      <ServicesCards />
-      <FeaturedWorkers />
-      <HowItWorks />
-      <BecomeTasker />
-      <AboutUs />
-      <Testimonials />
+      <main>
+        <Hero />
+        <ServicesCards />
+        <FeaturedWorkers />
+        <HowItWorks />
+        <Testimonials />
+        <CtaSection />
+      </main>
       <Footer />
-    </>
+    </div>
   )
 }
 

@@ -21,10 +21,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -144,5 +146,45 @@ class BookingServiceTest {
 
         assertEquals("Worker is not available", exception.getMessage());
         verify(bookingRepository, never()).save(any(Booking.class));
+    }
+
+    @Test
+    void getMyBookingsShouldPopulateRatingFlagAndWorkerJob() {
+        User bookingUser = new User();
+        bookingUser.setId(1L);
+        bookingUser.setUsername("customer");
+
+        User workerAccount = new User();
+        workerAccount.setId(2L);
+
+        Worker worker = Worker.builder()
+                .id(3L)
+                .name("Hamza")
+                .job("Electrician")
+                .user(workerAccount)
+                .availability(WorkerAvailability.AVAILABLE)
+                .verificationStatus(WorkerVerificationStatus.VERIFIED)
+                .build();
+
+        Booking booking = Booking.builder()
+                .id(5L)
+                .user(bookingUser)
+                .worker(worker)
+                .status(BookingStatus.COMPLETED)
+                .description("Install lights")
+                .address("Casablanca")
+                .bookingDate(LocalDateTime.now().plusDays(1))
+                .price(250.0)
+                .build();
+
+        when(bookingRepository.findByUserId(1L)).thenReturn(List.of(booking));
+        when(bookingRepository.findById(5L)).thenReturn(Optional.of(booking));
+        when(ratingRepository.existsByBookingId(5L)).thenReturn(false);
+
+        List<BookingResponseDto> response = bookingService.getMyBookings(bookingUser);
+
+        assertEquals(1, response.size());
+        assertEquals("Electrician", response.getFirst().getWorkerJob());
+        assertFalse(response.getFirst().isRated());
     }
 }

@@ -16,6 +16,8 @@ public class BookingResponseDto {
     private Long workerUserId;
     private String workerName;
     private String workerJob;
+    private String workerImageUrl;
+    private String userImageUrl;
     private BookingStatus status;
     private String description;
     private String address;

@@ -1,10 +1,10 @@
 import React from "react"
-import { Eye, EyeOff, Lock, Phone } from "lucide-react"
+import { Eye, EyeOff, Lock, Phone, UserCircle2 } from "lucide-react"
 
 function StatusMessage({ error, success }) {
   if (error) {
     return (
-      <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600 shadow-sm">
+      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50/50 px-4 py-3 text-sm font-bold text-red-600 animate-in fade-in slide-in-from-top-2 duration-300">
         <div className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-red-400" />
         {error}
       </div>
@@ -13,8 +13,8 @@ function StatusMessage({ error, success }) {
 
   if (success) {
     return (
-      <div className="mb-6 flex items-center gap-3 rounded-xl border border-primary/10 bg-primary-soft px-4 py-3 text-sm text-primary shadow-sm">
-        <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm font-bold text-blue-600 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="h-2 w-2 shrink-0 rounded-full bg-blue-400" />
         {success}
       </div>
     )
@@ -36,81 +36,106 @@ export default function LoginForm({
   success
 }) {
   return (
-    <div className="mx-auto w-full max-w-sm animate-fade-in p-1" dir="rtl">
-      <div className="mb-10 text-center">
-        <h2 className="mb-3 text-3xl font-black tracking-tight text-surface-900">مرحباً بعودتك</h2>
-        <p className="text-sm font-medium text-surface-500">
-          سجّل الدخول لإدارة مهامك، حجوزاتك، ورسائلك من لوحة واحدة.
-        </p>
+    <div className="w-full max-w-sm mx-auto animate-in fade-in slide-in-from-left-4 duration-500" dir="rtl">
+      
+      <div className="text-right mb-10">
+        <h1 className="text-4xl font-black text-slate-800 mb-3 tracking-tight">تسجيل الدخول</h1>
+        <p className="text-slate-400 font-bold">مرحباً بك مجدداً في منصة العمال</p>
       </div>
 
       <StatusMessage error={error} success={success} />
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <label className="mr-1 block text-xs font-bold text-surface-700">رقم الهاتف</label>
-          <div className="group relative">
-            <Phone className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 transition-colors group-focus-within:text-primary" size={18} />
+          <label className="auth-label block mr-1 text-slate-500">رقم الهاتف</label>
+          <div className="auth-input-group">
             <input
               type="tel"
               name="phone"
+              placeholder="4X XX XX XX"
               value={formData.phone}
-              placeholder="00000000"
               onChange={handleChange}
-              className="saas-input pr-10 hover:border-surface-300"
+              className="auth-input pr-12 text-left bg-slate-50/50"
+              dir="ltr"
               required
             />
+            <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
           </div>
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <label className="block text-xs font-bold text-surface-700">كلمة المرور</label>
+          <div className="flex items-center justify-between mb-1 px-1">
+            <label className="auth-label block m-0 text-slate-500">كلمة المرور</label>
             <button
               type="button"
               onClick={onForgot}
-              className="text-xs font-bold text-primary transition-colors hover:text-primary-hover"
+              className="text-xs font-bold text-blue-500 hover:text-blue-700 transition-colors"
             >
               نسيت كلمة المرور؟
             </button>
           </div>
-          <div className="group relative">
-            <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 transition-colors group-focus-within:text-primary" size={18} />
+          <div className="auth-input-group">
             <input
               type={showPassword ? "text" : "password"}
               name="password"
-              value={formData.password}
               placeholder="••••••••"
+              value={formData.password}
               onChange={handleChange}
-              className="saas-input pl-10 pr-10 hover:border-surface-300"
+              className="auth-input pr-12 text-left bg-slate-50/50"
+              dir="ltr"
               required
             />
+            <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
             <button
               type="button"
-              onClick={() => setShowPassword((current) => !current)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 transition-colors hover:text-surface-600"
-              aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="btn-saas btn-primary h-12 w-full shadow-md shadow-primary/20 disabled:opacity-50"
-        >
-          {loading ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول"}
-        </button>
+        <div className="flex items-center gap-3 mr-1">
+          <div className="relative flex items-center h-5">
+            <input 
+              type="checkbox" 
+              id="remember" 
+              className="w-5 h-5 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500 transition-all cursor-pointer" 
+            />
+          </div>
+          <label htmlFor="remember" className="text-sm font-bold text-slate-400 cursor-pointer select-none">تذكرني</label>
+        </div>
 
-        <p className="pt-4 text-center text-sm font-medium text-surface-500">
+        <div className="pt-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-auth-primary w-full h-14 text-lg shadow-blue-200"
+          >
+            {loading ? "جاري التحميل..." : "تسجيل الدخول"}
+          </button>
+        </div>
+      </form>
+
+      <div className="mt-10 text-center">
+        <p className="text-slate-400 font-bold">
           ليس لديك حساب؟{" "}
-          <button type="button" onClick={onSwitch} className="font-bold text-primary hover:underline">
-            أنشئ حساباً جديداً
+          <button
+            onClick={onSwitch}
+            className="text-blue-500 hover:underline font-extrabold transition-colors p-1"
+          >
+            إنشاء حساب
           </button>
         </p>
-      </form>
+      </div>
+      
+      {/* Absolute Bottom Links */}
+      <div className="mt-16 flex items-center justify-center gap-6 text-[10px] font-bold text-slate-200 uppercase tracking-widest whitespace-nowrap">
+        <button type="button" className="hover:text-slate-400">الشروط والأحكام</button>
+        <button type="button" className="hover:text-slate-400">سياسة الخصوصية</button>
+        <button type="button" className="hover:text-slate-400">اتصل بنا</button>
+      </div>
     </div>
   )
 }

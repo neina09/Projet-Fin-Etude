@@ -1,5 +1,6 @@
 package com.backend.Projet.config;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +16,6 @@ import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,43 +24,54 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfiguration {
 
+    @Value("${app.security.allowed-origins:http://localhost:5173,http://localhost:3000}")
+    private String allowedOriginsRaw;
+
+    @Value("${app.security.public-docs-enabled:false}")
+    private boolean publicDocsEnabled;
+
     private final AuthenticationProvider authenticationProvider;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final List<String> allowedOrigins;
-    private final boolean publicDocsEnabled;
 
     public SecurityConfiguration(
-            JwtAuthenticationFilter jwtAuthenticationFilter,
-            AuthenticationProvider authenticationProvider,
-            @Value("${app.security.allowed-origins:http://localhost:5173,http://localhost:3000}") String allowedOrigins,
-            @Value("${app.security.public-docs-enabled:false}") boolean publicDocsEnabled
+            @Lazy JwtAuthenticationFilter jwtAuthenticationFilter,
+            AuthenticationProvider authenticationProvider
     ) {
         this.authenticationProvider = authenticationProvider;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
-                .map(String::trim)
-                .filter(origin -> !origin.isBlank())
-                .toList();
-        this.publicDocsEnabled = publicDocsEnabled;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        List<String> allowedOrigins = Arrays.stream(allowedOriginsRaw.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .toList();
+
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource(allowedOrigins)))
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.deny())
-                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https:;"))
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; " +
+                                        "script-src 'self' 'unsafe-inline' https://unpkg.com; " +
+                                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; " +
+                                        "font-src 'self' https://fonts.gstatic.com data:; " +
+                                        "img-src 'self' data: https:; " +
+                                        "connect-src 'self' https:;"
+                        ))
                 )
                 .authorizeHttpRequests(authorize -> {
                     if (publicDocsEnabled) {
-                        authorize.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
+                        authorize.requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll();
                     }
 
                     authorize
                             .requestMatchers("/auth/**").permitAll()
                             .requestMatchers("/ws/**").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/uploads/users/images/**").permitAll()
                             .requestMatchers(HttpMethod.GET, "/uploads/workers/images/**").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/workers").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/workers/paged").permitAll()
@@ -86,8 +97,7 @@ public class SecurityConfiguration {
         return http.build();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    private CorsConfigurationSource corsConfigurationSource(List<String> allowedOrigins) {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

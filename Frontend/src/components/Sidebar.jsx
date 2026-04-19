@@ -1,6 +1,6 @@
 import React, { useMemo } from "react"
 import {
-  Home,
+  Briefcase,
   ClipboardList,
   LayoutDashboard,
   LogOut,
@@ -8,9 +8,10 @@ import {
   User,
   UserPlus,
   Users,
-  Wrench,
-  X
+  Sparkles,
+  Zap
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function Sidebar({ page, onNavigate, user, onLogout, isOpen, onClose }) {
   const isAdmin = user?.role === "ADMIN"
@@ -18,14 +19,14 @@ export default function Sidebar({ page, onNavigate, user, onLogout, isOpen, onCl
 
   const navItems = useMemo(() => {
     const items = [
-      { id: "dashboard", label: "الرئيسية", icon: LayoutDashboard },
-      { id: "workers", label: "العمال", icon: Users },
-      { id: "tasks", label: isWorker ? "المهام والعروض" : "المهام", icon: ClipboardList },
-      { id: "profile", label: "الملف الشخصي", icon: User }
+      { id: "dashboard", label: "الرئيسية الذكية", icon: LayoutDashboard },
+      { id: "workers", label: "سوق الكفاءات", icon: Users },
+      { id: "tasks", label: isWorker ? "المهام والعروض" : "إدارة العمليات", icon: ClipboardList },
+      { id: "profile", label: "الملف الرقمي", icon: User }
     ]
 
     if (!isAdmin && !isWorker) {
-      items.splice(3, 0, { id: "becomeWorker", label: "قدّم كعامل", icon: UserPlus })
+      items.splice(3, 0, { id: "becomeWorker", label: "أضف نفسك كعامل", icon: UserPlus })
     }
 
     return items
@@ -33,114 +34,82 @@ export default function Sidebar({ page, onNavigate, user, onLogout, isOpen, onCl
 
   return (
     <>
-      {isOpen && <div className="fixed inset-0 z-[55] bg-slate-950/35 lg:hidden" onClick={onClose} />}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            onClick={onClose} 
+            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden transition-all" 
+          />
+        )}
+      </AnimatePresence>
 
-      <aside className={`fixed right-0 top-0 z-[60] flex h-screen w-72 flex-col border-l border-surface-200 bg-white shadow-xl shadow-surface-900/[0.02] transition-transform duration-300 ${isOpen ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}>
-        <div className="flex items-center justify-between gap-3 p-6">
-          <button
-            type="button"
-            onClick={() => onNavigate("dashboard")}
-            className="flex items-center gap-3 text-right"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
-              <Wrench size={20} />
-            </div>
-            <div>
-              <span className="block font-alexandria text-2xl font-black tracking-tight text-surface-900">شغلني</span>
-              <span className="block text-[11px] font-bold text-surface-400">لوحة التحكم</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-surface-400 hover:bg-surface-50 lg:hidden"
-            aria-label="إغلاق القائمة"
-          >
-            <X size={18} />
-          </button>
+      <aside className={`fixed right-0 top-0 z-50 flex h-screen w-72 flex-col border-l border-slate-100 bg-white transition-all duration-500 ease-in-out lg:translate-x-0 ${isOpen ? "translate-x-0 shadow-2xl" : "translate-x-full"}`}>
+        {/* Header / Logo Section */}
+        <div className="flex h-24 items-center gap-4 px-8 border-b border-slate-50">
+           <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1d4ed8] shadow-lg shadow-blue-500/20 group cursor-pointer overflow-hidden">
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+              <Briefcase size={24} className="text-white relative z-10" />
+           </div>
+           <div>
+              <h1 className="text-2xl font-black text-slate-950 uppercase tracking-tight">شغلني</h1>
+              <p className="text-[10px] font-black text-[#1d4ed8] tracking-[0.3em] uppercase opacity-70">Smart Platform</p>
+           </div>
         </div>
 
-        <div className="px-4">
-          <button
-            type="button"
-            onClick={() => onNavigate("dashboard")}
-            className="flex w-full items-center gap-3 rounded-2xl border border-surface-200 bg-surface-50 px-4 py-3 text-sm font-bold text-surface-700 hover:border-primary/20 hover:text-primary"
-          >
-            <Home size={18} />
-            <span className="flex-1 text-right">العودة إلى ملخص الحساب</span>
-          </button>
-        </div>
-
-        <nav className="mt-4 flex-1 space-y-2 overflow-y-auto px-4 pb-6">
-          <p className="mb-4 px-4 text-[11px] font-black tracking-[0.2em] text-surface-400">التنقل الرئيسي</p>
-
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onNavigate(item.id)}
-              className={`group flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300 ${
-                page === item.id
-                  ? "bg-primary text-white shadow-lg shadow-primary/20"
-                  : "text-surface-500 hover:bg-surface-50 hover:text-surface-900"
-              }`}
-            >
-              <item.icon size={20} className={page === item.id ? "text-white" : "text-surface-400 transition-colors group-hover:text-primary"} />
-              <span className="flex-1 text-right">{item.label}</span>
-              {page === item.id && <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />}
-            </button>
-          ))}
-
-          {!isAdmin && !isWorker && (
-            <button
-              type="button"
-              onClick={() => onNavigate("becomeWorker")}
-              className="mt-4 w-full rounded-2xl border border-primary/20 bg-primary-soft px-4 py-4 text-sm font-black text-primary transition-all hover:bg-primary hover:text-white"
-            >
-              ابدأ كمزود خدمة
-            </button>
-          )}
+        <nav className="flex-1 space-y-2 px-4 py-8 overflow-y-auto custom-scrollbar">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const active = page === item.id
+            return (
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                className={`group relative flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-sm font-bold transition-all duration-300 ${active ? "bg-blue-50 text-[#1d4ed8]" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"}`}
+              >
+                {active && (
+                  <motion.div layoutId="activePill" className="absolute right-0 h-6 w-1 rounded-l-full bg-[#1d4ed8]" />
+                )}
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500 ${active ? "bg-[#1d4ed8] text-white shadow-lg shadow-blue-500/30 rotate-0" : "bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-[#1d4ed8] group-hover:rotate-12"}`}>
+                  <Icon size={20} />
+                </div>
+                {item.label}
+                {active && <Sparkles size={14} className="mr-auto text-[#1d4ed8] opacity-50 animate-pulse" />}
+              </button>
+            )
+          })}
 
           {isAdmin && (
-            <>
-              <div className="mx-4 my-6 h-px bg-surface-100" />
-              <p className="mb-4 px-4 text-[11px] font-black tracking-[0.2em] text-surface-400">الإدارة</p>
-              <button
-                type="button"
-                onClick={() => onNavigate("admin")}
-                className={`group flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300 ${
-                  page === "admin"
-                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100"
-                    : "text-surface-500 hover:bg-indigo-50 hover:text-indigo-600"
-                }`}
-              >
-                <ShieldCheck size={20} className={page === "admin" ? "text-white" : "text-indigo-400"} />
-                <span className="flex-1 text-right">لوحة الإدارة</span>
-              </button>
-            </>
+             <button
+               onClick={() => onNavigate("admin")}
+               className={`group relative flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-sm font-bold transition-all duration-300 ${page === "admin" ? "bg-amber-50 text-amber-600" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"}`}
+             >
+               <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500 ${page === "admin" ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30 rotate-0" : "bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-amber-500 group-hover:rotate-12"}`}>
+                 <ShieldCheck size={20} />
+               </div>
+               إدارة المنصة
+             </button>
           )}
         </nav>
 
-        <div className="border-t border-surface-100 bg-surface-50/50 p-6">
-          <div className="mb-6 flex items-center gap-3 p-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-surface-200 bg-white font-black text-primary shadow-sm">
-              {user?.username?.[0]?.toUpperCase() || "U"}
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-black text-surface-900">{user?.username || "المستخدم"}</p>
-              <p className="text-[11px] font-bold tracking-tight text-surface-400">
-                {isAdmin ? "حساب مدير" : isWorker ? "حساب عامل" : "حساب عميل"}
-              </p>
+        <div className="p-6">
+          <div className="mb-6 rounded-[2rem] bg-slate-50 p-6 border border-slate-100 relative overflow-hidden group">
+            <div className="absolute -top-10 -right-10 h-32 w-32 bg-[#1d4ed8]/5 rounded-full blur-2xl transition-all group-hover:scale-150" />
+            <div className="relative z-10">
+               <div className="flex items-center gap-3 mb-4">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">حالة الاتصال</p>
+               </div>
+               <p className="text-sm font-black text-slate-900 mb-1">{user?.username || "Guest"}</p>
+               <p className="text-[10px] font-bold text-slate-500 opacity-60 uppercase tracking-widest">ID: {user?.id ? String(user.id).slice(-8).toUpperCase() : "USR"}</p>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={onLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-3 text-xs font-black text-red-500 shadow-sm transition-all hover:border-red-100 hover:bg-red-50"
-          >
-            <LogOut size={16} />
+          <button onClick={onLogout} className="flex w-full items-center gap-4 rounded-2xl px-6 py-4 text-sm font-black text-red-500 transition-all hover:bg-red-50 group shadow-sm hover:shadow-red-100 border border-transparent hover:border-red-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-all duration-500 shadow-sm shadow-red-200">
+               <LogOut size={20} />
+            </div>
             تسجيل الخروج
           </button>
         </div>

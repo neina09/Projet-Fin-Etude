@@ -11,7 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.security.public-docs-enabled=true")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class SecurityConfigurationIntegrationTest {
@@ -48,6 +48,12 @@ class SecurityConfigurationIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     void adminPendingWorkersShouldAllowAdmins() throws Exception {
         mockMvc.perform(get("/api/workers/admin/pending"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void apiDocsShouldBeAccessible() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk());
     }
 }

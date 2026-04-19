@@ -76,7 +76,7 @@ public class BookingService {
     @Transactional(readOnly = true)
     public List<BookingResponseDto> getMyBookings(User currentUser) {
         return bookingRepository.findByUserId(currentUser.getId())
-                .stream().map(bookingMapper::toDto).toList();
+                .stream().map(this::toBookingDto).toList();
     }
 
     @Transactional(readOnly = true)
@@ -89,7 +89,7 @@ public class BookingService {
     @Transactional(readOnly = true)
     public List<BookingResponseDto> getMyRequests(User currentUser) {
         return bookingRepository.findByWorkerUserId(currentUser.getId())
-                .stream().map(bookingMapper::toDto).toList();
+                .stream().map(this::toBookingDto).toList();
     }
 
     @Transactional(readOnly = true)

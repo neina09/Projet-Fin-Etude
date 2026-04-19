@@ -1,66 +1,55 @@
 import React, { useEffect, useState } from "react"
 import {
   Briefcase,
-  Calendar,
   CheckCircle2,
   MapPin,
   MessageSquare,
   Navigation,
   Pencil,
-  Send,
-  Sparkles,
   Trash2,
   User,
-  XCircle
+  XCircle,
+  Map,
+  Zap,
+  Clock,
+  ArrowRight,
+  ShieldCheck,
+  ChevronDown,
+  Bookmark,
+  Star,
+  Send
 } from "lucide-react"
-import { getOffersForTask } from "../api"
+import { getOffersForTask, resolveAssetUrl } from "../api"
 import LeafletMapPicker from "./LeafletMapPicker"
+import { motion, AnimatePresence } from "framer-motion"
 
 const TASK_STATUS_LABELS = {
-  PENDING_REVIEW: "قيد مراجعة المدير",
-  OPEN: "مفتوحة",
+  PENDING_REVIEW: "تحت المراجعة",
+  OPEN: "متاح",
   IN_PROGRESS: "قيد التنفيذ",
-  COMPLETED: "مكتملة",
-  CANCELLED: "ملغاة",
-  CLOSED: "مغلقة"
+  COMPLETED: "مهمة مكتملة",
+  CANCELLED: "طلب ملغى",
+  CLOSED: "منتهية"
 }
 
 const OFFER_STATUS_LABELS = {
-  PENDING: "قيد الانتظار",
-  SELECTED: "تم اختياره",
+  PENDING: "بانتظار الرد",
+  SELECTED: "تم اختيارك",
   REFUSED: "مرفوض",
-  WORKER_REFUSED: "رفضه العامل",
+  WORKER_REFUSED: "معتذر",
   IN_PROGRESS: "قيد التنفيذ",
   COMPLETED: "مكتمل",
   CLOSED: "مغلق"
 }
 
 function badgeClass(status) {
-  if (status === "COMPLETED") return "bg-emerald-50 border-emerald-100 text-emerald-600"
-  if (status === "IN_PROGRESS") return "bg-amber-50 border-amber-100 text-amber-600"
-  if (status === "SELECTED") return "bg-indigo-50 border-indigo-100 text-indigo-600"
-  if (status === "PENDING_REVIEW") return "bg-amber-50 border-amber-100 text-amber-700"
-  if (status === "CANCELLED" || status === "REFUSED" || status === "WORKER_REFUSED") return "bg-red-50 border-red-100 text-red-600"
-  if (status === "CLOSED") return "bg-surface-50 border-surface-100 text-surface-400"
-  return "bg-primary-soft border-primary/10 text-primary"
-}
-
-function formatAddress(address) {
-  if (!address || typeof address !== "string") return "الموقع غير محدد"
-
-  const parts = address
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean)
-
-  if (!parts.length) return "الموقع غير محدد"
-
-  const uniqueParts = parts.filter((part, index) => parts.indexOf(part) === index)
-  const visibleParts = uniqueParts
-    .filter((part) => !["موريتانيا", "Mauritania"].includes(part))
-    .slice(0, 3)
-
-  return visibleParts.length ? visibleParts.join("، ") : "الموقع غير محدد"
+  if (status === "COMPLETED") return "bg-emerald-50 text-emerald-600 border-emerald-100"
+  if (status === "IN_PROGRESS") return "bg-blue-50 text-[#1d4ed8] border-blue-100"
+  if (status === "SELECTED") return "bg-indigo-50 text-indigo-600 border-indigo-100"
+  if (status === "PENDING_REVIEW") return "bg-slate-50 text-slate-400 border-slate-100"
+  if (status === "CANCELLED" || status === "REFUSED" || status === "WORKER_REFUSED") return "bg-red-50 text-red-600 border-red-100"
+  if (status === "CLOSED") return "bg-slate-50 text-slate-400 border-slate-100"
+  return "bg-blue-50 text-[#1d4ed8] border-blue-100"
 }
 
 export default function ProblemCard({
@@ -82,20 +71,20 @@ export default function ProblemCard({
   const [offerError, setOfferError] = useState("")
   const [sendingOffer, setSendingOffer] = useState(false)
   const [deciding, setDeciding] = useState(false)
+  const [selectingOfferId, setSelectingOfferId] = useState(null)
   const [distanceKm, setDistanceKm] = useState(null)
 
   const status = String(problem.status || "OPEN").toUpperCase()
-  const title = problem.title || "بدون عنوان"
+  const title = problem.title || "عنوان المهمة"
   const description = problem.description || ""
-  const address = problem.address || "الموقع غير محدد"
-  const displayAddress = formatAddress(problem.address)
-  const profession = problem.profession || "مهنة غير محددة"
+  const displayAddress = problem.address || "الموقع غير محدد"
+  const profession = problem.profession || "خدمة عامة"
   const latitude = Number(problem.latitude)
   const longitude = Number(problem.longitude)
   const hasCoordinates = Number.isFinite(latitude) && Number.isFinite(longitude)
-  const time = problem.createdAt ? new Date(problem.createdAt).toLocaleDateString("ar-EG") : "الآن"
   const isOwner = Boolean(currentUser?.id && problem.userId === currentUser.id)
   const isWorker = currentUser?.role === "WORKER"
+  const isAdmin = currentUser?.role === "ADMIN"
   const canOffer = isWorker && !isOwner && status === "OPEN"
   const canMarkDone = isOwner && status === "IN_PROGRESS"
   const canCancelTask = isOwner && (status === "OPEN" || status === "PENDING_REVIEW")
@@ -103,330 +92,338 @@ export default function ProblemCard({
 
   useEffect(() => {
     if (!open || !isOwner || status === "PENDING_REVIEW") return
-
     setLoadingOffers(true)
-    setOfferError("")
-
     getOffersForTask(problem.id)
-      .then((data) => setOffers(Array.isArray(data) ? data : []))
-      .catch((err) => setOfferError(err.message || "تعذر تحميل العروض"))
+      .then(data => setOffers(Array.isArray(data) ? data : []))
+      .catch(err => setOfferError(err.message || "تعذر تحميل العروض"))
       .finally(() => setLoadingOffers(false))
   }, [isOwner, open, problem.id, status])
 
-  useEffect(() => {
-    if (!open) {
-      setDistanceKm(null)
-    }
-  }, [open])
-
   const handleOfferSubmit = async () => {
     if (!offerText.trim()) return
-
     setSendingOffer(true)
     setOfferError("")
-
     try {
       const createdOffer = await onSubmitOffer?.(problem.id, offerText.trim())
-      if (createdOffer) {
-        setOffers((current) => [createdOffer, ...current])
-      }
+      if (createdOffer) setOffers(c => [createdOffer, ...c])
       setOfferText("")
-    } catch (err) {
-      setOfferError(err.message || "تعذر إرسال العرض")
-    } finally {
-      setSendingOffer(false)
-    }
-  }
-
-  const handleSelectOffer = async (offerId) => {
-    try {
-      await onSelectOffer?.(offerId)
-    } catch (err) {
-      setOfferError(err.message || "تعذر اختيار العامل")
-    }
+    } catch (err) { setOfferError(err.message || "فشل إرسال العرض") }
+    finally { setSendingOffer(false) }
   }
 
   const handleDecision = async (decision) => {
     setDeciding(true)
+    try { await onWorkerDecision?.(workerOffer.id, decision) }
+    catch (err) { setOfferError(err.message || "فشل تسجيل القرار") }
+    finally { setDeciding(false) }
+  }
+
+  const handleSelectOffer = async (offerId) => {
+    setSelectingOfferId(offerId)
     setOfferError("")
     try {
-      await onWorkerDecision?.(workerOffer.id, decision)
+      await onSelectOffer?.(offerId)
     } catch (err) {
-      setOfferError(err.message || "فشل تسجيل قرارك")
+      setOfferError(err.message || "تعذر اختيار هذا العامل.")
     } finally {
-      setDeciding(false)
+      setSelectingOfferId(null)
     }
   }
 
+  // Placeholder mock data matching requested design logic
+  const isUrgent = status === "PENDING_REVIEW"
+  // Update ownerImageUrl to prefer currentUser.imageUrl if the logged in user is the owner
+  const ownerImageUrl = resolveAssetUrl(isOwner && currentUser?.imageUrl ? currentUser.imageUrl : problem.userImageUrl)
+
   return (
-    <article className="saas-card border-surface-200 bg-white p-6 transition-all duration-300 hover:border-primary/20">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-surface-100 bg-surface-50 text-surface-400">
-              <User size={20} />
+    <article className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-md mb-6 w-full">
+      <div className="flex flex-col gap-6">
+        
+        {/* Top Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+          {/* User Info (Right) */}
+          <div className="flex items-start gap-4 order-2 md:order-1 flex-1">
+            <div className="h-16 w-16 bg-[#18181b] rounded-2xl flex items-center justify-center flex-shrink-0 relative overflow-hidden group">
+               {ownerImageUrl ? (
+                  <img src={ownerImageUrl} alt={problem.userName || "صاحب الطلب"} className="h-full w-full object-cover" />
+               ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-amber-400 opacity-60">
+                     <User size={32} />
+                  </div>
+               )}
             </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-surface-900">{problem.userName || "مستخدم"}</p>
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-surface-400">
-                <Calendar size={12} className="opacity-50" />
-                {time}
+            
+            <div className="flex flex-col justify-center gap-1 mt-1">
+              <div className="flex items-center gap-2">
+                <h4 className="text-[17px] font-black text-slate-900">{problem.userName || "صاحب الطلب"}</h4>
+                <div className="text-blue-500 rounded-full flex items-center justify-center h-4 w-4">
+                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                <span className="flex items-center gap-1 text-slate-400">
+                   <Clock size={12} /> {problem.createdAt ? new Date(problem.createdAt).toLocaleDateString("ar") : "مهمة جديدة"}
+                </span>
+                {problem.distanceKm != null && (
+                  <>
+                    <span className="text-slate-300">|</span>
+                    <span>{problem.distanceKm} كم</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-2xl font-black leading-tight text-surface-900">{title}</h3>
-            {description && (
-              <p className="text-sm font-medium leading-7 text-surface-600">{description}</p>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-xl border border-primary/10 bg-primary-soft px-3 py-2 text-xs font-black text-primary">
-              <Briefcase size={14} />
-              {profession}
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-xl border border-surface-200 bg-surface-50 px-3 py-2 text-xs font-bold text-surface-500">
-              <MapPin size={14} className="text-primary opacity-70" />
-              <span title={address}>{displayAddress}</span>
-            </span>
-            {distanceKm !== null && (
-              <span className="inline-flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700">
-                <Navigation size={14} />
-                مسافة الطريق {distanceKm} كم
+          {/* Time & Badges (Left) */}
+          <div className="flex flex-col items-end gap-3 order-1 md:order-2">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-slate-400 text-left">
+                نُشر منذ {problem.createdAt ? Math.max(1, Math.floor((Date.now() - new Date(problem.createdAt).getTime()) / 3600000)) + " ساعة" : "وقت قصير"}
               </span>
-            )}
+              {isUrgent && (
+                <span className="bg-red-50 text-red-500 text-[10px] font-black px-3 py-1.5 rounded-full flex items-center gap-1 uppercase tracking-widest border border-red-100">
+                  <Zap size={10} fill="currentColor" /> عاجل
+                </span>
+              )}
+            </div>
+            <div className="bg-blue-50/50 text-[#1d4ed8] text-sm font-black px-5 py-2 rounded-full mt-2 self-start md:self-end text-center w-auto inline-block border border-blue-100/30">
+               {profession}
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col items-start gap-3 lg:items-end">
-          <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-black ${badgeClass(status)}`}>
-            {TASK_STATUS_LABELS[status] || status}
-          </span>
+        {/* Content Section */}
+        <div className="space-y-4 pr-1 mt-2">
+          <h3 className="text-[22px] font-black text-slate-900 leading-tight">
+            {title}
+          </h3>
+          <p className="text-sm font-medium text-slate-500 leading-relaxed max-w-4xl opacity-90">
+            {description}
+          </p>
+        </div>
 
-          {isOwner && (
-            <div className="flex flex-wrap gap-2 lg:justify-end">
-              <button
-                type="button"
-                onClick={() => onEdit?.(problem)}
-                className="inline-flex items-center gap-2 rounded-xl border border-surface-200 px-3 py-2 text-xs font-bold text-surface-600 hover:bg-surface-50"
-              >
-                <Pencil size={14} />
-                تعديل
-              </button>
-              <button
-                type="button"
-                onClick={() => onDelete?.(problem)}
-                className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50"
-              >
-                <Trash2 size={14} />
-                حذف
-              </button>
-            </div>
+        {/* Tags Section */}
+        <div className="flex items-center gap-3 flex-wrap mt-2">
+          <span className="bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-700 text-[10px] font-black px-5 py-2 rounded-2xl flex items-center gap-2 transition-colors cursor-pointer uppercase tracking-widest shadow-sm">
+            {displayAddress.split(',')[0]} <MapPin size={14} className="text-slate-400" />
+          </span>
+          <span className="bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-700 text-[10px] font-black px-5 py-2 rounded-2xl flex items-center gap-2 transition-colors cursor-pointer uppercase tracking-widest shadow-sm">
+            {profession} <Briefcase size={14} className="text-slate-400" />
+          </span>
+        </div>
+
+        {/* Actions Footer */}
+        <div className="flex items-center gap-4 mt-6 w-full justify-start">
+          {canOffer || workerOffer ? (
+             <button 
+                onClick={() => setOpen(!open)}
+                className="flex-1 bg-[#1d4ed8] hover:bg-blue-700 text-white font-black text-[14px] py-4 rounded-[1.25rem] shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]"
+             >
+                {workerOffer ? "إدارة العرض المُقدم" : "تقديم عرض"}
+             </button>
+          ) : isOwner ? (
+             <button 
+                onClick={() => setOpen(!open)}
+                className="flex-1 bg-[#1d4ed8] hover:bg-blue-700 text-white font-black text-[14px] py-4 rounded-[1.25rem] shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]"
+             >
+                كافة العروض ({offers.length || 0})
+             </button>
+          ) : (
+             <button disabled className="flex-1 bg-slate-50 text-slate-400 font-black text-[14px] py-4 rounded-[1.25rem] cursor-not-allowed border border-slate-100">
+                غير قابل للتقديم
+             </button>
+          )}
+
+          <button onClick={() => setOpen(!open)} className="bg-slate-50 hover:bg-slate-100 border border-slate-100 text-[#1d4ed8] shadow-sm font-black text-[13px] px-8 py-4 rounded-[1.25rem] transition-colors whitespace-nowrap">
+            التفاصيل
+          </button>
+          
+          <button className="bg-slate-50 hover:bg-slate-100 border border-slate-100 shadow-sm text-slate-400 hover:text-slate-600 flex items-center justify-center p-4 h-14 w-14 rounded-[1.25rem] transition-colors">
+            <Bookmark size={20} />
+          </button>
+          
+          {isOwner && (isAdmin || isOwner) && (
+             <button onClick={() => onDelete?.(problem)} className="bg-white hover:bg-red-50 text-red-500 flex items-center justify-center p-4 h-14 w-14 rounded-[1.25rem] transition-colors border border-red-100 shadow-sm">
+               <Trash2 size={20} />
+             </button>
           )}
         </div>
       </div>
-
-      {isWorker && workerOffer?.status === "SELECTED" && (
-        <div className="mt-6 flex flex-col gap-4 rounded-xl border border-indigo-200 bg-indigo-50 p-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-black text-indigo-900">تم اختيارك لهذه المهمة</p>
-              <p className="text-xs font-medium text-indigo-700">بانتظار موافقتك النهائية لبدء العمل.</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleDecision("refuse")}
-              disabled={deciding}
-              className="rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-bold text-indigo-600 transition-colors hover:bg-red-50 hover:text-red-600"
-            >
-              اعتذار
-            </button>
-            <button
-              onClick={() => handleDecision("accept")}
-              disabled={deciding}
-              className="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700"
-            >
-              موافق، سأبدأ الآن
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-surface-100 pt-5">
-        {(canMarkDone || canCancelTask) && (
-          <div className="flex flex-wrap items-center gap-2">
+      
+      {/* Sub-actions for active tasks / owner states */}
+      {(canMarkDone || canCancelTask) && (
+         <div className="flex items-center gap-4 mt-6 pt-6 border-t border-slate-100">
             {canMarkDone && (
-              <button
-                type="button"
-                onClick={() => onStatusChange?.(problem, "done")}
-                className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-600 hover:bg-emerald-50"
-              >
-                <CheckCircle2 size={14} />
-                تأكيد الإنجاز
+              <button onClick={() => onStatusChange?.(problem, "done")} className="flex bg-emerald-50 text-emerald-600 font-bold px-6 py-3 rounded-[1rem] text-sm items-center gap-2 hover:bg-emerald-100 transition-colors border border-emerald-100">
+                 <CheckCircle2 size={18} /> اعتماد إتمام العمل
               </button>
             )}
             {canCancelTask && (
-              <button
-                type="button"
-                onClick={() => onStatusChange?.(problem, "cancel")}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-200 px-3 py-2 text-xs font-bold text-amber-600 hover:bg-amber-50"
-              >
-                <XCircle size={14} />
-                {status === "PENDING_REVIEW" ? "سحب المهمة" : "إلغاء المهمة"}
+              <button onClick={() => onStatusChange?.(problem, "cancel")} className="flex bg-red-50 text-red-500 font-bold px-6 py-3 rounded-[1rem] text-sm items-center gap-2 hover:bg-red-100 transition-colors border border-red-100/50">
+                 <XCircle size={18} /> {status === "PENDING_REVIEW" ? "سحب الطلب" : "إلغاء المهمة"}
               </button>
             )}
-          </div>
-        )}
-
-        {(isOwner || canOffer || workerOffer) && (
-          <button
-            onClick={() => setOpen((current) => !current)}
-            className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${
-              open ? "bg-primary-soft text-primary" : "text-surface-500 hover:bg-surface-50 hover:text-primary"
-            }`}
-          >
-            <MessageSquare size={14} className="opacity-70" />
-            {isOwner ? "التفاصيل والعروض" : "إضافة عرض"}
-          </button>
-        )}
-      </div>
-
-      {open && (
-        <div className="mt-6 space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="overflow-hidden rounded-2xl border border-surface-200">
-            {hasCoordinates ? (
-              <LeafletMapPicker
-                isListView
-                height="260px"
-                showCurrentLocation
-                taskLocation={{ lat: latitude, lng: longitude }}
-                taskLabel={title}
-                onDistanceChange={setDistanceKm}
-              />
-            ) : (
-              <div className="flex h-56 w-full items-center justify-center bg-surface-50 text-sm font-medium text-surface-400">
-                الموقع غير محدد على الخريطة
-              </div>
-            )}
-          </div>
-
-          {hasCoordinates && (
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-surface-200 bg-surface-50 px-4 py-3">
-                <p className="text-[11px] font-black uppercase tracking-widest text-surface-400">موقع المهمة</p>
-                <p className="mt-1 text-sm font-bold text-surface-900">{displayAddress}</p>
-              </div>
-              <div className="rounded-xl border border-surface-200 bg-surface-50 px-4 py-3">
-                <p className="text-[11px] font-black uppercase tracking-widest text-surface-400">الإحداثيات</p>
-                <p className="mt-1 text-sm font-bold text-surface-900">
-                  {latitude.toFixed(5)}, {longitude.toFixed(5)}
-                </p>
-              </div>
-              <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
-                <p className="text-[11px] font-black uppercase tracking-widest text-blue-500">مسافة الطريق</p>
-                <p className="mt-1 text-sm font-bold text-surface-900">
-                  {distanceKm !== null ? `تبعد المهمة عنك عبر الطريق ${distanceKm} كم` : "اسمح بالوصول إلى موقعك لحساب مسافة الطريق"}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {status === "PENDING_REVIEW" && isOwner && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
-              المهمة لم تُنشر بعد. ستظهر في المنصة فقط بعد موافقة المدير.
-            </div>
-          )}
-
-          {isOwner && status !== "PENDING_REVIEW" && (
-            <div className="space-y-3">
-              {loadingOffers ? (
-                <div className="rounded-xl border border-surface-100 bg-surface-50 p-4 text-sm font-bold text-surface-400">
-                  جاري تحميل عروض العمال...
-                </div>
-              ) : offers.length ? (
-                offers.map((offer) => (
-                  <div key={offer.id} className="rounded-xl border border-surface-100 bg-surface-50 p-4">
-                    <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <span className="block text-sm font-black text-surface-900">{offer.workerName}</span>
-                        <span className="text-xs font-bold text-surface-400">{offer.workerJob || "عامل"}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`rounded-full border px-3 py-1 text-[10px] font-black ${badgeClass(offer.status)}`}>
-                          {OFFER_STATUS_LABELS[offer.status] || offer.status}
-                        </span>
-                        {offer.status === "PENDING" && status === "OPEN" && (
-                          <button
-                            type="button"
-                            onClick={() => handleSelectOffer(offer.id)}
-                            disabled={offer.workerAvailability === "BUSY"}
-                            className={`rounded-xl px-3 py-2 text-xs font-black text-white ${
-                              offer.workerAvailability === "BUSY" ? "cursor-not-allowed bg-surface-300" : "bg-primary"
-                            }`}
-                          >
-                            {offer.workerAvailability === "BUSY" ? "العامل مشغول حاليًا" : "اختيار العامل"}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-sm font-medium leading-relaxed text-surface-600">{offer.message}</p>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-xl border border-dashed border-surface-200 bg-surface-50 p-4 text-sm font-bold text-surface-400">
-                  لا توجد عروض من العمال على هذه المهمة بعد.
-                </div>
-              )}
-            </div>
-          )}
-
-          {canOffer && (
-            <div className="space-y-3">
-              {workerOffer ? (
-                <div className="rounded-xl border border-primary/20 bg-primary-soft p-4">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <span className="text-sm font-black text-primary">عرضك الحالي</span>
-                    <span className={`rounded-full border px-3 py-1 text-[10px] font-black ${badgeClass(workerOffer.status)}`}>
-                      {OFFER_STATUS_LABELS[workerOffer.status] || workerOffer.status}
-                    </span>
-                  </div>
-                  <p className="text-sm font-medium leading-relaxed text-surface-700">{workerOffer.message}</p>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 pt-2">
-                  <textarea
-                    value={offerText}
-                    onChange={(event) => setOfferText(event.target.value)}
-                    placeholder={isCurrentWorkerBusy ? "أنت مشغول حاليًا، غيّر حالتك لتتمكن من إرسال عرض." : "اكتب عرضك أو رسالتك لصاحب المهمة..."}
-                    disabled={sendingOffer || isCurrentWorkerBusy}
-                    className="saas-input min-h-[88px] flex-1 resize-none border-surface-200 px-4 py-3"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleOfferSubmit}
-                    disabled={sendingOffer || !offerText.trim() || isCurrentWorkerBusy}
-                    className="btn-saas btn-primary h-12 px-5 text-sm font-bold disabled:opacity-50"
-                  >
-                    <Send size={16} />
-                  </button>
-                </div>
-              )}
-
-              {offerError && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
-                  {offerError}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+         </div>
       )}
+
+      {/* Selected worker alert */}
+      {isWorker && workerOffer?.status === "SELECTED" && (
+         <div className="mt-6 flex flex-col md:flex-row md:items-center justify-between gap-6 p-5 rounded-[1.25rem] bg-[#1d4ed8] shadow-lg text-white">
+            <div>
+               <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-200 mb-2">تم اختيارك لتنفيذ المهمة!</p>
+               <p className="text-sm font-bold text-white/90">برجاء تأكيد العمل لتبدأ العملية فوراً.</p>
+            </div>
+            <div className="flex gap-4 items-center">
+               <button onClick={() => handleDecision("accept")} disabled={deciding} className="bg-white text-[#1d4ed8] text-sm font-black px-6 py-2.5 rounded-xl flex items-center gap-2 hover:bg-blue-50 transition-all whitespace-nowrap">
+                  <CheckCircle2 size={16} /> قبول
+               </button>
+               <button onClick={() => handleDecision("refuse")} disabled={deciding} className="bg-blue-700/50 border border-blue-400 text-white text-sm font-black px-6 py-2.5 rounded-xl flex items-center gap-2 hover:bg-blue-800 transition-all whitespace-nowrap">
+                  <XCircle size={16} /> اعتذار
+               </button>
+            </div>
+         </div>
+      )}
+
+      {/* Collapsible Details Content (Map & Offers) */}
+      <AnimatePresence>
+        {open && (
+           <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden mt-6 pt-6 border-t border-slate-100"
+           >
+              <div className="space-y-10">
+                 {/* Map location box */}
+                 <div className="overflow-hidden rounded-[1.5rem] border border-slate-100 shadow-sm relative">
+                    {hasCoordinates ? (
+                       <LeafletMapPicker isListView height="300px" showCurrentLocation taskLocation={{ lat: latitude, lng: longitude }} taskLabel={title} onDistanceChange={setDistanceKm} />
+                    ) : (
+                       <div className="flex h-48 w-full flex-col items-center justify-center gap-4 bg-slate-50 text-slate-400">
+                          <Map size={36} />
+                          <p className="text-xs font-black uppercase tracking-widest">الموقع غير محدد أوتوماتيكياً</p>
+                       </div>
+                    )}
+                 </div>
+
+                 {/* Offers List (Owner View) */}
+                 {isOwner && (
+                    <div className="space-y-6">
+                       <div className="flex items-center justify-between">
+                          <h4 className="text-xl font-black text-slate-900 border-r-4 border-[#1d4ed8] pr-4">عروض المحترفين</h4>
+                          <span className="bg-blue-50 text-[#1d4ed8] text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-widest">{offers.length} عرض متاح</span>
+                       </div>
+                       
+                       {loadingOffers ? (
+                          <div className="py-16 flex flex-col items-center justify-center text-slate-400">
+                             <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-[#1d4ed8] animate-spin mb-4" />
+                             <p className="font-bold text-sm">جاري جلب العروض من مركز البيانات...</p>
+                          </div>
+                       ) : offers.length ? (
+                          <div className="grid gap-5">
+                             {offers.map(o => (
+                                <div key={o.id} className="relative p-6 rounded-[2rem] border border-slate-100 bg-white hover:border-blue-500/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-500 group">
+                                   <div className="absolute top-0 right-0 w-1.5 h-full bg-[#1d4ed8] rounded-r-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                   
+                                   <div className="flex flex-col md:flex-row gap-6">
+                                      {/* Worker Info Column */}
+                                      <div className="flex items-center gap-5 md:w-1/3 border-b md:border-b-0 md:border-l border-slate-100 pb-5 md:pb-0 md:pl-6">
+                                         <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-sm transition-transform group-hover:scale-110">
+                                            {o.workerImageUrl ? (
+                                              <img src={o.workerImageUrl} alt={o.workerName || "عامل"} className="h-full w-full object-cover" />
+                                            ) : (
+                                              <div className="flex h-full w-full items-center justify-center text-[#1d4ed8] font-black text-xl">
+                                                {o.workerName?.[0] || <User size={20} />}
+                                              </div>
+                                            )}
+                                         </div>
+                                         <div className="flex-1">
+                                            <h5 className="font-black text-slate-900 text-[15px] group-hover:text-[#1d4ed8] transition-colors">{o.workerName}</h5>
+                                            <div className="flex items-center gap-2 mt-1.5">
+                                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{o.workerJob || "محترف معتمد"}</span>
+                                               <span className={`flex items-center text-[10px] font-black px-1.5 py-0.5 rounded-md border ${
+                                                 o.workerAvailability === "BUSY"
+                                                   ? "text-amber-600 bg-amber-50 border-amber-100/50"
+                                                   : "text-emerald-600 bg-emerald-50 border-emerald-100/50"
+                                               }`}>
+                                                  {o.workerAvailability === "BUSY" ? "مشغول" : "متاح"}
+                                               </span>
+                                            </div>
+                                         </div>
+                                      </div>
+                                      
+                                      {/* Offer Content & Actions */}
+                                      <div className="flex-1 flex flex-col justify-between">
+                                         <div className="relative mb-4">
+                                            <MessageSquare size={20} className="absolute -right-3 -top-3 text-blue-100/50 opacity-50 rotate-12" />
+                                            <p className="text-sm font-bold text-slate-600 bg-slate-50/50 px-5 py-4 rounded-[1.25rem] border border-slate-100/80 leading-relaxed shadow-inner">
+                                               "{o.message}"
+                                            </p>
+                                         </div>
+                                         
+                                         <div className="flex items-center justify-between">
+                                            <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase text-center border shadow-sm ${badgeClass(o.status)}`}>
+                                               {OFFER_STATUS_LABELS[o.status] || o.status}
+                                            </span>
+                                            
+                                            {o.status === "PENDING" && status === "OPEN" && (
+                                               <button onClick={() => handleSelectOffer(o.id)} disabled={o.workerAvailability === "BUSY" || selectingOfferId === o.id} className="bg-[#1d4ed8] hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black text-xs active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-blue-500/20">
+                                                  <CheckCircle2 size={16} />
+                                                  {selectingOfferId === o.id ? "جاري الاعتماد..." : o.workerAvailability === "BUSY" ? "العامل منشغل حالياً" : "قبول وتوظيف"}
+                                               </button>
+                                            )}
+                                         </div>
+                                      </div>
+                                   </div>
+                                </div>
+                             ))}
+                          </div>
+                       ) : (
+                          <div className="py-16 text-center rounded-[2rem] border-2 border-dashed border-slate-100 bg-slate-50/50 flex flex-col items-center gap-4">
+                             <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                <Briefcase size={24} className="text-slate-300" />
+                             </div>
+                             <div>
+                                <h5 className="text-base font-black text-slate-900 mb-1">لا توجد عروض حتى الآن</h5>
+                                <p className="text-xs font-bold text-slate-400">سيتم إشعارك فور تقدم أحد المحترفين لهذه المهمة.</p>
+                             </div>
+                          </div>
+                       )}
+                    </div>
+                 )}
+
+                 {/* Submit Offer (Worker View) */}
+                 {canOffer && (
+                    <div className="space-y-6">
+                       <h4 className="text-xl font-black text-slate-900 border-r-4 border-[#1d4ed8] pr-4">قدم عرضاً لتنفيذ المهمة</h4>
+                       <textarea 
+                          value={offerText} 
+                          onChange={e => setOfferText(e.target.value)} 
+                          disabled={sendingOffer || isCurrentWorkerBusy} 
+                          placeholder={isCurrentWorkerBusy ? "أنت منشغل بمهمة أخرى..." : "اشرح قدراتك والسعر والمدة.. (مثال: أستطيع تنفيذ المطلوب غداً بـ ٣٠٠ ريال)"} 
+                          className="w-full min-h-[140px] p-6 text-sm font-medium bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:bg-white focus:border-blue-500 outline-none resize-none transition-all"
+                       />
+                       <button onClick={handleOfferSubmit} disabled={sendingOffer || !offerText.trim() || isCurrentWorkerBusy} className="w-full bg-[#1d4ed8] text-white rounded-[1.25rem] py-4 text-sm font-black active:scale-[0.98] transition-all flex justify-center items-center gap-2 disabled:bg-slate-300">
+                          {sendingOffer ? "جاري الإرسال..." : "إرسال العرض"} 
+                          <Send size={16} />
+                       </button>
+                    </div>
+                 )}
+
+                 {/* Worker's Past Offer details */}
+                 {workerOffer && (
+                    <div className="space-y-4 p-6 bg-blue-50/30 border border-blue-100 rounded-[1.5rem]">
+                       <h4 className="text-sm font-black text-[#1d4ed8]">عرضك المُقدم سابقاً:</h4>
+                       <p className="text-sm text-slate-700 bg-white p-4 rounded-xl border border-slate-200 shadow-sm leading-relaxed">"{workerOffer.message}"</p>
+                    </div>
+                 )}
+
+                 {offerError && <div className="p-4 rounded-xl bg-red-50 text-red-600 text-xs font-bold text-center border border-red-100">{offerError}</div>}
+              </div>
+           </motion.div>
+        )}
+      </AnimatePresence>
     </article>
   )
 }

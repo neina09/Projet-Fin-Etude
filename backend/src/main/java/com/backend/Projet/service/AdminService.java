@@ -44,7 +44,7 @@ public class AdminService {
                 .latestPendingWorkers(workerRepository
                         .findTop5ByVerificationStatusOrderByIdDesc(WorkerVerificationStatus.PENDING)
                         .stream()
-                        .map(workerMapper::toDto)
+                        .map(worker -> workerMapper.toDto(worker, true))
                         .toList())
                 .latestPendingTasks(taskRepository.findTop5ByStatusOrderByIdDesc(TaskStatus.PENDING_REVIEW)
                         .stream()

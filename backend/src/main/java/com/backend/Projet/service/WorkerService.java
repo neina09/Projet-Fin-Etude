@@ -38,6 +38,9 @@ public class WorkerService {
 
     @Transactional
     public WorkerResponseDto registerAsWorker(WorkerRequestDto dto, User currentUser) {
+        if (currentUser.getRole() == Role.ADMIN) {
+            throw new BusinessException("Admin accounts cannot register themselves as workers");
+        }
         if (workerRepository.findByUserId(currentUser.getId()).isPresent()) {
             throw new BusinessException("You are already registered as a worker");
         }

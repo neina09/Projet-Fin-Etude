@@ -16,14 +16,22 @@ public class WorkerMapper {
         if (worker == null) {
             return null;
         }
+        String resolvedImageUrl = worker.getImageUrl();
+        if ((resolvedImageUrl == null || resolvedImageUrl.isBlank())
+                && worker.getUser() != null
+                && worker.getUser().getImageUrl() != null
+                && !worker.getUser().getImageUrl().isBlank()) {
+            resolvedImageUrl = worker.getUser().getImageUrl();
+        }
         return WorkerResponseDto.builder()
                 .id(worker.getId())
                 .name(worker.getName())
                 .job(worker.getJob())
                 .address(worker.getAddress())
                 .salary(worker.getSalary())
-                .imageUrl(worker.getImageUrl())
+                .imageUrl(resolvedImageUrl)
                 .identityDocumentUrl(includeSensitiveDetails ? worker.getIdentityDocumentUrl() : null)
+                .nationalIdNumber(includeSensitiveDetails ? worker.getNationalIdNumber() : null)
                 .phoneNumber(worker.getPhoneNumber())
                 .availability(worker.getAvailability())
                 .averageRating(worker.getAverageRating())

@@ -34,7 +34,7 @@ function ChartFrame({ children }) {
 
   return (
     <div ref={containerRef} className="h-72 w-full min-h-[288px] min-w-0">
-      {size.width > 0 ? children(size) : <div className="h-full w-full animate-pulse rounded-2xl bg-surface-50" />}
+      {size.width > 0 ? children(size) : <div className="h-full w-full animate-pulse rounded-2xl bg-gray-50" />}
     </div>
   )
 }
@@ -75,15 +75,24 @@ export default function TaskStatsCharts({ tasks = [] }) {
       else groups["ملغاة أو معلقة"].value += 1
     })
 
-    return Object.entries(groups).map(([name, config]) => ({ name, ...config }))
+    const data = Object.entries(groups).map(([name, config]) => ({ name, ...config }))
+    // Prevent empty pie chart by adding dummy data if all are 0
+    const total = data.reduce((acc, curr) => acc + curr.value, 0)
+    if (total === 0) {
+      return [
+        { name: "مكتملة", value: 1, color: "#e2e8f0" },
+        { name: "قيد التنفيذ", value: 1, color: "#f1f5f9" }
+      ]
+    }
+    return data
   }, [tasks])
 
   return (
-    <div className="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
-      <div className="saas-card min-w-0 border-surface-200 bg-white p-8">
-        <div className="mb-6">
-          <h3 className="text-lg font-black text-surface-900 font-alexandria">نشاط المهام الأسبوعي</h3>
-          <p className="text-xs font-bold text-surface-400 mt-1 uppercase tracking-widest">مقارنة المهام الجديدة خلال الأسبوع</p>
+    <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm min-w-0 transition-shadow hover:shadow-md">
+        <div className="mb-6 text-center">
+          <h3 className="text-xl font-extrabold text-gray-900">نشاط المهام الأسبوعي</h3>
+          <p className="text-xs font-semibold text-gray-400 mt-1 uppercase tracking-widest">مقارنة المهام الجديدة خلال الأسبوع</p>
         </div>
 
         <ChartFrame>
@@ -125,10 +134,10 @@ export default function TaskStatsCharts({ tasks = [] }) {
         </ChartFrame>
       </div>
 
-      <div className="saas-card min-w-0 border-surface-200 bg-white p-8">
-        <div className="mb-6">
-          <h3 className="text-lg font-black text-surface-900 font-alexandria">توزيع حالة المهام</h3>
-          <p className="text-xs font-bold text-surface-400 mt-1 uppercase tracking-widest">نسبة المهام حسب الحالة الحالية</p>
+      <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm min-w-0 transition-shadow hover:shadow-md">
+        <div className="mb-6 text-center">
+          <h3 className="text-xl font-extrabold text-gray-900">توزيع حالة المهام</h3>
+          <p className="text-xs font-semibold text-gray-400 mt-1 uppercase tracking-widest">نسبة المهام حسب الحالة الحالية</p>
         </div>
 
         <ChartFrame>
@@ -153,7 +162,7 @@ export default function TaskStatsCharts({ tasks = [] }) {
               <Legend
                 verticalAlign="bottom"
                 height={36}
-                formatter={(value) => <span className="text-xs font-bold text-surface-600 font-alexandria ml-2">{value}</span>}
+                formatter={(value) => <span className="text-xs font-bold text-gray-600 ml-2">{value}</span>}
               />
             </PieChart>
           )}

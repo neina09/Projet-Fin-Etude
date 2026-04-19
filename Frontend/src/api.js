@@ -1,5 +1,27 @@
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "")
 const OPENROUTESERVICE_API_KEY = import.meta.env.VITE_OPENROUTESERVICE_API_KEY || ""
+const UPLOADS_ASSET_VERSION_KEY = "uploadsAssetVersion"
+
+const getUploadsAssetVersion = () => {
+  const raw = localStorage.getItem(UPLOADS_ASSET_VERSION_KEY)
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+}
+
+const bumpUploadsAssetVersion = () => {
+  const nextVersion = Date.now()
+  localStorage.setItem(UPLOADS_ASSET_VERSION_KEY, String(nextVersion))
+  return nextVersion
+}
+
+const withAssetVersion = (url) => {
+  if (!url || !url.includes("/uploads/")) return url
+  if (url.includes("?v=")) return url
+  const version = getUploadsAssetVersion()
+  if (!version) return url
+  const separator = url.includes("?") ? "&" : "?"
+  return `${url}${separator}v=${version}`
+}
 
 export const resolveAssetUrl = (value) => {
   if (!value || typeof value !== "string") return ""
@@ -8,31 +30,31 @@ export const resolveAssetUrl = (value) => {
   if (!trimmed) return ""
 
   if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
-    return trimmed
+    return withAssetVersion(trimmed)
   }
 
   const uploadsIndex = trimmed.indexOf("/uploads/")
   if (uploadsIndex >= 0) {
-    return `${BASE_URL}${trimmed.slice(uploadsIndex)}`
+    return withAssetVersion(`${BASE_URL}${trimmed.slice(uploadsIndex)}`)
   }
 
   if (trimmed.startsWith("uploads/")) {
-    return `${BASE_URL}/${trimmed}`
+    return withAssetVersion(`${BASE_URL}/${trimmed}`)
   }
 
   if (trimmed.startsWith("/uploads/")) {
-    return `${BASE_URL}${trimmed}`
+    return withAssetVersion(`${BASE_URL}${trimmed}`)
   }
 
   if (trimmed.startsWith("/workers/")) {
-    return `${BASE_URL}/uploads${trimmed}`
+    return withAssetVersion(`${BASE_URL}/uploads${trimmed}`)
   }
 
   if (trimmed.startsWith("/")) {
-    return `${BASE_URL}${trimmed}`
+    return withAssetVersion(`${BASE_URL}${trimmed}`)
   }
 
-  return `${BASE_URL}/${trimmed}`
+  return withAssetVersion(`${BASE_URL}/${trimmed}`)
 }
 
 const getToken = () => localStorage.getItem("token")
@@ -108,13 +130,17 @@ const normalizeWorker = (worker) => {
   if (!worker || typeof worker !== "object") return worker
 
   const verificationStatus = worker.verificationStatus || (worker.verified ? "VERIFIED" : undefined)
+  const workerJob = worker.job || worker.profession || worker.specialty || ""
+  const workerImage = worker.imageUrl || worker.workerImageUrl || worker.profileImageUrl || worker.userImageUrl || ""
 
   return {
     ...worker,
+    job: workerJob,
+    profession: worker.profession || workerJob,
     verificationStatus,
     verified: Boolean(worker.verified ?? verificationStatus === "VERIFIED"),
     available: Boolean(worker.available ?? worker.availability === "AVAILABLE"),
-    imageUrl: resolveAssetUrl(worker.imageUrl),
+    imageUrl: resolveAssetUrl(workerImage),
     identityDocumentUrl: resolveAssetUrl(worker.identityDocumentUrl)
   }
 }
@@ -124,14 +150,32 @@ const normalizeBooking = (booking) => {
 
   return {
     ...booking,
+    workerJob: booking.workerJob || booking.workerProfession || "",
     isRated: Boolean(booking.isRated ?? booking.rated),
-    rated: Boolean(booking.rated ?? booking.isRated)
+    rated: Boolean(booking.rated ?? booking.isRated),
+    workerImageUrl: resolveAssetUrl(booking.workerImageUrl),
+    userImageUrl: resolveAssetUrl(booking.userImageUrl)
   }
 }
 
 const normalizeTask = (task) => {
   if (!task || typeof task !== "object") return task
-  return { ...task }
+  return {
+    ...task,
+    userImageUrl: resolveAssetUrl(task.userImageUrl),
+    assignedWorkerImageUrl: resolveAssetUrl(task.assignedWorkerImageUrl)
+  }
+}
+
+const normalizeOffer = (offer) => {
+  if (!offer || typeof offer !== "object") return offer
+
+  return {
+    ...offer,
+    workerJob: offer.workerJob || offer.workerProfession || "",
+    workerImageUrl: resolveAssetUrl(offer.workerImageUrl),
+    taskUserImageUrl: resolveAssetUrl(offer.taskUserImageUrl)
+  }
 }
 
 const normalizeNotification = (notification) => {
@@ -236,6 +280,19 @@ export const updateProfile = async ({ username, phone }) =>
     body: JSON.stringify({ username, phone })
   })
 
+export const uploadUserImage = async (file) => {
+  const formData = new FormData()
+  formData.append("file", file)
+
+  const payload = await request("/users/upload-image", {
+    method: "POST",
+    headers: buildHeaders({}, true),
+    body: formData
+  })
+  bumpUploadsAssetVersion()
+  return payload
+}
+
 export const deleteAccount = async () =>
   request("/users/delete", {
     method: "DELETE",
@@ -276,23 +333,27 @@ export const getMyTasks = async () =>
   )
 
 export const getTasksAssignedToMe = async () =>
-  request("/api/tasks/assigned-to-me", {
+  (await request("/api/tasks/assigned-to-me", {
     headers: buildHeaders({}, true)
-  })
+  })).map(normalizeTask)
 
 export const createTask = async (taskData) =>
-  request("/api/tasks", {
-    method: "POST",
-    headers: buildHeaders({ "Content-Type": "application/json" }, true),
-    body: JSON.stringify(taskData)
-  })
+  normalizeTask(
+    await request("/api/tasks", {
+      method: "POST",
+      headers: buildHeaders({ "Content-Type": "application/json" }, true),
+      body: JSON.stringify(taskData)
+    })
+  )
 
 export const updateTask = async (taskId, taskData) =>
-  request(`/api/tasks/${taskId}`, {
-    method: "PUT",
-    headers: buildHeaders({ "Content-Type": "application/json" }, true),
-    body: JSON.stringify(taskData)
-  })
+  normalizeTask(
+    await request(`/api/tasks/${taskId}`, {
+      method: "PUT",
+      headers: buildHeaders({ "Content-Type": "application/json" }, true),
+      body: JSON.stringify(taskData)
+    })
+  )
 
 export const deleteTask = async (taskId) =>
   request(`/api/tasks/${taskId}`, {
@@ -301,51 +362,63 @@ export const deleteTask = async (taskId) =>
   })
 
 export const markTaskDone = async (taskId) =>
-  request(`/api/tasks/${taskId}/done`, {
-    method: "PATCH",
-    headers: buildHeaders({}, true)
-  })
+  normalizeTask(
+    await request(`/api/tasks/${taskId}/done`, {
+      method: "PATCH",
+      headers: buildHeaders({}, true)
+    })
+  )
 
 export const cancelTaskRequest = async (taskId) =>
-  request(`/api/tasks/${taskId}/cancel`, {
-    method: "PATCH",
-    headers: buildHeaders({}, true)
-  })
+  normalizeTask(
+    await request(`/api/tasks/${taskId}/cancel`, {
+      method: "PATCH",
+      headers: buildHeaders({}, true)
+    })
+  )
 
 export const getOffersForTask = async (taskId) =>
-  request(`/api/tasks/${taskId}/offers`, {
+  (await request(`/api/tasks/${taskId}/offers`, {
     headers: buildHeaders({}, true)
-  })
+  })).map(normalizeOffer)
 
 export const getMyOffers = async () =>
-  request("/api/tasks/my-offers", {
+  (await request("/api/tasks/my-offers", {
     headers: buildHeaders({}, true)
-  })
+  })).map(normalizeOffer)
 
 export const createOffer = async (taskId, offerData) =>
-  request(`/api/tasks/${taskId}/offer`, {
-    method: "POST",
-    headers: buildHeaders({ "Content-Type": "application/json" }, true),
-    body: JSON.stringify(offerData)
-  })
+  normalizeOffer(
+    await request(`/api/tasks/${taskId}/offer`, {
+      method: "POST",
+      headers: buildHeaders({ "Content-Type": "application/json" }, true),
+      body: JSON.stringify(offerData)
+    })
+  )
 
 export const selectOffer = async (offerId) =>
-  request(`/api/tasks/offers/${offerId}/select`, {
-    method: "PATCH",
-    headers: buildHeaders({}, true)
-  })
+  normalizeOffer(
+    await request(`/api/tasks/offers/${offerId}/select`, {
+      method: "PATCH",
+      headers: buildHeaders({}, true)
+    })
+  )
 
 export const approveTask = async (taskId) =>
-  request(`/api/tasks/${taskId}/approve`, {
-    method: "PATCH",
-    headers: buildHeaders({}, true)
-  })
+  normalizeTask(
+    await request(`/api/tasks/${taskId}/approve`, {
+      method: "PATCH",
+      headers: buildHeaders({}, true)
+    })
+  )
 
 export const rejectTask = async (taskId) =>
-  request(`/api/tasks/${taskId}/reject`, {
-    method: "PATCH",
-    headers: buildHeaders({}, true)
-  })
+  normalizeTask(
+    await request(`/api/tasks/${taskId}/reject`, {
+      method: "PATCH",
+      headers: buildHeaders({}, true)
+    })
+  )
 
 export const getPendingTasks = async () =>
   normalizePage(
@@ -356,16 +429,20 @@ export const getPendingTasks = async () =>
   )
 
 export const acceptOffer = async (offerId) =>
-  request(`/api/tasks/offers/${offerId}/worker-accept`, {
-    method: "PATCH",
-    headers: buildHeaders({}, true)
-  })
+  normalizeOffer(
+    await request(`/api/tasks/offers/${offerId}/worker-accept`, {
+      method: "PATCH",
+      headers: buildHeaders({}, true)
+    })
+  )
 
 export const refuseOffer = async (offerId) =>
-  request(`/api/tasks/offers/${offerId}/worker-refuse`, {
-    method: "PATCH",
-    headers: buildHeaders({}, true)
-  })
+  normalizeOffer(
+    await request(`/api/tasks/offers/${offerId}/worker-refuse`, {
+      method: "PATCH",
+      headers: buildHeaders({}, true)
+    })
+  )
 
 export const getWorkers = async () =>
   (await request("/api/workers", {
@@ -378,6 +455,11 @@ export const getWorkerById = async (workerId) =>
       headers: buildHeaders()
     })
   )
+
+export const getPendingWorkers = async () =>
+  (await request("/api/workers/admin/pending", {
+    headers: buildHeaders({}, true)
+  })).map(normalizeWorker)
 
 export const getMyWorkerProfile = async () =>
   normalizeWorker(
@@ -424,13 +506,13 @@ export const uploadWorkerImage = async (workerId, file) => {
   const formData = new FormData()
   formData.append("file", file)
 
-  return normalizeWorker(
-    await request(`/api/workers/${workerId}/upload-image`, {
-      method: "POST",
-      headers: buildHeaders({}, true),
-      body: formData
-    })
-  )
+  const payload = await request(`/api/workers/${workerId}/upload-image`, {
+    method: "POST",
+    headers: buildHeaders({}, true),
+    body: formData
+  })
+  bumpUploadsAssetVersion()
+  return normalizeWorker(payload)
 }
 
 export const uploadIdentityDocument = async (workerId, file) => {
@@ -444,6 +526,34 @@ export const uploadIdentityDocument = async (workerId, file) => {
       body: formData
     })
   )
+}
+
+/**
+ * وثائق الهوية غير معرّضة كملفات ثابتة علنية؛ يجب جلبها عبر API مع التوكن.
+ * يعيد رابط blob يجب استدعاء URL.revokeObjectURL عليه عند الانتهاء.
+ */
+export const fetchWorkerIdentityDocumentPreview = async (workerId) => {
+  const response = await fetch(`${BASE_URL}/api/workers/${workerId}/identity-document`, {
+    method: "GET",
+    headers: buildHeaders({}, true)
+  })
+
+  if (!response.ok) {
+    let msg = "تعذر تحميل وثيقة الهوية"
+    try {
+      const raw = await response.text()
+      if (raw && raw.length < 240) msg = raw
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg)
+  }
+
+  const blob = await response.blob()
+  return {
+    objectUrl: URL.createObjectURL(blob),
+    mediaType: blob.type || ""
+  }
 }
 
 export const verifyWorker = async (workerId) =>

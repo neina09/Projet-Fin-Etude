@@ -11,9 +11,11 @@ public class OfferResponseDto {
     private String        taskTitle;
     private Long          taskUserId;
     private String        taskUserName;
+    private String        taskUserImageUrl;
     private Long          workerId;
     private String        workerName;
     private String        workerJob;
+    private String        workerImageUrl;
     private String        message;
     private OfferStatus   status;
     private String        workerAvailability;
