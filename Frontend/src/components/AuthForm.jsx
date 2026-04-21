@@ -53,8 +53,15 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
       setError("كلمتا المرور غير متطابقتين.")
       return
     }
-    if (formData.password.length < 6) {
-      setError("يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.")
+    // الاسم يجب أن يكون يتكون من حروف و ليكون طويل جدا max 15 حرف
+    const nameRegex = /^[\u0600-\u06FFa-zA-Z ]{1,15}$/
+    if (!nameRegex.test(formData.name)) {
+      setError("الاسم يجب أن يحتوي على حروف فقط وبحد أقصى 15 حرفاً.")
+      return
+    }
+
+    if (formData.password.length !== 8) {
+      setError("يجب أن تتكون كلمة المرور من 8 خانات بالضبط (أرقام وحروف ورموز).")
       return
     }
 
@@ -80,7 +87,6 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
 
     setLoading(true)
     clearMessages()
-
     try {
       const data = await loginUser(formData.phone, formData.password)
       localStorage.setItem("token", data.token)
@@ -105,7 +111,7 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
 
   const handleVerify = async () => {
     if (!verificationCode || verificationCode.length < 6) {
-      setError("أدخل رمز التحقق المكون من 6 أرقام.")
+      setError("أدخل رمز التحقق المكون من 6 خانات.")
       return
     }
 
@@ -165,8 +171,8 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
       setError("يرجى ملء جميع الحقول.")
       return
     }
-    if (newPassword.length < 6) {
-      setError("يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.")
+    if (newPassword.length !== 8) {
+      setError("يجب أن تتكون كلمة المرور الجديدة من 8 خانات بالضبط.")
       return
     }
 

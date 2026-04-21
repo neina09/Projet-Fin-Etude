@@ -13,6 +13,7 @@ import {
   getWorkers
 } from "../api"
 import DashboardHeader from "./DashboardHeader"
+import Footer from "./Footer"
 
 const WorkersSection = lazy(() => import("./WorkersSection"))
 const ProblemBoard = lazy(() => import("./ProblemBoard"))
@@ -21,6 +22,7 @@ const AdminDashboard = lazy(() => import("./AdminDashboard"))
 const TaskStatsCharts = lazy(() => import("./TaskStatsCharts"))
 const ProfileSettings = lazy(() => import("./ProfileSettings"))
 const RatingsSection = lazy(() => import("./RatingsSection"))
+const TasksVerificationPage = lazy(() => import("./TasksVerificationPage"))
 
 function SectionLoader({ message = "جاري تحضير البيانات..." }) {
   return (
@@ -44,7 +46,8 @@ const DASHBOARD_ROUTES = {
   ratings: "/dashboard/ratings",
   becomeWorker: "/dashboard/become-worker",
   profile: "/dashboard/profile",
-  admin: "/dashboard/admin"
+  admin: "/dashboard/admin",
+  tasksVerification: "/dashboard/tasks-verification"   // ← جديد
 }
 
 const PAGE_TITLES = {
@@ -54,7 +57,8 @@ const PAGE_TITLES = {
   ratings: "التقييمات والعروض",
   becomeWorker: "الانضمام للمنصة",
   profile: "الملف الشخصي",
-  admin: "لوحة السيطرة"
+  admin: "لوحة السيطرة",
+  tasksVerification: "إدارة المهام والتوثيق"           // ← جديد
 }
 
 export default function Dashboard({ onLogout }) {
@@ -80,6 +84,9 @@ export default function Dashboard({ onLogout }) {
   }, [location.pathname])
 
   const setPage = (nextPage, initialTab = "open") => {
+    // ── حماية: صفحة إدارة المهام والتوثيق للمدير فقط ──
+    if (nextPage === "tasksVerification" && !isAdmin) return
+
     const path = DASHBOARD_ROUTES[nextPage] || DASHBOARD_ROUTES.dashboard
     setTasksTab(initialTab)
     navigate(path)
@@ -112,7 +119,9 @@ export default function Dashboard({ onLogout }) {
   useEffect(() => {
     if (isAdmin && page === "dashboard") navigate(DASHBOARD_ROUTES.admin, { replace: true })
     if ((isAdmin || isWorker) && page === "becomeWorker") navigate(isAdmin ? DASHBOARD_ROUTES.admin : DASHBOARD_ROUTES.dashboard, { replace: true })
-  }, [isAdmin, isWorker, navigate, page])
+    // ── إعادة توجيه غير المدير إذا حاول الوصول المباشر ──
+    if (!isAdmin && page === "tasksVerification" && user !== null) navigate(DASHBOARD_ROUTES.dashboard, { replace: true })
+  }, [isAdmin, isWorker, navigate, page, user])
 
   const statsCards = useMemo(() => {
     const activeTasksCount = myTasks.filter(t => ["OPEN", "IN_PROGRESS", "ASSIGNED"].includes(String(t.status).toUpperCase())).length
@@ -360,17 +369,38 @@ export default function Dashboard({ onLogout }) {
                 </div>
               )}
 
-
               <div className="mx-auto max-w-7xl">
                 {page === "workers" && <Suspense fallback={<SectionLoader message="جاري استدعاء قائمة الخبراء..." />}><WorkersSection currentUser={user} /></Suspense>}
                 {page === "tasks" && <Suspense fallback={<SectionLoader message="جاري تجهيز غرفة العمليات..." />}><ProblemBoard currentUser={user} initialTab={tasksTab} /></Suspense>}
                 {page === "ratings" && <Suspense fallback={<SectionLoader message="جاري تجهيز التقييمات..." />}><RatingsSection currentUser={user} myTasks={myTasks} myOffers={myOffers} /></Suspense>}
                 {page === "becomeWorker" && !isAdmin && !isWorker && <Suspense fallback={<SectionLoader message="جاري فتح نموذج الانضمام..." />}><BecomeWorker onSuccess={async () => { await loadUser(); await loadDashboardData(); setPage("dashboard"); }} /></Suspense>}
                 {page === "profile" && <Suspense fallback={<SectionLoader message="جاري عرض الهوية الرقمية..." />}><ProfileSettings user={user} onUpdate={setUser} onRefresh={loadDashboardData} onBecomeWorker={() => setPage("becomeWorker")} onLogout={onLogout} /></Suspense>}
-                {page === "admin" && <Suspense fallback={<SectionLoader message="الوصول لمركز السيطرة المركزي..." />}><AdminDashboard /></Suspense>}
+                {page === "admin" && isAdmin && <Suspense fallback={<SectionLoader message="الوصول لمركز السيطرة المركزي..." />}><AdminDashboard onNavigate={setPage} /></Suspense>}
+
+                {/* ── صفحة إدارة المهام والتوثيق — للمدير فقط ── */}
+                {page === "tasksVerification" && isAdmin && (
+                  <Suspense fallback={<SectionLoader message="جاري تحميل إدارة المهام والتوثيق..." />}>
+                    <TasksVerificationPage />
+                  </Suspense>
+                )}
+
+                {/* ── حماية: غير المدير لا يرى الصفحة ── */}
+                {page === "tasksVerification" && !isAdmin && user !== null && (
+                  <div className="flex min-h-[500px] flex-col items-center justify-center text-center p-12">
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-50">
+                      <span className="text-4xl">🔒</span>
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 mb-2">غير مصرح بالدخول</h3>
+                    <p className="text-sm font-bold text-slate-400 mb-8">هذه الصفحة مخصصة للمدير فقط.</p>
+                    <button onClick={() => setPage("dashboard")} className="rounded-2xl bg-[#1d4ed8] px-8 py-3 text-sm font-black text-white shadow-lg hover:bg-blue-700 transition-all">
+                      العودة للرئيسية
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </AnimatePresence>
+          <Footer />
         </main>
       </div>
     </div>

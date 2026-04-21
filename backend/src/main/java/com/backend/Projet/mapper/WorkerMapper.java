@@ -30,13 +30,14 @@ public class WorkerMapper {
                 .address(worker.getAddress())
                 .salary(worker.getSalary())
                 .imageUrl(resolvedImageUrl)
+                // حقول حساسة: تظهر فقط للمالك أو المدير
                 .identityDocumentUrl(includeSensitiveDetails ? worker.getIdentityDocumentUrl() : null)
                 .nationalIdNumber(includeSensitiveDetails ? worker.getNationalIdNumber() : null)
-                .phoneNumber(worker.getPhoneNumber())
+                .phoneNumber(includeSensitiveDetails ? worker.getPhoneNumber() : null)
                 .availability(worker.getAvailability())
                 .averageRating(worker.getAverageRating())
                 .verificationStatus(worker.getVerificationStatus())
-                .verificationNotes(worker.getVerificationNotes())
+                .verificationNotes(includeSensitiveDetails ? worker.getVerificationNotes() : null)
                 .userId(worker.getUser() != null ? worker.getUser().getId() : null)
                 .verified(worker.getVerificationStatus() == WorkerVerificationStatus.VERIFIED)
                 .build();

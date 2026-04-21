@@ -70,7 +70,7 @@ public class SecurityConfiguration {
 
                     authorize
                             .requestMatchers("/auth/**").permitAll()
-                            .requestMatchers("/ws/**").permitAll()
+                            .requestMatchers("/ws", "/ws/**").authenticated()
                             .requestMatchers(HttpMethod.GET, "/uploads/users/images/**").permitAll()
                             .requestMatchers(HttpMethod.GET, "/uploads/workers/images/**").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/workers").permitAll()

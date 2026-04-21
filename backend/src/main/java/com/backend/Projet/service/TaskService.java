@@ -36,17 +36,19 @@ public class TaskService {
                 .profession(input.getProfession())
                 .latitude(input.getLatitude())
                 .longitude(input.getLongitude())
-                .status(TaskStatus.PENDING_REVIEW)
+                .status(user.getRole() == Role.ADMIN ? TaskStatus.OPEN : TaskStatus.PENDING_REVIEW)
                 .user(managedUser)
                 .build();
 
         Task savedTask = taskRepository.save(task);
 
-        notificationService.sendNotificationToRole(
-                Role.ADMIN,
-                "New task pending review: " + savedTask.getTitle(),
-                NotificationType.ADMIN_TASK_REVIEW
-        );
+        if (savedTask.getStatus() == TaskStatus.PENDING_REVIEW) {
+            notificationService.sendNotificationToRole(
+                    Role.ADMIN,
+                    "New task pending review: " + savedTask.getTitle(),
+                    NotificationType.ADMIN_TASK_REVIEW
+            );
+        }
 
         return toTaskDto(savedTask);
     }
@@ -109,7 +111,7 @@ public class TaskService {
         );
     }
 
-    // FIX #1: يرى الجميع تفاصيل Task المفتوحة (مش مقيد بصاحب الـ Task فقط)
+    // الجميع يرون تفاصيل أي Task عبر ID بغض النظر عن الحالة
     @Transactional(readOnly = true)
     public TaskResponseDto getTaskById(Long id) {
         return getTaskById(id, null, null);
@@ -119,9 +121,6 @@ public class TaskService {
     public TaskResponseDto getTaskById(Long id, Double userLatitude, Double userLongitude) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
-        if (task.getStatus() != TaskStatus.OPEN) {
-            throw new ResourceNotFoundException("Task not found");
-        }
         return toTaskDto(task, userLatitude, userLongitude);
     }
 
@@ -440,6 +439,59 @@ public class TaskService {
         );
 
         return offerMapper.toDto(offer);
+    }
+
+    @Transactional
+    public void requestAnotherWorker(Long taskId, WorkerReferralRequestDto dto, User workerUser) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        if (task.getStatus() != TaskStatus.OPEN && task.getStatus() != TaskStatus.IN_PROGRESS) {
+            throw new BusinessException("Task is not available for worker referrals");
+        }
+        if (task.getUser().getId().equals(workerUser.getId())) {
+            throw new BusinessException("Cannot request another worker on your own task");
+        }
+        if (workerUser.getRole() != Role.WORKER) {
+            throw new BusinessException("Only workers can request another worker");
+        }
+
+        Worker requestingWorker = workerRepository.findByUserId(workerUser.getId())
+                .orElseThrow(() -> new BusinessException("Please complete your worker profile first"));
+        if (requestingWorker.getVerificationStatus() != WorkerVerificationStatus.VERIFIED) {
+            throw new BusinessException("Only verified workers can request another worker");
+        }
+
+        Worker requestedWorker = workerRepository.findById(dto.getWorkerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Requested worker not found"));
+
+        if (requestedWorker.getId().equals(requestingWorker.getId())) {
+            throw new BusinessException("You cannot request yourself");
+        }
+        if (requestedWorker.getVerificationStatus() != WorkerVerificationStatus.VERIFIED) {
+            throw new BusinessException("Requested worker must be verified");
+        }
+        if (requestedWorker.getAvailability() != null
+                && requestedWorker.getAvailability() != WorkerAvailability.AVAILABLE) {
+            throw new BusinessException("Requested worker is not currently available");
+        }
+        if (offerRepository.existsByTaskIdAndWorkerId(taskId, requestedWorker.getId())) {
+            throw new BusinessException("This worker already has an offer on the task");
+        }
+
+        String referralMessage = dto.getMessage().trim();
+        notificationService.sendNotification(
+                requestedWorker.getUser(),
+                "Worker " + requestingWorker.getName() + " asked you to review task: "
+                        + task.getTitle() + ". Message: " + referralMessage,
+                NotificationType.WORKER_ASSISTANCE_REQUEST
+        );
+        notificationService.sendNotification(
+                task.getUser(),
+                "Worker " + requestingWorker.getName() + " requested help from "
+                        + requestedWorker.getName() + " on task: " + task.getTitle(),
+                NotificationType.WORKER_ASSISTANCE_REQUEST
+        );
     }
 
     private TaskResponseDto toTaskDto(Task task) {

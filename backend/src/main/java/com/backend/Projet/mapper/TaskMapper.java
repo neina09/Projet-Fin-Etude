@@ -2,10 +2,15 @@ package com.backend.Projet.mapper;
 
 import com.backend.Projet.dto.TaskResponseDto;
 import com.backend.Projet.model.Task;
+import com.backend.Projet.repository.RatingRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class TaskMapper {
+
+    private final RatingRepository ratingRepository;
 
     public TaskResponseDto toDto(Task task) {
         if (task == null) {
@@ -21,6 +26,7 @@ public class TaskMapper {
                 assignedWorkerImageUrl = task.getAssignedWorker().getUser().getImageUrl();
             }
         }
+        boolean isRated = ratingRepository.existsByTaskId(task.getId());
         return TaskResponseDto.builder()
                 .id(task.getId())
                 .title(task.getTitle())
@@ -41,6 +47,8 @@ public class TaskMapper {
                 .createdAt(task.getCreatedAt())
                 .latitude(task.getLatitude())
                 .longitude(task.getLongitude())
+                .isRated(isRated)
                 .build();
     }
 }
+

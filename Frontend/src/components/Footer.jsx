@@ -1,74 +1,77 @@
 import React from "react"
-import { Facebook, Twitter, Instagram, Linkedin, Sparkles } from "lucide-react"
+import { Briefcase, Facebook, Twitter, Instagram, Mail, Phone, MapPin } from "lucide-react"
+import logo from "../assets/logo.png"
 
-function Footer() {
+export default function Footer() {
   return (
-    <footer className="bg-white border-t border-slate-100 py-16" dir="rtl">
-      <div className="mx-auto max-w-7xl px-6 lg:px-12">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
-          {/* Brand Info */}
-          <div className="flex flex-col items-start gap-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue text-white shadow-lg">
-                <Sparkles size={22} className="fill-current" />
+    <footer className="mt-20 border-t border-slate-100 bg-white" dir="rtl">
+      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-12">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-4">
+          <div className="lg:col-span-1">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-slate-100 p-1.5 shadow-sm">
+                <img src={logo} alt="L" className="h-full w-full object-contain" />
               </div>
-              <p className="text-2xl font-black tracking-tight text-slate-900">منصة العمل</p>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">عاملك</h2>
             </div>
-            <p className="max-w-[240px] text-sm font-medium leading-relaxed text-slate-500">
-              المنصة الموريتانية الأولى لتوظيف المحترفين الميدانيين بكل ثقة وأمان.
+            <p className="text-sm font-bold text-slate-500 leading-relaxed">
+              المنصة الموريتانية الأولى لربط المهنيين المهرة بأصحاب العمل. نسعى لتطوير سوق العمل الرقمي وتسهيل المعاملات بين الجميع.
             </p>
-            <div className="flex items-center gap-4">
-              {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
-                <a key={i} href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-all hover:bg-brand-blue hover:text-white">
-                  <Icon size={18} />
-                </a>
-              ))}
-            </div>
           </div>
 
-          {/* Quick Links */}
-          <div className="flex flex-col items-start gap-6">
-            <h4 className="text-sm font-black uppercase tracking-widest text-slate-900">الروابط</h4>
-            <nav className="flex flex-col gap-4">
-              {["الرئيسية", "عن المنصة", "الخدمات", "العمال"].map((link) => (
-                <a key={link} href="#" className="text-sm font-bold text-slate-500 transition-colors hover:text-brand-blue">{link}</a>
-              ))}
-            </nav>
+          <div className="lg:col-span-1">
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-6 underline decoration-[#1d4ed8] decoration-2 underline-offset-8">روابط سريعة</h3>
+            <ul className="space-y-4">
+              <li><a href="#" className="text-sm font-bold text-slate-500 hover:text-[#1d4ed8] transition-colors">عن المنصة</a></li>
+              <li><a href="#" className="text-sm font-bold text-slate-500 hover:text-[#1d4ed8] transition-colors">كيفية العمل</a></li>
+              <li><a href="#" className="text-sm font-bold text-slate-500 hover:text-[#1d4ed8] transition-colors">الأسئلة الشائعة</a></li>
+              <li><a href="#" className="text-sm font-bold text-slate-500 hover:text-[#1d4ed8] transition-colors">سياسة الخصوصية</a></li>
+            </ul>
           </div>
 
-          {/* Support */}
-          <div className="flex flex-col items-start gap-6">
-            <h4 className="text-sm font-black uppercase tracking-widest text-slate-900">الدعم</h4>
-            <nav className="flex flex-col gap-4">
-              {["الأسئلة الشائعة", "سياسة الخصوصية", "اتصل بنا", "الشروط والأحكام"].map((link) => (
-                <a key={link} href="#" className="text-sm font-bold text-slate-500 transition-colors hover:text-brand-blue">{link}</a>
-              ))}
-            </nav>
+          <div className="lg:col-span-1">
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-6 underline decoration-[#1d4ed8] decoration-2 underline-offset-8">اتصل بنا</h3>
+            <ul className="space-y-4">
+              <li className="flex items-center gap-3 text-sm font-bold text-slate-500">
+                <Phone size={16} className="text-[#1d4ed8]" /> +222 22 22 22 22
+              </li>
+              <li className="flex items-center gap-3 text-sm font-bold text-slate-500">
+                <Mail size={16} className="text-[#1d4ed8]" /> contact@aamilak.mr
+              </li>
+              <li className="flex items-center gap-3 text-sm font-bold text-slate-500">
+                <MapPin size={16} className="text-[#1d4ed8]" /> نواكشوط، موريتانيا
+              </li>
+            </ul>
           </div>
 
-          {/* Contact */}
-          <div className="flex flex-col items-start gap-6">
-            <h4 className="text-sm font-black uppercase tracking-widest text-slate-900">تواصل معنا</h4>
-            <div className="flex flex-col gap-4">
-              <p className="text-sm font-bold text-slate-500">نواكشوط، موريتانيا</p>
-              <p className="text-sm font-bold text-slate-500">support@mansa.mr</p>
-              <p className="text-sm font-bold text-slate-500">+222 44 44 44 44</p>
+          <div className="lg:col-span-1">
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-6 underline decoration-[#1d4ed8] decoration-2 underline-offset-8">تابعنا</h3>
+            <div className="flex gap-4">
+              <a href="#" className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-[#1d4ed8] hover:text-white transition-all shadow-sm">
+                <Facebook size={18} />
+              </a>
+              <a href="#" className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-[#1d4ed8] hover:text-white transition-all shadow-sm">
+                <Twitter size={18} />
+              </a>
+              <a href="#" className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-[#1d4ed8] hover:text-white transition-all shadow-sm">
+                <Instagram size={18} />
+              </a>
             </div>
           </div>
         </div>
 
         <div className="mt-16 pt-8 border-t border-slate-50 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-sm font-medium text-slate-400 text-center">
-            © 2026 منصة العمل. جميع الحقوق محفوظة.
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            © {new Date().getFullYear()} عاملك. جميع الحقوق محفوظة لجمهورية موريتانيا الإسلامية.
           </p>
-          <div className="flex items-center gap-6">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/Visa_Logo.png" alt="Visa" className="h-4 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/MasterCard_Logo.png" alt="MasterCard" className="h-6 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
+          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">حالة النظام: مستقر</span>
+             </div>
           </div>
         </div>
       </div>
     </footer>
   )
 }
-
-export default Footer

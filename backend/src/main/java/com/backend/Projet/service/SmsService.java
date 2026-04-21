@@ -1,15 +1,18 @@
 package com.backend.Projet.service;
 
 import com.backend.Projet.exception.BusinessException;
-import com.twilio.Twilio;
-import com.twilio.exception.ApiException;
-import com.twilio.rest.api.v2010.account.Message;
-import com.twilio.type.PhoneNumber;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
 
 @Service
 public class SmsService {
@@ -19,76 +22,75 @@ public class SmsService {
     @Value("${app.sms.enabled:false}")
     private boolean smsEnabled;
 
-    @Value("${app.sms.sender-name:Khadamat MR}")
-    private String senderName;
+    @Value("${app.sms.chinguisoft.validation-key:}")
+    private String validationKey;
 
-    @Value("${app.sms.twilio.account-sid:}")
-    private String accountSid;
+    @Value("${app.sms.chinguisoft.validation-token:}")
+    private String validationToken;
 
-    @Value("${app.sms.twilio.api-key:}")
-    private String apiKey;
+    @Value("${app.sms.chinguisoft.lang:ar}")
+    private String lang;
 
-    @Value("${app.sms.twilio.api-secret:}")
-    private String apiSecret;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${app.sms.twilio.from-number:}")
-    private String fromNumber;
-
-    @Value("${app.sms.twilio.messaging-service-sid:}")
-    private String messagingServiceSid;
-
-    @PostConstruct
-    void initializeTwilio() {
-        if (!smsEnabled) {
-            return;
-        }
-
-        if (isBlank(accountSid) || isBlank(apiKey) || isBlank(apiSecret)) {
-            throw new IllegalStateException("SMS is enabled but Twilio credentials are incomplete");
-        }
-
-        Twilio.init(apiKey, apiSecret, accountSid);
-        log.info("Twilio SMS service initialized successfully");
-    }
-
-    public void sendVerificationCode(String phone, String verificationCode) {
-        sendSms(phone, "Your verification code is: " + verificationCode);
+    public void sendVerificationCode(String phone, String code) {
+        sendSms(phone, code);
     }
 
     public void sendPasswordResetToken(String phone, String token) {
-        sendSms(phone, "Your password reset code is: " + token);
+        sendSms(phone, token);
     }
 
-    private void sendSms(String phone, String message) {
+    private void sendSms(String phone, String code) {
         if (!smsEnabled) {
-            log.info("SMS disabled. Fallback message to {} from {}: {}", phone, senderName, message);
+            log.warn("SMS delivery is disabled. No SMS was sent to {}", maskPhone(phone));
             return;
         }
 
+        if (validationKey.isBlank() || validationToken.isBlank()) {
+            log.error("SMS keys are not configured. Check validation-key and validation-token.");
+            throw new BusinessException("SMS configuration is incomplete");
+        }
+
+        String url = "https://chinguisoft.com/api/sms/validation/" + validationKey;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Validation-token", validationToken);
+
+        Map<String, String> body = Map.of(
+                "phone", phone,
+                "lang", lang,
+                "code", code
+        );
+
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
+
         try {
-            var creator = isBlank(messagingServiceSid)
-                    ? Message.creator(new PhoneNumber(phone), resolveFromNumber(), message)
-                    : Message.creator(new PhoneNumber(phone), messagingServiceSid, message);
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
 
-            creator.create();
-            log.info("SMS sent successfully to {}", phone);
-        } catch (ApiException ex) {
-            log.error("Twilio rejected SMS to {}: {}", phone, ex.getMessage(), ex);
-            throw new BusinessException("Failed to send SMS");
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                log.info("SMS sent to {}. Balance: {}", maskPhone(phone), response.getBody().get("balance"));
+            } else {
+                log.error("Chinguisoft SMS error: status={}", response.getStatusCode());
+                throw new BusinessException("Failed to send SMS");
+            }
+
+        } catch (BusinessException ex) {
+            throw ex;
         } catch (Exception ex) {
-            log.error("Unexpected SMS error for {}: {}", phone, ex.getMessage(), ex);
+            log.error("Unexpected SMS error for {}: {}", maskPhone(phone), ex.getMessage(), ex);
             throw new BusinessException("Failed to send SMS");
         }
     }
 
-    private PhoneNumber resolveFromNumber() {
-        if (isBlank(fromNumber)) {
-            throw new BusinessException("Twilio sender number is not configured");
+    private String maskPhone(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return "unknown";
         }
-        return new PhoneNumber(fromNumber);
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.isBlank();
+        if (phone.length() <= 4) {
+            return "****";
+        }
+        return "*".repeat(Math.max(0, phone.length() - 4)) + phone.substring(phone.length() - 4);
     }
 }

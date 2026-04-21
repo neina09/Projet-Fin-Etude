@@ -1,6 +1,12 @@
 package com.backend.Projet.service;
 
-import com.backend.Projet.dto.*;
+import com.backend.Projet.dto.ChangePasswordDto;
+import com.backend.Projet.dto.LoginUserDto;
+import com.backend.Projet.dto.RegisterUserDto;
+import com.backend.Projet.dto.ResetPasswordDto;
+import com.backend.Projet.dto.UpdateProfileDto;
+import com.backend.Projet.dto.UserResponseDto;
+import com.backend.Projet.dto.VerifyUserDto;
 import com.backend.Projet.exception.BusinessException;
 import com.backend.Projet.exception.ResourceNotFoundException;
 import com.backend.Projet.model.Role;
@@ -16,12 +22,13 @@ import com.backend.Projet.repository.WorkerRepository;
 import com.backend.Projet.util.MauritaniaPhoneUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -76,7 +83,9 @@ public class AuthenticationService {
     @Transactional
     public UserResponseDto signup(RegisterUserDto input) {
         String normalizedPhone = MauritaniaPhoneUtils.normalize(input.getPhone());
+        log.info("Signup attempt for phone {}", maskPhone(normalizedPhone));
         if (userRepository.findByPhone(normalizedPhone).isPresent()) {
+            log.warn("Phone already in use for {}", maskPhone(normalizedPhone));
             throw new BusinessException("Phone already in use");
         }
         User user = new User(input.getUsername(), normalizedPhone, passwordEncoder.encode(input.getPassword()));
@@ -85,6 +94,7 @@ public class AuthenticationService {
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
         sendVerificationCode(user);
+        log.info("Verification SMS dispatched to {}", maskPhone(normalizedPhone));
         User saved = userRepository.save(user);
         return userMapper.toDto(saved);
     }
@@ -111,7 +121,6 @@ public class AuthenticationService {
         if (user.getVerificationCode() == null || user.getVerificationCodeExpiresAt() == null) {
             throw new BusinessException("No verification code found for this account");
         }
-
         if (user.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
             throw new BusinessException("Verification code has expired");
         }
@@ -139,7 +148,7 @@ public class AuthenticationService {
             sendVerificationCode(user);
             userRepository.save(user);
         } else {
-            log.info("Verification code requested for unknown phone {}", normalizedPhone);
+            log.info("Verification code requested for unknown phone {}", maskPhone(normalizedPhone));
         }
     }
 
@@ -148,12 +157,11 @@ public class AuthenticationService {
         String normalizedPhone = MauritaniaPhoneUtils.normalize(phone);
         Optional<User> optionalUser = userRepository.findByPhone(normalizedPhone);
         if (optionalUser.isEmpty()) {
-            log.info("Reset password requested for unknown phone {}", normalizedPhone);
+            log.info("Reset password requested for unknown phone {}", maskPhone(normalizedPhone));
             return;
         }
-
         User user = optionalUser.get();
-        String token = generateVerificationCode();
+        String token = generateResetPasswordToken();
         user.setResetPasswordToken(token);
         user.setResetPasswordExpiresAt(LocalDateTime.now().plusMinutes(15));
         userRepository.save(user);
@@ -200,7 +208,7 @@ public class AuthenticationService {
     }
 
     @Transactional
-    public UserResponseDto uploadProfileImage(User currentUser, org.springframework.web.multipart.MultipartFile file) {
+    public UserResponseDto uploadProfileImage(User currentUser, MultipartFile file) {
         if (currentUser.getImageUrl() != null && !currentUser.getImageUrl().isBlank()) {
             fileStorageService.deleteStoredFile(currentUser.getImageUrl());
         }
@@ -220,22 +228,18 @@ public class AuthenticationService {
         User managedUser = userRepository.findById(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Long userId = managedUser.getId();
-
         log.info("Starting account deletion for user ID: {}", userId);
 
-        // 1. Independent child records
         notificationRepository.deleteByUserId(userId);
 
-        // 2. Worker-related data (if applicable)
         Worker worker = workerRepository.findByUserId(userId).orElse(null);
         if (worker != null) {
             Long workerId = worker.getId();
             log.info("User is a worker (ID: {}). Cleaning up worker data.", workerId);
-
             ratingRepository.deleteByTaskAssignedWorkerId(workerId);
             taskRepository.clearAssignedWorkerByWorkerId(workerId);
-            ratingRepository.deleteByBookingWorkerId(workerId); // Delete ratings of bookings the worker performed
-            ratingRepository.deleteByWorkerId(workerId);        // Delete general ratings for this worker
+            ratingRepository.deleteByBookingWorkerId(workerId);
+            ratingRepository.deleteByWorkerId(workerId);
             offerRepository.deleteByWorkerId(workerId);
             bookingRepository.deleteByWorkerId(workerId);
             fileStorageService.deleteStoredFile(worker.getImageUrl());
@@ -243,35 +247,38 @@ public class AuthenticationService {
             workerRepository.delete(worker);
         }
 
-        // 3. User-related data as a customer
-        // Delete ratings of bookings the user made
         ratingRepository.deleteByBookingUserId(userId);
-        // Delete ratings the user wrote
         ratingRepository.deleteByUserId(userId);
-        
-        // Delete offers on tasks owned by this user
         offerRepository.deleteByTaskUserId(userId);
-        
-        // Delete bookings the user created
         bookingRepository.deleteByUserId(userId);
-        
-        // Delete tasks the user created
         taskRepository.deleteByUserId(userId);
 
-        // 4. Finally delete the user
         fileStorageService.deleteStoredFile(managedUser.getImageUrl());
         userRepository.delete(managedUser);
         log.info("Successfully deleted user ID: {}", userId);
     }
-
-
 
     private void sendVerificationCode(User user) {
         smsService.sendVerificationCode(user.getPhone(), user.getVerificationCode());
     }
 
     private String generateVerificationCode() {
-        int code = SECURE_RANDOM.nextInt(900000) + 100000;
+        int code = 100000 + SECURE_RANDOM.nextInt(900000);
         return String.valueOf(code);
+    }
+
+    private String generateResetPasswordToken() {
+        int code = 10_000_000 + SECURE_RANDOM.nextInt(90_000_000);
+        return String.valueOf(code);
+    }
+
+    private String maskPhone(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return "unknown";
+        }
+        if (phone.length() <= 4) {
+            return "****";
+        }
+        return "*".repeat(Math.max(0, phone.length() - 4)) + phone.substring(phone.length() - 4);
     }
 }

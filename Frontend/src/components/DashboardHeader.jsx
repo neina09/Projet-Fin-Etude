@@ -1,9 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { Bell, Menu, Search, Sparkles, User as UserIcon, LogOut, ClipboardList, Users, ShieldCheck, ChevronDown, Briefcase, Home, ShoppingBag, FileText, Star } from "lucide-react"
+import {
+  Bell,
+  Search,
+  LogOut,
+  ClipboardList,
+  Users,
+  ChevronDown,
+  Briefcase,
+  Home,
+  Star,
+  Shield
+} from "lucide-react"
 import NotificationList from "./NotificationList"
 import { getMyNotifications, isAuthenticationError, markNotificationRead, resolveAssetUrl } from "../api"
-import { AnimatePresence, motion } from "framer-motion";
-
+import { AnimatePresence, motion } from "framer-motion"
+import logo from "../assets/logo.png"
 
 const normalizeNotification = (notification) => ({
   ...notification,
@@ -18,26 +29,22 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
 
   const isAdmin = user?.role === "ADMIN"
+
   const fetchNotifications = useCallback(async () => {
     if (!notificationsEnabled) return
-
     try {
       const data = await getMyNotifications()
       const list = (Array.isArray(data) ? data : []).map(normalizeNotification)
       setNotifications(
         list
-          .map((notification) =>
-            hiddenNotificationIds.includes(notification.id)
-              ? { ...notification, isRead: true }
-              : notification
-          )
-          .filter((notification) => !notification.isRead)
+          .map((n) => hiddenNotificationIds.includes(n.id) ? { ...n, isRead: true } : n)
+          .filter((n) => !n.isRead)
       )
     } catch (error) {
       if (isAuthenticationError(error)) {
-         setNotificationsEnabled(false)
-         setNotifications([])
-         return
+        setNotificationsEnabled(false)
+        setNotifications([])
+        return
       }
       console.error("Failed to fetch notifications:", error)
     }
@@ -47,55 +54,56 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
     if (!notificationsEnabled) return undefined
     const initialTimer = setTimeout(() => fetchNotifications(), 0)
     const interval = setInterval(fetchNotifications, 8000)
-    return () => {
-      clearTimeout(initialTimer)
-      clearInterval(interval)
-    }
+    return () => { clearTimeout(initialTimer); clearInterval(interval) }
   }, [fetchNotifications, notificationsEnabled])
 
   const handleMarkRead = async (id) => {
     try {
       await markNotificationRead(id)
-      setHiddenNotificationIds((current) => (current.includes(id) ? current : [...current, id]))
-      setNotifications((current) => current.filter((notification) => notification.id !== id))
+      setHiddenNotificationIds((c) => (c.includes(id) ? c : [...c, id]))
+      setNotifications((c) => c.filter((n) => n.id !== id))
     } catch (error) {
-       if (isAuthenticationError(error)) {
-         setNotificationsEnabled(false)
-         setNotifications([])
-         return
-       }
-       console.error("Failed to mark notification as read:", error)
+      if (isAuthenticationError(error)) {
+        setNotificationsEnabled(false)
+        setNotifications([])
+        return
+      }
+      console.error("Failed to mark notification as read:", error)
     }
   }
 
   const unreadCount = useMemo(
-    () => notifications.filter((notification) => !notification.isRead).length,
+    () => notifications.filter((n) => !n.isRead).length,
     [notifications]
   )
 
-  // Navigation items shown in header bar
+  // Navigation tabs — added tasks-verification for admin
   const headerNavItems = [
     { id: isAdmin ? "admin" : "dashboard", label: "الرئيسية", icon: Home },
     { id: "workers", label: "سوق العمال", icon: Users },
     { id: "tasks", label: "المهام والعروض", icon: ClipboardList },
-    { id: "ratings", label: "التقييمات", icon: Star },
+    ...(isAdmin
+      ? [{ id: "tasksVerification", label: "المهام والتوثيق", icon: Shield }]
+      : []),
+    { id: "ratings", label: "التقييمات", icon: Star }
   ]
-
-
 
   return (
     <header className="sticky top-0 z-[50] flex flex-col border-b border-slate-100 bg-white/95 backdrop-blur-3xl transition-all duration-500 shadow-sm">
       {/* Top Row */}
       <div className="flex h-20 items-center justify-between px-6 lg:px-12">
         <div className="flex items-center gap-8">
-          <div className="flex items-center gap-4 cursor-pointer" onClick={() => onNavigate(isAdmin ? "admin" : "dashboard")}>
-             <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1d4ed8] shadow-lg shadow-blue-500/20 overflow-hidden">
-                <Briefcase size={20} className="text-white" />
-             </div>
-             <div className="hidden sm:block">
-                <h1 className="text-xl font-black text-slate-950 uppercase tracking-tight">شغلني</h1>
-                <p className="text-[8px] font-black text-[#1d4ed8] tracking-[0.2em] uppercase opacity-60">Smart Node</p>
-             </div>
+          <div
+            className="flex items-center gap-4 cursor-pointer"
+            onClick={() => onNavigate(isAdmin ? "admin" : "dashboard")}
+          >
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-lg border border-slate-100 p-1.5 overflow-hidden">
+              <img src={logo} alt="L" className="h-full w-full object-contain" />
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-xl font-black text-slate-950 uppercase tracking-tight">عاملك</h1>
+              <p className="text-[8px] font-black text-[#1d4ed8] tracking-[0.2em] uppercase opacity-60">Aamilak Node</p>
+            </div>
           </div>
         </div>
 
@@ -114,9 +122,11 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
           <div className="relative">
             <button
               type="button"
-              onClick={() => setShowNotifications((current) => !current)}
+              onClick={() => setShowNotifications((c) => !c)}
               className={`relative flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-300 ${
-                showNotifications ? "bg-[#1d4ed8] text-white shadow-lg shadow-blue-500/20" : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-900 shadow-sm"
+                showNotifications
+                  ? "bg-[#1d4ed8] text-white shadow-lg shadow-blue-500/20"
+                  : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-900 shadow-sm"
               }`}
             >
               <Bell size={19} />
@@ -129,7 +139,7 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
 
             <AnimatePresence>
               {showNotifications && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -147,23 +157,27 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
           {/* User Menu */}
           <div className="relative">
             <button
-               onClick={() => setShowUserMenu(!showUserMenu)}
-               className={`flex items-center gap-3 p-1.5 rounded-2xl border transition-all duration-300 ${showUserMenu ? 'bg-slate-50 border-blue-500/20 shadow-sm' : 'bg-white border-slate-100 hover:border-slate-200 shadow-sm'}`}
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className={`flex items-center gap-3 p-1.5 rounded-2xl border transition-all duration-300 ${
+                showUserMenu
+                  ? "bg-slate-50 border-blue-500/20 shadow-sm"
+                  : "bg-white border-slate-100 hover:border-slate-200 shadow-sm"
+              }`}
             >
-               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100/50 text-sm font-black text-[#1d4ed8] overflow-hidden">
-                  {user?.imageUrl ? (
-                    <img src={resolveAssetUrl(user.imageUrl)} alt={user?.username || "User"} className="h-full w-full object-cover" />
-                  ) : (
-                    user?.username?.[0]?.toUpperCase() || "U"
-                  )}
-               </div>
-               <div className="hidden sm:flex flex-col items-end gap-0.5 ml-2">
-                  <span className="text-[12px] font-black text-slate-900 leading-tight">{user?.username || "Guest User"}</span>
-                  <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5">
-                     Online <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-                  </span>
-               </div>
-               <ChevronDown size={15} className={`text-slate-400 transition-transform duration-500 ${showUserMenu ? 'rotate-180' : ''}`} />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100/50 text-sm font-black text-[#1d4ed8] overflow-hidden">
+                {user?.imageUrl ? (
+                  <img src={resolveAssetUrl(user.imageUrl)} alt={user?.username || "User"} className="h-full w-full object-cover" />
+                ) : (
+                  user?.username?.[0]?.toUpperCase() || "U"
+                )}
+              </div>
+              <div className="hidden sm:flex flex-col items-end gap-0.5 ml-2">
+                <span className="text-[12px] font-black text-slate-900 leading-tight">{user?.username || "Guest User"}</span>
+                <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5">
+                  Online <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                </span>
+              </div>
+              <ChevronDown size={15} className={`text-slate-400 transition-transform duration-500 ${showUserMenu ? "rotate-180" : ""}`} />
             </button>
 
             <AnimatePresence>
@@ -174,24 +188,16 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   className="absolute left-0 mt-4 w-72 origin-top-left rounded-[2rem] bg-white border border-slate-100 p-3 shadow-2xl z-50"
                 >
-                  <div className="px-5 py-4 mb-2 border-b border-slate-50">
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">بيانات المستخدم</p>
-                     <p className="text-sm font-black text-slate-900 truncate">{user?.username}</p>
-                     <p className="text-[10px] font-bold text-slate-400 mt-0.5">ID: {user?.id ? String(user.id).slice(-8).toUpperCase() : "USR"}</p>
-                  </div>
-
-
-
                   <div className="mt-2 pt-2 border-t border-slate-50">
-                     <button
-                       onClick={onLogout}
-                       className="flex w-full items-center gap-4 rounded-2xl px-5 py-3.5 text-sm font-bold text-red-500 transition-all hover:bg-red-50 group"
-                     >
-                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-400 group-hover:bg-red-500 group-hover:text-white transition-all">
-                         <LogOut size={18} />
-                       </div>
-                       تسجيل الخروج
-                     </button>
+                    <button
+                      onClick={onLogout}
+                      className="flex w-full items-center gap-4 rounded-2xl px-5 py-3.5 text-sm font-bold text-red-500 transition-all hover:bg-red-50 group"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-400 group-hover:bg-red-500 group-hover:text-white transition-all">
+                        <LogOut size={18} />
+                      </div>
+                      تسجيل الخروج
+                    </button>
                   </div>
 
                   <div className="fixed inset-0 z-[-1]" onClick={() => setShowUserMenu(false)} />
@@ -203,15 +209,18 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
       </div>
 
       {/* Bottom Navigation Bar */}
-      <div className="flex items-center gap-1 px-6 lg:px-12 -mb-px">
+      <div className="flex items-center gap-1 px-6 lg:px-12 -mb-px overflow-x-auto">
         {headerNavItems.map((item) => {
           const Icon = item.icon
-          const isActive = activePage === item.id || (item.id === "dashboard" && activePage === "admin" && !isAdmin)
+          const isActive =
+            activePage === item.id ||
+            (item.id === "dashboard" && activePage === "admin" && !isAdmin)
+
           return (
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`flex items-center gap-2.5 px-6 py-3 text-[12px] font-black tracking-wide transition-all duration-300 border-b-[3px] ${
+              className={`flex shrink-0 items-center gap-2.5 px-5 py-3 text-[12px] font-black tracking-wide transition-all duration-300 border-b-[3px] ${
                 isActive
                   ? "border-[#1d4ed8] text-[#1d4ed8] bg-blue-50/50"
                   : "border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-50/50"
@@ -219,6 +228,14 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
             >
               <Icon size={16} />
               {item.label}
+              {/* Highlight badge for tasks-verification tab when it's admin */}
+              {item.id === "tasksVerification" && (
+                <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black ${
+                  isActive ? "bg-blue-100 text-blue-700" : "bg-red-50 text-red-500"
+                }`}>
+                  إدارة
+                </span>
+              )}
             </button>
           )
         })}

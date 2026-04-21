@@ -60,9 +60,12 @@ export default function ProblemCard({
   onStatusChange,
   workerOffer,
   currentWorkerStatus,
+  availableWorkers = [],
+  currentWorkerProfile,
   onSubmitOffer,
   onSelectOffer,
-  onWorkerDecision
+  onWorkerDecision,
+  onRequestWorker
 }) {
   const [open, setOpen] = useState(false)
   const [offers, setOffers] = useState([])
@@ -73,6 +76,10 @@ export default function ProblemCard({
   const [deciding, setDeciding] = useState(false)
   const [selectingOfferId, setSelectingOfferId] = useState(null)
   const [distanceKm, setDistanceKm] = useState(null)
+  const [showMap, setShowMap] = useState(false)
+  const [requestedWorkerId, setRequestedWorkerId] = useState("")
+  const [referralMessage, setReferralMessage] = useState("")
+  const [requestingWorker, setRequestingWorker] = useState(false)
 
   const status = String(problem.status || "OPEN").toUpperCase()
   const title = problem.title || "عنوان المهمة"
@@ -89,6 +96,13 @@ export default function ProblemCard({
   const canMarkDone = isOwner && status === "IN_PROGRESS"
   const canCancelTask = isOwner && (status === "OPEN" || status === "PENDING_REVIEW")
   const isCurrentWorkerBusy = currentWorkerStatus === "BUSY"
+  const referralCandidates = availableWorkers.filter((worker) => (
+    worker?.id &&
+    worker.id !== currentWorkerProfile?.id &&
+    worker.userId !== problem.userId &&
+    worker.verificationStatus === "VERIFIED" &&
+    worker.availability === "AVAILABLE"
+  ))
 
   useEffect(() => {
     if (!open || !isOwner || status === "PENDING_REVIEW") return
@@ -130,9 +144,22 @@ export default function ProblemCard({
     }
   }
 
-  // Placeholder mock data matching requested design logic
+  const handleRequestWorker = async () => {
+    if (!requestedWorkerId || !referralMessage.trim()) return
+    setRequestingWorker(true)
+    setOfferError("")
+    try {
+      await onRequestWorker?.(problem.id, Number(requestedWorkerId), referralMessage.trim())
+      setRequestedWorkerId("")
+      setReferralMessage("")
+    } catch (err) {
+      setOfferError(err.message || "تعذر إرسال طلب العامل الآخر")
+    } finally {
+      setRequestingWorker(false)
+    }
+  }
+
   const isUrgent = status === "PENDING_REVIEW"
-  // Update ownerImageUrl to prefer currentUser.imageUrl if the logged in user is the owner
   const ownerImageUrl = resolveAssetUrl(isOwner && currentUser?.imageUrl ? currentUser.imageUrl : problem.userImageUrl)
 
   return (
@@ -141,7 +168,6 @@ export default function ProblemCard({
         
         {/* Top Section */}
         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-          {/* User Info (Right) */}
           <div className="flex items-start gap-4 order-2 md:order-1 flex-1">
             <div className="h-16 w-16 bg-[#18181b] rounded-2xl flex items-center justify-center flex-shrink-0 relative overflow-hidden group">
                {ownerImageUrl ? (
@@ -175,7 +201,6 @@ export default function ProblemCard({
             </div>
           </div>
 
-          {/* Time & Badges (Left) */}
           <div className="flex flex-col items-end gap-3 order-1 md:order-2">
             <div className="flex items-center gap-3">
               <span className="text-xs font-bold text-slate-400 text-left">
@@ -193,7 +218,6 @@ export default function ProblemCard({
           </div>
         </div>
 
-        {/* Content Section */}
         <div className="space-y-4 pr-1 mt-2">
           <h3 className="text-[22px] font-black text-slate-900 leading-tight">
             {title}
@@ -203,7 +227,6 @@ export default function ProblemCard({
           </p>
         </div>
 
-        {/* Tags Section */}
         <div className="flex items-center gap-3 flex-wrap mt-2">
           <span className="bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-700 text-[10px] font-black px-5 py-2 rounded-2xl flex items-center gap-2 transition-colors cursor-pointer uppercase tracking-widest shadow-sm">
             {displayAddress.split(',')[0]} <MapPin size={14} className="text-slate-400" />
@@ -213,7 +236,6 @@ export default function ProblemCard({
           </span>
         </div>
 
-        {/* Actions Footer */}
         <div className="flex items-center gap-4 mt-6 w-full justify-start">
           {canOffer || workerOffer ? (
              <button 
@@ -236,22 +258,21 @@ export default function ProblemCard({
           )}
 
           <button onClick={() => setOpen(!open)} className="bg-slate-50 hover:bg-slate-100 border border-slate-100 text-[#1d4ed8] shadow-sm font-black text-[13px] px-8 py-4 rounded-[1.25rem] transition-colors whitespace-nowrap">
-            التفاصيل
+            {open ? "إغلاق" : "التفاصيل"}
           </button>
           
           <button className="bg-slate-50 hover:bg-slate-100 border border-slate-100 shadow-sm text-slate-400 hover:text-slate-600 flex items-center justify-center p-4 h-14 w-14 rounded-[1.25rem] transition-colors">
             <Bookmark size={20} />
           </button>
           
-          {isOwner && (isAdmin || isOwner) && (
+          {(isAdmin || isOwner) && (
              <button onClick={() => onDelete?.(problem)} className="bg-white hover:bg-red-50 text-red-500 flex items-center justify-center p-4 h-14 w-14 rounded-[1.25rem] transition-colors border border-red-100 shadow-sm">
-               <Trash2 size={20} />
+                <Trash2 size={20} />
              </button>
           )}
         </div>
       </div>
       
-      {/* Sub-actions for active tasks / owner states */}
       {(canMarkDone || canCancelTask) && (
          <div className="flex items-center gap-4 mt-6 pt-6 border-t border-slate-100">
             {canMarkDone && (
@@ -267,7 +288,6 @@ export default function ProblemCard({
          </div>
       )}
 
-      {/* Selected worker alert */}
       {isWorker && workerOffer?.status === "SELECTED" && (
          <div className="mt-6 flex flex-col md:flex-row md:items-center justify-between gap-6 p-5 rounded-[1.25rem] bg-[#1d4ed8] shadow-lg text-white">
             <div>
@@ -285,7 +305,6 @@ export default function ProblemCard({
          </div>
       )}
 
-      {/* Collapsible Details Content (Map & Offers) */}
       <AnimatePresence>
         {open && (
            <motion.div 
@@ -295,19 +314,6 @@ export default function ProblemCard({
               className="overflow-hidden mt-6 pt-6 border-t border-slate-100"
            >
               <div className="space-y-10">
-                 {/* Map location box */}
-                 <div className="overflow-hidden rounded-[1.5rem] border border-slate-100 shadow-sm relative">
-                    {hasCoordinates ? (
-                       <LeafletMapPicker isListView height="300px" showCurrentLocation taskLocation={{ lat: latitude, lng: longitude }} taskLabel={title} onDistanceChange={setDistanceKm} />
-                    ) : (
-                       <div className="flex h-48 w-full flex-col items-center justify-center gap-4 bg-slate-50 text-slate-400">
-                          <Map size={36} />
-                          <p className="text-xs font-black uppercase tracking-widest">الموقع غير محدد أوتوماتيكياً</p>
-                       </div>
-                    )}
-                 </div>
-
-                 {/* Offers List (Owner View) */}
                  {isOwner && (
                     <div className="space-y-6">
                        <div className="flex items-center justify-between">
@@ -325,13 +331,11 @@ export default function ProblemCard({
                              {offers.map(o => (
                                 <div key={o.id} className="relative p-6 rounded-[2rem] border border-slate-100 bg-white hover:border-blue-500/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-500 group">
                                    <div className="absolute top-0 right-0 w-1.5 h-full bg-[#1d4ed8] rounded-r-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                   
                                    <div className="flex flex-col md:flex-row gap-6">
-                                      {/* Worker Info Column */}
                                       <div className="flex items-center gap-5 md:w-1/3 border-b md:border-b-0 md:border-l border-slate-100 pb-5 md:pb-0 md:pl-6">
                                          <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-sm transition-transform group-hover:scale-110">
                                             {o.workerImageUrl ? (
-                                              <img src={o.workerImageUrl} alt={o.workerName || "عامل"} className="h-full w-full object-cover" />
+                                              <img src={o.workerImageUrl} alt={o.workerName} className="h-full w-full object-cover" />
                                             ) : (
                                               <div className="flex h-full w-full items-center justify-center text-[#1d4ed8] font-black text-xl">
                                                 {o.workerName?.[0] || <User size={20} />}
@@ -342,35 +346,27 @@ export default function ProblemCard({
                                             <h5 className="font-black text-slate-900 text-[15px] group-hover:text-[#1d4ed8] transition-colors">{o.workerName}</h5>
                                             <div className="flex items-center gap-2 mt-1.5">
                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{o.workerJob || "محترف معتمد"}</span>
-                                               <span className={`flex items-center text-[10px] font-black px-1.5 py-0.5 rounded-md border ${
-                                                 o.workerAvailability === "BUSY"
-                                                   ? "text-amber-600 bg-amber-50 border-amber-100/50"
-                                                   : "text-emerald-600 bg-emerald-50 border-emerald-100/50"
-                                               }`}>
+                                               <span className={`flex items-center text-[10px] font-black px-1.5 py-0.5 rounded-md border ${o.workerAvailability === "BUSY" ? "text-amber-600 bg-amber-50 border-amber-100/50" : "text-emerald-600 bg-emerald-50 border-emerald-100/50"}`}>
                                                   {o.workerAvailability === "BUSY" ? "مشغول" : "متاح"}
                                                </span>
                                             </div>
                                          </div>
                                       </div>
-                                      
-                                      {/* Offer Content & Actions */}
                                       <div className="flex-1 flex flex-col justify-between">
                                          <div className="relative mb-4">
                                             <MessageSquare size={20} className="absolute -right-3 -top-3 text-blue-100/50 opacity-50 rotate-12" />
                                             <p className="text-sm font-bold text-slate-600 bg-slate-50/50 px-5 py-4 rounded-[1.25rem] border border-slate-100/80 leading-relaxed shadow-inner">
-                                               "{o.message}"
+                                               {`"${o.message}"`}
                                             </p>
                                          </div>
-                                         
                                          <div className="flex items-center justify-between">
                                             <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase text-center border shadow-sm ${badgeClass(o.status)}`}>
                                                {OFFER_STATUS_LABELS[o.status] || o.status}
                                             </span>
-                                            
                                             {o.status === "PENDING" && status === "OPEN" && (
-                                               <button onClick={() => handleSelectOffer(o.id)} disabled={o.workerAvailability === "BUSY" || selectingOfferId === o.id} className="bg-[#1d4ed8] hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black text-xs active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-blue-500/20">
+                                               <button onClick={() => handleSelectOffer(o.id)} disabled={o.workerAvailability === "BUSY" || selectingOfferId === o.id} className="bg-[#1d4ed8] hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black text-xs transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg">
                                                   <CheckCircle2 size={16} />
-                                                  {selectingOfferId === o.id ? "جاري الاعتماد..." : o.workerAvailability === "BUSY" ? "العامل منشغل حالياً" : "قبول وتوظيف"}
+                                                  {selectingOfferId === o.id ? "جاري..." : "توظيف"}
                                                </button>
                                             )}
                                          </div>
@@ -381,43 +377,77 @@ export default function ProblemCard({
                           </div>
                        ) : (
                           <div className="py-16 text-center rounded-[2rem] border-2 border-dashed border-slate-100 bg-slate-50/50 flex flex-col items-center gap-4">
-                             <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                <Briefcase size={24} className="text-slate-300" />
-                             </div>
-                             <div>
-                                <h5 className="text-base font-black text-slate-900 mb-1">لا توجد عروض حتى الآن</h5>
-                                <p className="text-xs font-bold text-slate-400">سيتم إشعارك فور تقدم أحد المحترفين لهذه المهمة.</p>
-                             </div>
+                             <Briefcase size={24} className="text-slate-300" />
+                             <p className="text-xs font-bold text-slate-400">لا توجد عروض لهذه المهمة بعد.</p>
                           </div>
                        )}
                     </div>
                  )}
 
-                 {/* Submit Offer (Worker View) */}
                  {canOffer && (
                     <div className="space-y-6">
-                       <h4 className="text-xl font-black text-slate-900 border-r-4 border-[#1d4ed8] pr-4">قدم عرضاً لتنفيذ المهمة</h4>
-                       <textarea 
-                          value={offerText} 
-                          onChange={e => setOfferText(e.target.value)} 
-                          disabled={sendingOffer || isCurrentWorkerBusy} 
-                          placeholder={isCurrentWorkerBusy ? "أنت منشغل بمهمة أخرى..." : "اشرح قدراتك والسعر والمدة.. (مثال: أستطيع تنفيذ المطلوب غداً بـ ٣٠٠ ريال)"} 
-                          className="w-full min-h-[140px] p-6 text-sm font-medium bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:bg-white focus:border-blue-500 outline-none resize-none transition-all"
-                       />
-                       <button onClick={handleOfferSubmit} disabled={sendingOffer || !offerText.trim() || isCurrentWorkerBusy} className="w-full bg-[#1d4ed8] text-white rounded-[1.25rem] py-4 text-sm font-black active:scale-[0.98] transition-all flex justify-center items-center gap-2 disabled:bg-slate-300">
-                          {sendingOffer ? "جاري الإرسال..." : "إرسال العرض"} 
-                          <Send size={16} />
+                       <h4 className="text-xl font-black text-slate-900 border-r-4 border-[#1d4ed8] pr-4">قدم عرضك الآن</h4>
+                       <textarea value={offerText} onChange={e => setOfferText(e.target.value)} disabled={sendingOffer || isCurrentWorkerBusy} placeholder="اشرح لماذا أنت الأنسب.." className="w-full min-h-[120px] p-6 text-sm font-medium bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:bg-white outline-none" />
+                       <button onClick={handleOfferSubmit} disabled={sendingOffer || !offerText.trim() || isCurrentWorkerBusy} className="w-full bg-[#1d4ed8] text-white rounded-[1.25rem] py-4 text-sm font-black shadow-lg shadow-blue-200 flex justify-center items-center gap-2">
+                          {sendingOffer ? "جاري الإرسال..." : "إرسال العرض"} <Send size={16} />
                        </button>
                     </div>
                  )}
 
-                 {/* Worker's Past Offer details */}
-                 {workerOffer && (
-                    <div className="space-y-4 p-6 bg-blue-50/30 border border-blue-100 rounded-[1.5rem]">
-                       <h4 className="text-sm font-black text-[#1d4ed8]">عرضك المُقدم سابقاً:</h4>
-                       <p className="text-sm text-slate-700 bg-white p-4 rounded-xl border border-slate-200 shadow-sm leading-relaxed">"{workerOffer.message}"</p>
+                 {canOffer && referralCandidates.length > 0 && (
+                    <div className="space-y-5 rounded-[1.5rem] border border-violet-100 bg-violet-50/70 p-6">
+                       <h4 className="text-lg font-black text-slate-900">طلب عامل آخر</h4>
+                       <select
+                         value={requestedWorkerId}
+                         onChange={(e) => setRequestedWorkerId(e.target.value)}
+                         disabled={requestingWorker}
+                         className="w-full rounded-2xl border border-violet-100 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none"
+                       >
+                         <option value="">اختر العامل المطلوب</option>
+                         {referralCandidates.map((worker) => (
+                           <option key={worker.id} value={worker.id}>
+                             {worker.name} - {worker.job || "عامل"}
+                           </option>
+                         ))}
+                       </select>
+                       <textarea
+                         value={referralMessage}
+                         onChange={(e) => setReferralMessage(e.target.value)}
+                         disabled={requestingWorker}
+                         placeholder="اكتب ملاحظة قصيرة للعامل الآخر..."
+                         className="w-full min-h-[100px] rounded-[1.5rem] border border-violet-100 bg-white p-4 text-sm font-medium text-slate-700 outline-none"
+                       />
+                       <button
+                         onClick={handleRequestWorker}
+                         disabled={requestingWorker || !requestedWorkerId || !referralMessage.trim()}
+                         className="w-full rounded-[1.25rem] bg-violet-600 py-4 text-sm font-black text-white shadow-lg shadow-violet-200 disabled:opacity-50"
+                       >
+                         {requestingWorker ? "جاري الإرسال..." : "إرسال طلب العامل"}
+                       </button>
                     </div>
                  )}
+
+                 {workerOffer && (
+                   <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-[1.5rem]">
+                      <p className="text-xs font-black text-[#1d4ed8] mb-2">عرضك المُقدم:</p>
+                      <p className="text-sm font-bold text-slate-600 italic">{`"${workerOffer.message}"`}</p>
+                   </div>
+                 )}
+
+                 <div className="pt-6 border-t border-slate-50">
+                    <button onClick={() => setShowMap(!showMap)} className="flex items-center gap-2 text-xs font-black text-slate-400 hover:text-[#1d4ed8] transition-colors uppercase tracking-widest">
+                       <Map size={14} /> {showMap ? "إخفاء الخريطة" : "عرض موقع المهمة على الخريطة"}
+                    </button>
+                    {showMap && (
+                       <div className="mt-4 overflow-hidden rounded-[2rem] border border-slate-100 shadow-inner relative animate-in slide-in-from-top-2">
+                          {hasCoordinates ? (
+                             <LeafletMapPicker isListView height="250px" showCurrentLocation taskLocation={{ lat: latitude, lng: longitude }} taskLabel={title} onDistanceChange={setDistanceKm} />
+                          ) : (
+                             <div className="h-32 flex items-center justify-center bg-slate-50 text-slate-300 text-[10px] font-black">الموقع غير متاح</div>
+                          )}
+                       </div>
+                    )}
+                 </div>
 
                  {offerError && <div className="p-4 rounded-xl bg-red-50 text-red-600 text-xs font-bold text-center border border-red-100">{offerError}</div>}
               </div>

@@ -32,6 +32,7 @@ export default function SecuritySettings({ currentPassword, setCurrentPassword, 
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
+            maxLength={8}
             className={inputClass}
             autoComplete="new-password"
           />

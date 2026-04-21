@@ -23,6 +23,8 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
 
     boolean existsByBookingId(Long bookingId);
 
+    boolean existsByTaskId(Long taskId);
+
     @EntityGraph(attributePaths = {"booking", "task", "worker", "user"})
     List<Rating>     findByWorkerId(Long workerId);
 

@@ -24,4 +24,5 @@ public class TaskResponseDto {
     private Double        latitude;
     private Double        longitude;
     private Double        distanceKm;
+    private Boolean       isRated;
 }

@@ -147,11 +147,11 @@ class AuthenticationServiceTest {
     void verifyUserShouldEnableAccountAndClearVerificationData() {
         VerifyUserDto dto = new VerifyUserDto();
         dto.setPhone("22123456");
-        dto.setVerificationCode("123456");
+        dto.setVerificationCode("12345678");
 
         User user = new User();
         user.setPhone("22123456");
-        user.setVerificationCode("123456");
+        user.setVerificationCode("12345678");
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(5));
         user.setEnabled(false);
 
@@ -193,7 +193,7 @@ class AuthenticationServiceTest {
     }
 
     @Test
-    void forgotPasswordShouldSendSixDigitResetCodeBySms() {
+    void forgotPasswordShouldSendEightDigitResetCodeBySms() {
         User user = new User();
         user.setPhone("22123456");
 
@@ -203,7 +203,7 @@ class AuthenticationServiceTest {
         authenticationService.forgotPassword("22123456");
 
         assertNotNull(user.getResetPasswordToken());
-        assertEquals(6, user.getResetPasswordToken().length());
+        assertEquals(8, user.getResetPasswordToken().length());
         verify(smsService).sendPasswordResetToken(eq("22123456"), eq(user.getResetPasswordToken()));
     }
 

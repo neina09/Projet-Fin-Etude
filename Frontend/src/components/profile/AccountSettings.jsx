@@ -88,7 +88,7 @@ export default function AccountSettings({
         <form onSubmit={onSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="text-[11px] font-black text-slate-500">اسم المستخدم</label>
-            <input value={username} onChange={(e) => setUsername(e.target.value)} className={inputClass} />
+            <input value={username} onChange={(e) => setUsername(e.target.value)} maxLength={15} className={inputClass} />
           </div>
 
           <div className="space-y-2">

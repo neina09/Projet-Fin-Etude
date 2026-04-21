@@ -2,6 +2,7 @@ package com.backend.Projet.service;
 
 import com.backend.Projet.dto.OfferRequestDto;
 import com.backend.Projet.dto.OfferResponseDto;
+import com.backend.Projet.dto.WorkerReferralRequestDto;
 import com.backend.Projet.exception.BusinessException;
 import com.backend.Projet.exception.ResourceNotFoundException;
 import com.backend.Projet.mapper.OfferMapper;
@@ -13,6 +14,7 @@ import com.backend.Projet.model.Task;
 import com.backend.Projet.model.TaskStatus;
 import com.backend.Projet.model.User;
 import com.backend.Projet.model.Worker;
+import com.backend.Projet.model.WorkerAvailability;
 import com.backend.Projet.model.WorkerVerificationStatus;
 import com.backend.Projet.repository.OfferRepository;
 import com.backend.Projet.repository.TaskRepository;
@@ -269,5 +271,71 @@ class TaskServiceTest {
         when(taskRepository.findById(100L)).thenReturn(Optional.of(task));
 
         assertThrows(ResourceNotFoundException.class, () -> taskService.getTaskById(100L));
+    }
+
+    @Test
+    void requestAnotherWorkerShouldNotifyRequestedWorkerAndTaskOwner() {
+        User taskOwner = new User();
+        taskOwner.setId(10L);
+
+        User requestingUser = new User();
+        requestingUser.setId(20L);
+        requestingUser.setRole(Role.WORKER);
+
+        User requestedUser = new User();
+        requestedUser.setId(21L);
+
+        Task task = Task.builder()
+                .id(100L)
+                .title("Fix sink")
+                .status(TaskStatus.OPEN)
+                .user(taskOwner)
+                .build();
+
+        Worker requestingWorker = Worker.builder()
+                .id(30L)
+                .name("Ali")
+                .job("Plumber")
+                .phoneNumber("0611223344")
+                .address("Sale")
+                .salary(300)
+                .user(requestingUser)
+                .availability(WorkerAvailability.AVAILABLE)
+                .verificationStatus(WorkerVerificationStatus.VERIFIED)
+                .build();
+
+        Worker requestedWorker = Worker.builder()
+                .id(31L)
+                .name("Sara")
+                .job("Plumber")
+                .phoneNumber("0611223355")
+                .address("Rabat")
+                .salary(320)
+                .user(requestedUser)
+                .availability(WorkerAvailability.AVAILABLE)
+                .verificationStatus(WorkerVerificationStatus.VERIFIED)
+                .build();
+
+        WorkerReferralRequestDto dto = new WorkerReferralRequestDto();
+        dto.setWorkerId(31L);
+        dto.setMessage("Need backup on this task");
+
+        when(taskRepository.findById(100L)).thenReturn(Optional.of(task));
+        when(workerRepository.findByUserId(20L)).thenReturn(Optional.of(requestingWorker));
+        when(workerRepository.findById(31L)).thenReturn(Optional.of(requestedWorker));
+        when(offerRepository.existsByTaskIdAndWorkerId(100L, 31L)).thenReturn(false);
+
+        assertDoesNotThrow(() -> taskService.requestAnotherWorker(100L, dto, requestingUser));
+
+        verify(notificationService).sendNotification(
+                eq(requestedUser),
+                contains("asked you to review task"),
+                any()
+        );
+        verify(notificationService).sendNotification(
+                eq(taskOwner),
+                contains("requested help from Sara"),
+                any()
+        );
     }
 }

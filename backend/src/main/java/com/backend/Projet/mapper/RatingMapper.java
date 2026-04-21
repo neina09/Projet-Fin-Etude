@@ -21,6 +21,7 @@ public class RatingMapper {
                 .taskId(rating.getTask() != null ? rating.getTask().getId() : null)
                 .stars(rating.getStars())
                 .comment(rating.getComment())
+                .userImageUrl(rating.getUser().getImageUrl())
                 .createdAt(rating.getCreatedAt())
                 .build();
     }

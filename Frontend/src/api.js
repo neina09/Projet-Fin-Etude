@@ -163,7 +163,10 @@ const normalizeTask = (task) => {
   return {
     ...task,
     userImageUrl: resolveAssetUrl(task.userImageUrl),
-    assignedWorkerImageUrl: resolveAssetUrl(task.assignedWorkerImageUrl)
+    assignedWorkerImageUrl: resolveAssetUrl(task.assignedWorkerImageUrl),
+    workerName: task.assignedWorkerName || task.workerName || "",
+    isRated: Boolean(task.isRated ?? task.rated),
+    rated: Boolean(task.rated ?? task.isRated)
   }
 }
 
@@ -299,20 +302,22 @@ export const deleteAccount = async () =>
     headers: buildHeaders({}, true)
   })
 
-export const getOpenTasks = async () =>
+export const getOpenTasks = async (page = 0, size = 10) =>
   normalizePage(
-    await request("/api/tasks/open", {
+    await request(`/api/tasks/open?page=${page}&size=${size}`, {
       headers: buildHeaders()
     }),
     normalizeTask
   )
 
-export const searchOpenTasks = async ({ keyword = "", address = "", profession = "" } = {}) => {
+export const searchOpenTasks = async ({ keyword = "", address = "", profession = "", page = 0, size = 10 } = {}) => {
   const params = new URLSearchParams()
 
   if (keyword.trim()) params.set("keyword", keyword.trim())
   if (address.trim()) params.set("address", address.trim())
   if (profession.trim()) params.set("profession", profession.trim())
+  params.set("page", page)
+  params.set("size", size)
 
   const query = params.toString()
 
@@ -324,9 +329,9 @@ export const searchOpenTasks = async ({ keyword = "", address = "", profession =
   )
 }
 
-export const getMyTasks = async () =>
+export const getMyTasks = async (page = 0, size = 10) =>
   normalizePage(
-    await request("/api/tasks/my-tasks", {
+    await request(`/api/tasks/my-tasks?page=${page}&size=${size}`, {
       headers: buildHeaders({}, true)
     }),
     normalizeTask
@@ -420,9 +425,9 @@ export const rejectTask = async (taskId) =>
     })
   )
 
-export const getPendingTasks = async () =>
+export const getPendingTasks = async (page = 0, size = 10) =>
   normalizePage(
-    await request("/api/tasks/admin/pending", {
+    await request(`/api/tasks/admin/pending?page=${page}&size=${size}`, {
       headers: buildHeaders({}, true)
     }),
     normalizeTask
@@ -444,10 +449,20 @@ export const refuseOffer = async (offerId) =>
     })
   )
 
-export const getWorkers = async () =>
-  (await request("/api/workers", {
-    headers: buildHeaders()
-  })).map(normalizeWorker)
+export const requestAnotherWorker = async (taskId, payload) =>
+  request(`/api/tasks/${taskId}/request-worker`, {
+    method: "POST",
+    headers: buildHeaders({ "Content-Type": "application/json" }, true),
+    body: JSON.stringify(payload)
+  })
+
+export const getWorkers = async (page = 0, size = 12) =>
+  normalizePage(
+    await request(`/api/workers/paged?page=${page}&size=${size}`, {
+      headers: buildHeaders()
+    }),
+    normalizeWorker
+  )
 
 export const getWorkerById = async (workerId) =>
   normalizeWorker(
@@ -634,6 +649,15 @@ export const getAllUsers = async () =>
   request("/users", {
     headers: buildHeaders({}, true)
   })
+
+export const adminCreateWorker = async (userId, workerData) =>
+  normalizeWorker(
+    await request(`/api/workers/admin/create/${userId}`, {
+      method: "POST",
+      headers: buildHeaders({ "Content-Type": "application/json" }, true),
+      body: JSON.stringify(workerData)
+    })
+  )
 
 
 

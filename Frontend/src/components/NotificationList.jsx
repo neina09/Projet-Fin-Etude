@@ -10,6 +10,7 @@ export default function NotificationList({ notifications, onMarkAsRead }) {
     TASK_SELECTED: { icon: <UserCheck size={iconSize} />, color: "text-emerald-600", bg: "bg-emerald-50" },
     TASK_ACCEPTED: { icon: <Briefcase size={iconSize} />, color: "text-amber-600", bg: "bg-amber-50" },
     TASK_REFUSED: { icon: <Info size={iconSize} />, color: "text-rose-600", bg: "bg-rose-50" },
+    WORKER_ASSISTANCE_REQUEST: { icon: <Briefcase size={iconSize} />, color: "text-violet-600", bg: "bg-violet-50" },
     ADMIN_TASK_REVIEW: { icon: <Briefcase size={iconSize} />, color: "text-indigo-600", bg: "bg-indigo-50" },
     ADMIN_WORKER_REVIEW: { icon: <FileCheck size={iconSize} />, color: "text-fuchsia-600", bg: "bg-fuchsia-50" },
     WORKER_VERIFIED: { icon: <ShieldCheck size={iconSize} />, color: "text-emerald-600", bg: "bg-emerald-50" },

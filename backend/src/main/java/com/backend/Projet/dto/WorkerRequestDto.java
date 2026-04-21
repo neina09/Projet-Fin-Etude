@@ -20,7 +20,7 @@ public class WorkerRequestDto {
     private String job;
 
     @NotBlank(message = "Name is required")
-    @Size(max = 100, message = "Name must not exceed 100 characters")
+    @Pattern(regexp = "^[\\p{L} ]{1,15}$", message = "Name must contain letters only and be at most 15 characters")
     private String name;
 
     @NotBlank(message = "Address is required")
@@ -31,6 +31,6 @@ public class WorkerRequestDto {
     private int salary;
 
     @NotBlank(message = "National ID number is required")
-    @Size(min = 6, max = 30, message = "National ID number must be between 6 and 30 characters")
+    @Pattern(regexp = "^\\d{10}$", message = "National ID number must be exactly 10 digits (Mauritanian NNI)")
     private String nationalIdNumber;
 }

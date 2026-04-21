@@ -14,5 +14,6 @@ public class RatingResponseDto {
     private Long taskId;
     private int stars;
     private String comment;
+    private String userImageUrl;
     private LocalDateTime createdAt;
 }

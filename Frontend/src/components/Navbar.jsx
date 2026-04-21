@@ -31,10 +31,10 @@ function Navbar({ onLogin }) {
         <div className="flex items-center gap-12">
           {/* Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue text-white shadow-lg">
-              <Sparkles size={22} className="fill-current" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-slate-100 p-1.5 shadow-lg">
+              <img src={logo} alt="L" className="h-full w-full object-contain" />
             </div>
-            <p className="text-2xl font-black tracking-tight text-slate-900">منصة العمل</p>
+            <p className="text-2xl font-black tracking-tight text-slate-900">منصة عاملك</p>
           </div>
 
           {/* Desktop Navigation */}

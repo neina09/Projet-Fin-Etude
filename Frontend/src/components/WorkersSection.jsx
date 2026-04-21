@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react"
-import { CalendarClock, MapPin, Search, ShieldCheck, Star, UserRound, Wrench, X } from "lucide-react"
+import { CalendarClock, MapPin, Search, ShieldCheck, Star, UserRound, Wrench, X, ChevronRight, ChevronLeft } from "lucide-react"
 import { createBooking, getWorkerRatings, getWorkers, resolveAssetUrl } from "../api"
 import WorkerCard from "./WorkerCard"
 
@@ -31,6 +31,9 @@ export default function WorkersSection({ currentUser }) {
   const [ratingsLoading, setRatingsLoading] = useState(false)
   const [bookingForm, setBookingForm] = useState(defaultBookingForm)
   const [bookingLoading, setBookingLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
+  const itemsPerPage = 12
 
   const canRequestWorker = Boolean(currentUser)
 
@@ -39,8 +42,9 @@ export default function WorkersSection({ currentUser }) {
       setLoading(true)
       setError("")
       try {
-        const payload = await getWorkers()
-        setWorkers(Array.isArray(payload) ? payload : [])
+        const payload = await getWorkers(currentPage - 1, itemsPerPage)
+        setWorkers(payload.content || [])
+        setTotalPages(payload.totalPages || 0)
       } catch (err) {
         setError(err.message || "تعذر تحميل قائمة العمال.")
       } finally {
@@ -49,7 +53,7 @@ export default function WorkersSection({ currentUser }) {
     }
 
     loadWorkers()
-  }, [])
+  }, [currentPage, itemsPerPage])
 
   useEffect(() => {
     if (!selectedWorker?.id) {
@@ -77,16 +81,8 @@ export default function WorkersSection({ currentUser }) {
     return ["الكل", ...new Set(items)]
   }, [workers])
 
-  const filteredWorkers = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
-
-    return workers.filter((worker) => {
-      const haystack = [worker.name, worker.job, worker.address].filter(Boolean).join(" ").toLowerCase()
-      const matchesSearch = !normalizedSearch || haystack.includes(normalizedSearch)
-      const matchesFilter = filter === "الكل" || worker.job === filter
-      return matchesSearch && matchesFilter
-    })
-  }, [filter, search, workers])
+  const filteredWorkers = workers // For now, simple pagination on all workers. 
+  // If search/filter is needed server-side, it should be implemented in the backend.
 
   const closeModal = () => {
     setSelectedWorker(null)
@@ -126,6 +122,63 @@ export default function WorkersSection({ currentUser }) {
     } finally {
       setBookingLoading(false)
     }
+  }
+
+  const currentWorkers = workers
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page)
+      window.scrollTo({ top: 300, behavior: "smooth" })
+    }
+  }
+
+  const renderPagination = () => {
+    if (totalPages <= 0) return null
+    let pages = []
+    for (let i = 1; i <= Math.max(1, totalPages); i++) {
+       if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+          pages.push(i)
+       } else if (pages[pages.length - 1] !== '...') {
+          pages.push('...')
+       }
+    }
+
+    return (
+       <div className="flex justify-center items-center gap-2 mt-16 pb-8" dir="rtl">
+          <button 
+             onClick={() => handlePageChange(currentPage - 1)} 
+             disabled={currentPage === 1}
+             className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          >
+             <ChevronRight size={18} />
+          </button>
+          {pages.map((page, index) => (
+             page === '...' ? (
+                <span key={`dots-${index}`} className="w-10 h-10 flex items-center justify-center text-slate-400 font-bold">...</span>
+             ) : (
+                <button
+                   key={page}
+                   onClick={() => handlePageChange(page)}
+                   className={`w-10 h-10 flex items-center justify-center rounded-xl font-black text-sm transition-all shadow-sm ${
+                      currentPage === page
+                      ? "bg-[#1d4ed8] text-white shadow-blue-500/30"
+                      : "bg-white border border-slate-100 text-slate-600 hover:bg-slate-50"
+                   }`}
+                >
+                   {page}
+                </button>
+             )
+          ))}
+          <button 
+             onClick={() => handlePageChange(currentPage + 1)} 
+             disabled={currentPage === totalPages}
+             className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          >
+             <ChevronLeft size={18} />
+          </button>
+       </div>
+    )
   }
 
   return (
@@ -184,16 +237,19 @@ export default function WorkersSection({ currentUser }) {
           جاري تحميل قائمة العمال...
         </div>
       ) : filteredWorkers.length ? (
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
-          {filteredWorkers.map((worker) => (
-            <WorkerCard
-              key={worker.id}
-              worker={worker}
-              canHire={canRequestWorker}
-              onViewDetails={() => handleOpenWorker(worker)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
+            {currentWorkers.map((worker) => (
+              <WorkerCard
+                key={worker.id}
+                worker={worker}
+                canHire={canRequestWorker}
+                onViewDetails={() => handleOpenWorker(worker)}
+              />
+            ))}
+          </div>
+          {renderPagination()}
+        </>
       ) : (
         <div className="rounded-[2rem] border border-dashed border-slate-200 bg-white p-16 text-center text-sm font-bold text-slate-400">
           لا يوجد عمال مطابقون لبحثك حالياً.

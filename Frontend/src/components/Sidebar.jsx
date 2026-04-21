@@ -12,6 +12,7 @@ import {
   Zap
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import logo from "../assets/logo.png"
 
 export default function Sidebar({ page, onNavigate, user, onLogout, isOpen, onClose }) {
   const isAdmin = user?.role === "ADMIN"
@@ -54,8 +55,8 @@ export default function Sidebar({ page, onNavigate, user, onLogout, isOpen, onCl
               <Briefcase size={24} className="text-white relative z-10" />
            </div>
            <div>
-              <h1 className="text-2xl font-black text-slate-950 uppercase tracking-tight">شغلني</h1>
-              <p className="text-[10px] font-black text-[#1d4ed8] tracking-[0.3em] uppercase opacity-70">Smart Platform</p>
+              <h1 className="text-2xl font-black text-slate-950 uppercase tracking-tight">عاملك</h1>
+              <p className="text-[10px] font-black text-[#1d4ed8] tracking-[0.3em] uppercase opacity-70">Aamilak Platform</p>
            </div>
         </div>
 

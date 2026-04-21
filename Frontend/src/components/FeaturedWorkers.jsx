@@ -23,7 +23,9 @@ export default function FeaturedWorkers() {
     getWorkers()
       .then((payload) => {
         if (active) {
-          setWorkers(Array.isArray(payload) ? payload : [])
+          // ✅ الإصلاح: payload هو { content: [...] } وليس array مباشرة
+          const list = Array.isArray(payload) ? payload : (payload?.content ?? [])
+          setWorkers(list)
         }
       })
       .catch(() => {

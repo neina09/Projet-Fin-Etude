@@ -72,9 +72,10 @@ export default function ResetPassword({
               <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="password"
-                placeholder="6 أحرف على الأقل"
+                placeholder="8 خانات (أرقام وحروف ورموز)"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                maxLength={8}
                 className="auth-input pr-12"
                 required
               />

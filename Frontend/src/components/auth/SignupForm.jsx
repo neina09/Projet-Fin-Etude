@@ -48,6 +48,7 @@ export default function SignupForm({ formData, setFormData, handleChange, handle
               placeholder="أدخل اسمك الثلاثي"
               value={formData.name}
               onChange={handleChange}
+              maxLength={15}
               className="auth-input pr-12 bg-[#F8FAFC]"
               required
             />
@@ -81,6 +82,7 @@ export default function SignupForm({ formData, setFormData, handleChange, handle
               placeholder="********"
               value={formData.password}
               onChange={handleChange}
+              maxLength={8}
               className="auth-input pr-12 text-left bg-[#F8FAFC]"
               dir="ltr"
               required
@@ -98,6 +100,7 @@ export default function SignupForm({ formData, setFormData, handleChange, handle
               placeholder="********"
               value={formData.confirmPassword}
               onChange={handleChange}
+              maxLength={8}
               className="auth-input pr-12 text-left bg-[#F8FAFC]"
               dir="ltr"
               required

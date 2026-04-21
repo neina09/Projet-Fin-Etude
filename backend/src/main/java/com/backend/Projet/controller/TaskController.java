@@ -162,6 +162,15 @@ public class TaskController {
                 taskService.workerRefuse(offerId, currentUser));
     }
 
+    @PostMapping("/{id}/request-worker")
+    public ResponseEntity<String> requestAnotherWorker(
+            @PathVariable Long id,
+            @Valid @RequestBody WorkerReferralRequestDto dto,
+            @AuthenticationPrincipal User currentUser) {
+        taskService.requestAnotherWorker(id, dto, currentUser);
+        return ResponseEntity.ok("Worker request sent successfully");
+    }
+
     @PatchMapping("/{id}/approve")
     public ResponseEntity<TaskResponseDto> approveTask(
             @PathVariable Long id,

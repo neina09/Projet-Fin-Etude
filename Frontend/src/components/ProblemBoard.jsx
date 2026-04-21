@@ -10,10 +10,12 @@ import {
   deleteTask,
   getMyOffers,
   getMyTasks,
+  getWorkers,
   getMyWorkerProfile,
   getOpenTasks,
   getTasksAssignedToMe,
   markTaskDone,
+  requestAnotherWorker,
   refuseOffer,
   searchOpenTasks,
   selectOffer,
@@ -51,6 +53,7 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
   const [myTasks, setMyTasks] = useState([])
   const [assignedTasks, setAssignedTasks] = useState([])
   const [myOffers, setMyOffers] = useState([])
+  const [availableWorkers, setAvailableWorkers] = useState([])
   const [currentWorkerProfile, setCurrentWorkerProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -64,12 +67,13 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
   const [searchType, setSearchType] = useState("keyword")
   const [ratedTaskIds, setRatedTaskIds] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
   const itemsPerPage = 8
 
   const isWorker = currentUser?.role === "WORKER"
   const isAdmin = currentUser?.role === "ADMIN"
 
-  const fetchTasks = useCallback(async () => {
+  const fetchTasks = useCallback(async (pageNum = currentPage) => {
     setLoading(true)
     setError("")
 
@@ -79,20 +83,24 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
       ? searchOpenTasks({
           keyword: searchType === "keyword" ? normalizedQuery : "",
           address: searchType === "address" ? normalizedQuery : "",
-          profession: searchType === "profession" ? normalizedQuery : ""
+          profession: searchType === "profession" ? normalizedQuery : "",
+          page: pageNum - 1,
+          size: itemsPerPage
         })
-      : getOpenTasks()
+      : getOpenTasks(pageNum - 1, itemsPerPage)
 
-    const [openTasksResult, myTasksResult, assignedTasksResult, myOffersResult, workerProfileResult] = await Promise.allSettled([
+    const [openTasksResult, myTasksResult, assignedTasksResult, myOffersResult, workerProfileResult, workersResult] = await Promise.allSettled([
       openTasksPromise,
       getMyTasks(),
       isWorker ? getTasksAssignedToMe() : Promise.resolve([]),
       getMyOffers(),
-      isWorker ? getMyWorkerProfile() : Promise.resolve(null)
+      isWorker ? getMyWorkerProfile() : Promise.resolve(null),
+      isWorker ? getWorkers(0, 50) : Promise.resolve({ content: [] })
     ])
 
     if (openTasksResult.status === "fulfilled") {
-      setProblems(openTasksResult.value?.content || openTasksResult.value || [])
+      setProblems(openTasksResult.value?.content || [])
+      if (tab === "open") setTotalPages(openTasksResult.value?.totalPages || 0)
     }
     if (myTasksResult.status === "fulfilled") {
       setMyTasks(myTasksResult.value?.content || myTasksResult.value || [])
@@ -106,6 +114,9 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
     if (workerProfileResult.status === "fulfilled") {
       setCurrentWorkerProfile(workerProfileResult.value || null)
     }
+    if (workersResult.status === "fulfilled") {
+      setAvailableWorkers(Array.isArray(workersResult.value?.content) ? workersResult.value.content : [])
+    }
 
     if (openTasksResult.status === "rejected" && myTasksResult.status === "rejected") {
       setError("تعذر تحميل البيانات من مركز العمليات حالياً.")
@@ -115,8 +126,8 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
   }, [isWorker, searchQuery, searchType])
 
   useEffect(() => {
-    fetchTasks()
-  }, [fetchTasks])
+    fetchTasks(currentPage)
+  }, [fetchTasks, currentPage, tab])
 
   const upsertTask = (updatedTask) => {
     setProblems((current) => current.map((task) => task.id === updatedTask.id ? updatedTask : task))
@@ -201,6 +212,11 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
     await fetchTasks()
   }
 
+  const handleRequestAnotherWorker = async (taskId, workerId, message) => {
+    await requestAnotherWorker(taskId, { workerId, message })
+    setFeedback("تم إرسال طلب العامل الآخر بنجاح.")
+  }
+
   const handleTaskRatingSubmit = async (taskId) => {
      navigate("/dashboard/ratings")
   }
@@ -229,8 +245,8 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
     ? [{ id: "open", lbl: "المهام العامة" }, { id: "previous", lbl: "أعمالي وعروضي" }]
     : [{ id: "open", lbl: "سوق المهمات" }, { id: "previous", lbl: "سجل طلباتي" }]
 
-  const totalPages = Math.ceil(problems.length / itemsPerPage)
-  const currentProblems = problems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  const currentProblems = problems // problems already contains the current page content from server
+
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -362,7 +378,7 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
               </h4>
               <p className="text-base font-medium leading-relaxed text-slate-500 max-w-4xl">
                  {isWorker
-                   ? "منصة شغلني تضمن لك حقوقك المالية. عند اختيار عرضك، ابدأ التواصل فوراً وقم بتحديث الحالة لضمان التوثيق. التقييمات الإيجابية ترفع فرص ظهورك في المستقبل."
+                   ? "منصة عاملك تضمن لك حقوقك المالية. عند اختيار عرضك، ابدأ التواصل فوراً وقم بتحديث الحالة لضمان التوثيق. التقييمات الإيجابية ترفع فرص ظهورك في المستقبل."
                    : "اختر المحترف الأنسب بناءً على خبرته وسجله العملي. يمكنك مراجعة العروض بالتفصيل واختيار من يمتلك أعلى تقييم لضمان تنفيذ مهمتك بأفضل جودة."}
               </p>
            </div>
@@ -447,9 +463,12 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
                           onStatusChange={handleStatusChange}
                           workerOffer={myOffersByTaskId[problem.id]}
                           currentWorkerStatus={currentWorkerProfile?.availability}
+                          availableWorkers={availableWorkers}
+                          currentWorkerProfile={currentWorkerProfile}
                           onSubmitOffer={handleOfferSubmit}
                           onSelectOffer={handleOfferSelect}
                           onWorkerDecision={handleWorkerDecision}
+                          onRequestWorker={handleRequestAnotherWorker}
                         />
                       ))}
                     </div>
@@ -507,7 +526,7 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
                                           </div>
                                           <div>
                                              <p className="text-xl font-black text-amber-950">هل كنت راضياً عن أداء المحترف؟</p>
-                                             <p className="text-sm font-bold text-amber-900/60 mt-1">تقييمك يساعدنا في تحسين جودة مجتمع شغلني بشكل مستمر.</p>
+                                             <p className="text-sm font-bold text-amber-900/60 mt-1">تقييمك يساعدنا في تحسين جودة مجتمع عاملك بشكل مستمر.</p>
                                           </div>
                                        </div>
                                        <button onClick={() => handleTaskRatingSubmit(p.id)} className="h-16 px-12 bg-amber-600 text-white rounded-2xl font-black text-sm flex items-center gap-4 hover:bg-amber-700 transition-all shadow-xl shadow-amber-500/10 active:scale-95">

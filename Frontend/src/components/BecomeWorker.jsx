@@ -36,6 +36,11 @@ export default function BecomeWorker({ onSuccess }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (form.nationalIdNumber.length !== 10 || !/^\d{10}$/.test(form.nationalIdNumber)) {
+      setError("رقم الهوية الوطنية الموريتانية يجب أن يتكون من 10 أرقام بالضبط.");
+      return;
+    }
+
     setLoading(true)
     setError("")
 
@@ -155,14 +160,15 @@ export default function BecomeWorker({ onSuccess }) {
                   {/* Full Name */}
                   <div className="space-y-2">
                     <label className="text-[11px] font-black text-slate-500">الاسم الكامل</label>
-                    <input
-                      name="name"
-                      required
-                      value={form.name}
-                      onChange={setField}
-                      placeholder="أدخل اسمك كما هو في الهوية"
-                      className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-bold focus:bg-white focus:border-[#1d4ed8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-                    />
+                      <input
+                        name="name"
+                        required
+                        value={form.name}
+                        onChange={setField}
+                        maxLength={15}
+                        placeholder="أدخل اسمك كما هو في الهوية"
+                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-bold focus:bg-white focus:border-[#1d4ed8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                      />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -188,6 +194,7 @@ export default function BecomeWorker({ onSuccess }) {
                         required
                         value={form.nationalIdNumber}
                         onChange={setField}
+                        maxLength={10}
                         placeholder="10xxxxxxx"
                         dir="ltr"
                         className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-bold text-left focus:bg-white focus:border-[#1d4ed8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
