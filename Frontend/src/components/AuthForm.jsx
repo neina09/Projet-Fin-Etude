@@ -5,6 +5,7 @@ import LoginForm from "./auth/LoginForm"
 import ResetPassword from "./auth/ResetPassword"
 import SignupForm from "./auth/SignupForm"
 import VerifyScreen from "./auth/VerifyScreen"
+import { AUTH_STORAGE_KEYS, storeSessionToken } from "../utils/auth"
 
 export default function AuthForm({ onLoginSuccess, onViewChange }) {
   const [isLogin, setIsLogin] = useState(true)
@@ -89,8 +90,8 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
     clearMessages()
     try {
       const data = await loginUser(formData.phone, formData.password)
-      localStorage.setItem("token", data.token)
-      localStorage.setItem("userInfo", JSON.stringify({ phone: formData.phone }))
+      storeSessionToken(data.token)
+      localStorage.setItem(AUTH_STORAGE_KEYS.userInfo, JSON.stringify({ phone: formData.phone }))
       onLoginSuccess(data.token)
     } catch (err) {
       if (err.message.includes("User not found")) {

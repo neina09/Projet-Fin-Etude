@@ -56,7 +56,7 @@ export default function Sidebar({ page, onNavigate, user, onLogout, isOpen, onCl
            </div>
            <div>
               <h1 className="text-2xl font-black text-slate-950 uppercase tracking-tight">عاملك</h1>
-              <p className="text-[10px] font-black text-[#1d4ed8] tracking-[0.3em] uppercase opacity-70">Aamilak Platform</p>
+              <p className="t-label tracking-[0.3em] opacity-70">Aamilak Platform</p>
            </div>
         </div>
 
@@ -101,10 +101,10 @@ export default function Sidebar({ page, onNavigate, user, onLogout, isOpen, onCl
             <div className="relative z-10">
                <div className="flex items-center gap-3 mb-4">
                   <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">حالة الاتصال</p>
+                  <p className="t-label">حالة الاتصال</p>
                </div>
                <p className="text-sm font-black text-slate-900 mb-1">{user?.username || "Guest"}</p>
-               <p className="text-[10px] font-bold text-slate-500 opacity-60 uppercase tracking-widest">ID: {user?.id ? String(user.id).slice(-8).toUpperCase() : "USR"}</p>
+               <p className="t-label opacity-60">ID: {user?.id ? String(user.id).slice(-8).toUpperCase() : "USR"}</p>
             </div>
           </div>
           <button onClick={onLogout} className="flex w-full items-center gap-4 rounded-2xl px-6 py-4 text-sm font-black text-red-500 transition-all hover:bg-red-50 group shadow-sm hover:shadow-red-100 border border-transparent hover:border-red-100">

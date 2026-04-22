@@ -13,8 +13,8 @@ function StatusMessage({ error, success }) {
 
   if (success) {
     return (
-      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm font-bold text-blue-600 animate-in fade-in slide-in-from-top-2 duration-300">
-        <div className="h-2 w-2 shrink-0 rounded-full bg-blue-400" />
+      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm font-bold text-primary animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
         {success}
       </div>
     )
@@ -69,7 +69,7 @@ export default function LoginForm({
             <button
               type="button"
               onClick={onForgot}
-              className="text-xs font-bold text-blue-500 hover:text-blue-700 transition-colors"
+              className="text-[10px] font-black text-primary hover:text-primary-hover transition-colors uppercase tracking-widest"
             >
               نسيت كلمة المرور؟
             </button>
@@ -123,9 +123,9 @@ export default function LoginForm({
           ليس لديك حساب؟{" "}
           <button
             onClick={onSwitch}
-            className="text-blue-500 hover:underline font-extrabold transition-colors p-1"
+            className="text-primary hover:underline font-extrabold transition-colors p-1"
           >
-            إنشاء حساب
+            إنشاء حساب جديد
           </button>
         </p>
       </div>

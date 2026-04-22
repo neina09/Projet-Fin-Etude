@@ -204,6 +204,8 @@ public class WorkerService {
         User workerUser = worker.getUser();
         workerUser.setRole(Role.USER);
         userRepository.save(workerUser);
+        fileStorageService.deleteStoredFile(worker.getImageUrl());
+        fileStorageService.deleteStoredFile(worker.getIdentityDocumentUrl());
 
         workerRepository.delete(worker);
     }
@@ -255,8 +257,13 @@ public class WorkerService {
     @Transactional
     public WorkerResponseDto uploadWorkerImage(Long id, MultipartFile file, User currentUser) {
         Worker worker = getOwnedOrManagedWorker(id, currentUser);
+        String previousImageUrl = worker.getImageUrl();
         worker.setImageUrl(fileStorageService.storeWorkerImage(file));
-        return workerMapper.toDto(workerRepository.save(worker), true);
+        Worker savedWorker = workerRepository.save(worker);
+        if (previousImageUrl != null && !previousImageUrl.isBlank() && !previousImageUrl.equals(savedWorker.getImageUrl())) {
+            fileStorageService.deleteStoredFile(previousImageUrl);
+        }
+        return workerMapper.toDto(savedWorker, true);
     }
 
     @Transactional
@@ -269,10 +276,14 @@ public class WorkerService {
             throw new BusinessException("Identity document can only be submitted during worker registration");
         }
 
+        String previousDocumentUrl = worker.getIdentityDocumentUrl();
         worker.setIdentityDocumentUrl(fileStorageService.storeWorkerDocument(file));
         worker.setVerificationStatus(WorkerVerificationStatus.PENDING);
         worker.setVerificationNotes("Identity document uploaded and waiting for admin review");
         Worker savedWorker = workerRepository.save(worker);
+        if (previousDocumentUrl != null && !previousDocumentUrl.isBlank() && !previousDocumentUrl.equals(savedWorker.getIdentityDocumentUrl())) {
+            fileStorageService.deleteStoredFile(previousDocumentUrl);
+        }
 
         notificationService.sendNotificationToRole(
                 Role.ADMIN,

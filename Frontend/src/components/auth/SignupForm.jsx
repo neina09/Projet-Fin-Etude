@@ -13,8 +13,8 @@ function StatusMessage({ error, success }) {
 
   if (success) {
     return (
-      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm font-bold text-blue-600 animate-in fade-in slide-in-from-top-2 duration-300">
-        <div className="h-2 w-2 shrink-0 rounded-full bg-blue-400" />
+      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm font-bold text-primary animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
         {success}
       </div>
     )
@@ -126,9 +126,9 @@ export default function SignupForm({ formData, setFormData, handleChange, handle
           لديك حساب بالفعل؟{" "}
           <button
             onClick={onSwitch}
-            className="text-blue-600 hover:text-blue-700 transition-colors p-1"
+            className="text-primary hover:text-primary-hover transition-all p-1 font-black"
           >
-            تسجيل الدخول
+            تسجيل الدخول الآن
           </button>
         </p>
       </div>

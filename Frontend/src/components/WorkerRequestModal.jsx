@@ -172,10 +172,10 @@ export default function WorkerRequestModal({ worker, onClose, onSubmit }) {
                                    type="button"
                                    onClick={() => setFormData({...formData, time: t})}
                                    className={`h-12 rounded-xl text-[10px] font-black transition-all ${
-                                      formData.time === t
-                                      ? "bg-[#1d4ed8] text-white shadow-lg shadow-blue-500/20"
-                                      : "bg-white border border-slate-200 text-slate-600 hover:border-blue-300"
-                                   }`}
+                                       formData.time === t
+                                       ? "bg-[#1d4ed8] text-white shadow-lg shadow-blue-500/20"
+                                       : "bg-white border border-slate-200 text-slate-600 hover:border-blue-300"
+                                    }`}
                                 >
                                    {t}
                                 </button>
@@ -237,7 +237,7 @@ export default function WorkerRequestModal({ worker, onClose, onSubmit }) {
                  <div className="pt-10 flex gap-6">
                     <button
                        type="submit"
-                       className="flex-1 h-20 bg-[#1d4ed8] text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-blue-500/30 hover:bg-blue-700 hover:-translate-y-1 transition-all active:scale-95"
+                       className="flex-1 h-20 bg-primary text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-primary/30 hover:bg-primary-hover hover:-translate-y-1 transition-all active:scale-95"
                     >
                        تأكيد الحجز والعرض
                     </button>

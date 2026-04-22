@@ -32,12 +32,15 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.Optional;
 
 @Service
 public class AuthenticationService {
     private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final int VERIFICATION_CODE_LENGTH = 6;
+    private static final int RESET_TOKEN_LENGTH = 8;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -90,10 +93,11 @@ public class AuthenticationService {
         }
         User user = new User(input.getUsername(), normalizedPhone, passwordEncoder.encode(input.getPassword()));
         user.setRole(Role.USER);
-        user.setVerificationCode(generateVerificationCode());
+        String verificationCode = generateVerificationCode();
+        user.setVerificationCode(passwordEncoder.encode(verificationCode));
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
-        sendVerificationCode(user);
+        sendVerificationCode(user, verificationCode);
         log.info("Verification SMS dispatched to {}", maskPhone(normalizedPhone));
         User saved = userRepository.save(user);
         return userMapper.toDto(saved);
@@ -124,7 +128,7 @@ public class AuthenticationService {
         if (user.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
             throw new BusinessException("Verification code has expired");
         }
-        if (user.getVerificationCode().equals(input.getVerificationCode())) {
+        if (passwordEncoder.matches(input.getVerificationCode(), user.getVerificationCode())) {
             user.setEnabled(true);
             user.setVerificationCode(null);
             user.setVerificationCodeExpiresAt(null);
@@ -143,9 +147,10 @@ public class AuthenticationService {
             if (user.isEnabled()) {
                 throw new BusinessException("Account is already verified");
             }
-            user.setVerificationCode(generateVerificationCode());
+            String verificationCode = generateVerificationCode();
+            user.setVerificationCode(passwordEncoder.encode(verificationCode));
             user.setVerificationCodeExpiresAt(LocalDateTime.now().plusHours(1));
-            sendVerificationCode(user);
+            sendVerificationCode(user, verificationCode);
             userRepository.save(user);
         } else {
             log.info("Verification code requested for unknown phone {}", maskPhone(normalizedPhone));
@@ -162,7 +167,7 @@ public class AuthenticationService {
         }
         User user = optionalUser.get();
         String token = generateResetPasswordToken();
-        user.setResetPasswordToken(token);
+        user.setResetPasswordToken(passwordEncoder.encode(token));
         user.setResetPasswordExpiresAt(LocalDateTime.now().plusMinutes(15));
         userRepository.save(user);
         smsService.sendPasswordResetToken(user.getPhone(), token);
@@ -170,11 +175,12 @@ public class AuthenticationService {
 
     @Transactional
     public void resetPassword(ResetPasswordDto input) {
-        User user = userRepository.findByResetPasswordToken(input.getToken())
+        LocalDateTime now = LocalDateTime.now();
+        User user = userRepository.findByResetPasswordExpiresAtAfter(now).stream()
+                .filter(candidate -> candidate.getResetPasswordToken() != null)
+                .filter(candidate -> passwordEncoder.matches(input.getToken(), candidate.getResetPasswordToken()))
+                .min(Comparator.comparing(User::getResetPasswordExpiresAt))
                 .orElseThrow(() -> new ResourceNotFoundException("Invalid or expired reset token"));
-        if (user.getResetPasswordExpiresAt() == null || user.getResetPasswordExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new BusinessException("Reset token has expired");
-        }
         user.setPassword(passwordEncoder.encode(input.getNewPassword()));
         user.setResetPasswordToken(null);
         user.setResetPasswordExpiresAt(null);
@@ -209,9 +215,7 @@ public class AuthenticationService {
 
     @Transactional
     public UserResponseDto uploadProfileImage(User currentUser, MultipartFile file) {
-        if (currentUser.getImageUrl() != null && !currentUser.getImageUrl().isBlank()) {
-            fileStorageService.deleteStoredFile(currentUser.getImageUrl());
-        }
+        String previousImageUrl = currentUser.getImageUrl();
         currentUser.setImageUrl(fileStorageService.storeUserImage(file));
         User saved = userRepository.save(currentUser);
         workerRepository.findByUserId(saved.getId()).ifPresent(worker -> {
@@ -220,6 +224,9 @@ public class AuthenticationService {
                 workerRepository.save(worker);
             }
         });
+        if (previousImageUrl != null && !previousImageUrl.isBlank() && !previousImageUrl.equals(saved.getImageUrl())) {
+            fileStorageService.deleteStoredFile(previousImageUrl);
+        }
         return userMapper.toDto(saved);
     }
 
@@ -258,18 +265,20 @@ public class AuthenticationService {
         log.info("Successfully deleted user ID: {}", userId);
     }
 
-    private void sendVerificationCode(User user) {
-        smsService.sendVerificationCode(user.getPhone(), user.getVerificationCode());
+    private void sendVerificationCode(User user, String verificationCode) {
+        smsService.sendVerificationCode(user.getPhone(), verificationCode);
     }
 
     private String generateVerificationCode() {
-        int code = 100000 + SECURE_RANDOM.nextInt(900000);
-        return String.valueOf(code);
+        int lowerBound = (int) Math.pow(10, VERIFICATION_CODE_LENGTH - 1);
+        int range = (int) Math.pow(10, VERIFICATION_CODE_LENGTH) - lowerBound;
+        return String.valueOf(lowerBound + SECURE_RANDOM.nextInt(range));
     }
 
     private String generateResetPasswordToken() {
-        int code = 10_000_000 + SECURE_RANDOM.nextInt(90_000_000);
-        return String.valueOf(code);
+        int lowerBound = (int) Math.pow(10, RESET_TOKEN_LENGTH - 1);
+        int range = (int) Math.pow(10, RESET_TOKEN_LENGTH) - lowerBound;
+        return String.valueOf(lowerBound + SECURE_RANDOM.nextInt(range));
     }
 
     private String maskPhone(String phone) {

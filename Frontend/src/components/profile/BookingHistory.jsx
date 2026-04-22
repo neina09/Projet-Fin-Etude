@@ -1,5 +1,5 @@
 import React from "react"
-import { Star, Wrench } from "lucide-react"
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, MapPin, Star, Wallet, Wrench } from "lucide-react"
 
 const STATUS_LABELS = {
   PENDING: "قيد الانتظار",
@@ -9,17 +9,85 @@ const STATUS_LABELS = {
   CANCELLED: "ملغي"
 }
 
-const inputArea =
-  "min-h-[96px] w-full rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm font-bold text-slate-900 outline-none transition-all focus:border-[#1d4ed8] focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+const SECTION_TITLES = {
+  today: "حجوزات اليوم",
+  future: "الحجوزات القادمة",
+  past: "السجل السابق"
+}
+
+const toDateKey = (value) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+}
+
+const groupBookingsByDate = (bookings) => {
+  const now = new Date()
+  const todayKey = toDateKey(now)
+
+  return bookings.reduce(
+    (groups, booking) => {
+      const bookingDate = new Date(booking.bookingDate)
+      if (Number.isNaN(bookingDate.getTime())) {
+        groups.future.push(booking)
+        return groups
+      }
+
+      const bookingKey = toDateKey(bookingDate)
+      if (bookingKey === todayKey) {
+        groups.today.push(booking)
+        return groups
+      }
+
+      if (bookingDate > now) {
+        groups.future.push(booking)
+        return groups
+      }
+
+      groups.past.push(booking)
+      return groups
+    },
+    { today: [], future: [], past: [] }
+  )
+}
+
+const formatDateTime = (value) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "غير محدد"
+  return new Intl.DateTimeFormat("ar", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(date)
+}
+
+const formatPrice = (value) => {
+  const amount = Number(value)
+  if (!Number.isFinite(amount) || amount <= 0) return "غير محدد"
+  return `${amount} أوقية`
+}
+
+const getStatusBadgeClass = (status) => {
+  if (status === "PENDING") return "badge-primary"
+  if (status === "COMPLETED") return "badge-green"
+  if (status === "ACCEPTED") return "badge-amber"
+  return "badge-secondary"
+}
 
 export default function BookingHistory({
   bookings,
+  totalItems,
+  currentPage,
+  onPageChange,
+  itemsPerPage,
   ratingForm,
   updateRatingField,
   handleRateWorker,
   handleBookingAction,
-  onBecomeWorker
+  onBecomeWorker,
+  isWorker
 }) {
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const groupedBookings = groupBookingsByDate(bookings)
   const completedUnratedBookings = bookings.filter((booking) => {
     const bookingStatus = String(booking.status || "").toUpperCase()
     const isRated = Boolean(booking.isRated ?? booking.rated)
@@ -28,124 +96,201 @@ export default function BookingHistory({
 
   return (
     <section className="mt-8" dir="rtl">
-      <div className="rounded-[2rem] border border-slate-100 bg-white p-8 shadow-sm">
+      <div className="card-lg">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#1d4ed8]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Wrench size={20} />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-900">حجوزاتي وتقييم العمال</h2>
-            <p className="text-sm font-bold text-slate-500">يمكنك تقييم العامل فقط بعد اكتمال الحجز.</p>
+            <h2 className="text-xl font-black text-slate-900">حجوزاتي وسجل التعامل</h2>
+            <p className="t-label italic">الحجوزات مقسمة إلى اليوم والقادم والسجل السابق مع تفاصيل كاملة.</p>
           </div>
         </div>
 
-        <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/80 px-5 py-4 text-sm font-bold text-blue-800">
+        <div className="mb-6 rounded-2xl border border-primary/10 bg-primary/5 px-5 py-4 text-[11px] font-bold text-primary">
           {completedUnratedBookings.length
             ? `لديك ${completedUnratedBookings.length} حجز مكتمل بانتظار تقييمك. ستجد نموذج التقييم داخل بطاقة الحجز المكتمل.`
             : "سيظهر نموذج تقييم العامل هنا مباشرة بعد اكتمال أي حجز لم يتم تقييمه بعد."}
         </div>
 
-        <div className="mb-6 rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-bold text-amber-900">
-          إذا قررت أن تصبح عاملًا، يجب أن يقبل المدير طلبك أولًا قبل أن يظهر ملفك في المنصة.
-        </div>
+        {!isWorker && (
+          <>
+            <div className="mb-6 rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-[11px] font-bold text-amber-900">
+              إذا قررت أن تصبح عاملًا، يجب أن يقبل المدير طلبك أولًا قبل أن يظهر ملفك في المنصة.
+            </div>
 
-        <button
-          type="button"
-          onClick={onBecomeWorker}
-          className="mb-6 h-12 rounded-2xl bg-[#1d4ed8] px-8 text-sm font-black text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-[0.99]"
-        >
-          انضم كعامل
-        </button>
+            <button
+              type="button"
+              onClick={onBecomeWorker}
+              className="btn btn-primary btn-md mb-8"
+            >
+              انضم كعامل الآن
+            </button>
+          </>
+        )}
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {bookings.length ? (
-            bookings.map((booking) => {
-              const bookingStatus = String(booking.status || "").toUpperCase()
-              const isCompleted = bookingStatus === "COMPLETED"
-              const isRated = Boolean(booking.isRated ?? booking.rated)
-              const ratingValues = ratingForm[booking.id] || { stars: 0, comment: "" }
+            ["today", "future", "past"].map((sectionKey) => {
+              const sectionItems = groupedBookings[sectionKey]
+              if (!sectionItems.length) return null
 
               return (
-                <div key={booking.id} className="rounded-2xl border border-slate-100 bg-slate-50/40 p-5">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-base font-black text-slate-900">{booking.workerName || "عامل"}</h3>
-                      <p className="text-sm font-bold text-slate-500">
-                        {booking.workerJob || "خدمة عامة"} - {booking.address}
-                      </p>
-                    </div>
-                    <span className="rounded-full border border-slate-100 bg-white px-3 py-1 text-xs font-black text-slate-600">
-                      {STATUS_LABELS[bookingStatus] || bookingStatus}
-                    </span>
+                <section key={sectionKey} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-black text-slate-900">{SECTION_TITLES[sectionKey]}</h3>
+                    <span className="badge badge-secondary">{sectionItems.length}</span>
                   </div>
 
-                  {isCompleted && !isRated && (
-                    <div className="rounded-2xl border border-slate-100 bg-white p-4">
-                      <div className="mb-3 flex items-center gap-2 text-sm font-black text-slate-800">
-                        <Star size={16} className="text-amber-500" />
-                        قيّم العامل
-                      </div>
+                  {sectionItems.map((booking) => {
+                    const bookingStatus = String(booking.status || "").toUpperCase()
+                    const isCompleted = bookingStatus === "COMPLETED"
+                    const isRated = Boolean(booking.isRated ?? booking.rated)
+                    const ratingValues = ratingForm[booking.id] || { stars: 0, comment: "" }
 
-                      <div className="mb-3 flex gap-2">
-                        {[1, 2, 3, 4, 5].map((value) => (
+                    return (
+                      <div key={booking.id} className="card space-y-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-xs font-black text-blue-700">
+                                {booking.workerImageUrl ? (
+                                  <img src={booking.workerImageUrl} alt={booking.workerName || "عامل"} className="h-full w-full rounded-2xl object-cover" />
+                                ) : (
+                                  booking.workerName?.[0] || "ع"
+                                )}
+                              </div>
+                              <div>
+                                <h3 className="text-sm font-black text-slate-900">{booking.workerName || "عامل"}</h3>
+                                <p className="t-label">{booking.workerJob || "خدمة عامة"}</p>
+                              </div>
+                            </div>
+                            <p className="text-xs font-bold leading-relaxed text-slate-600">
+                              {booking.description || "طلب خدمة"}
+                            </p>
+                          </div>
+
+                          <span className={`badge ${getStatusBadgeClass(bookingStatus)}`}>
+                            {STATUS_LABELS[bookingStatus] || bookingStatus}
+                          </span>
+                        </div>
+
+                        <div className="grid gap-3 text-[11px] font-bold text-slate-500 sm:grid-cols-2">
+                          <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
+                            <CalendarDays size={14} className="text-blue-600" />
+                            {formatDateTime(booking.bookingDate)}
+                          </div>
+                          <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
+                            <Wallet size={14} className="text-emerald-600" />
+                            {formatPrice(booking.price)}
+                          </div>
+                          <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 sm:col-span-2">
+                            <MapPin size={14} className="text-rose-500" />
+                            {booking.address || "العنوان غير متوفر"}
+                          </div>
+                        </div>
+
+                        {isCompleted && !isRated && (
+                          <div className="card mt-2">
+                            <div className="mb-4 flex items-center gap-2 t-label">
+                              <Star size={14} className="text-amber-500" />
+                              قيّم تجربة العمل
+                            </div>
+
+                            <div className="mb-4 flex gap-2">
+                              {[1, 2, 3, 4, 5].map((value) => (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  onClick={() => updateRatingField(booking.id, "stars", value)}
+                                  className={`h-10 w-10 rounded-xl text-xs font-black transition-all ${
+                                    ratingValues.stars >= value
+                                      ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
+                                      : "border border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
+                                  }`}
+                                >
+                                  {value}
+                                </button>
+                              ))}
+                            </div>
+
+                            <textarea
+                              value={ratingValues.comment}
+                              onChange={(event) => updateRatingField(booking.id, "comment", event.target.value)}
+                              rows={3}
+                              placeholder="اكتب ملاحظتك حول جودة العمل..."
+                              className="input min-h-[100px] resize-none"
+                            />
+
+                            <button
+                              type="button"
+                              onClick={() => handleRateWorker(booking.id)}
+                              className="btn btn-primary btn-md mt-4 w-full"
+                            >
+                              <Star size={14} />
+                              إرسال التقييم النهائي
+                            </button>
+                          </div>
+                        )}
+
+                        {isCompleted && isRated && (
+                          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-[10px] font-black italic text-emerald-800">
+                            تم تقييم هذا الحجز بنجاح. شكرًا لك!
+                          </div>
+                        )}
+
+                        {bookingStatus === "PENDING" && (
                           <button
-                            key={value}
                             type="button"
-                            onClick={() => updateRatingField(booking.id, "stars", value)}
-                            className={`rounded-xl px-3 py-2 text-sm font-black transition-all ${
-                              ratingValues.stars >= value
-                                ? "bg-amber-500 text-white shadow-sm"
-                                : "border border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"
-                            }`}
+                            onClick={() => handleBookingAction(booking.id, "cancel")}
+                            className="btn btn-secondary btn-sm mt-1"
                           >
-                            {value}
+                            إلغاء الحجز
                           </button>
-                        ))}
+                        )}
+
+                        {bookingStatus !== "PENDING" && !isCompleted && (
+                          <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-500">
+                            <Clock3 size={14} />
+                            هذا الحجز محفوظ ضمن السجل ويمكن الرجوع لتفاصيله في أي وقت.
+                          </div>
+                        )}
                       </div>
-
-                      <textarea
-                        value={ratingValues.comment}
-                        onChange={(e) => updateRatingField(booking.id, "comment", e.target.value)}
-                        rows={3}
-                        placeholder="اكتب ملاحظتك حول جودة العمل..."
-                        className={inputArea}
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() => handleRateWorker(booking.id)}
-                        className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#1d4ed8] text-sm font-black text-white shadow-md shadow-blue-500/15 transition-all hover:bg-blue-700"
-                      >
-                        <Star size={16} />
-                        إرسال التقييم
-                      </button>
-                    </div>
-                  )}
-
-                  {isCompleted && isRated && (
-                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-black text-emerald-800">
-                      تم تقييم هذا الحجز بالفعل.
-                    </div>
-                  )}
-
-                  {bookingStatus === "PENDING" && (
-                    <button
-                      type="button"
-                      onClick={() => handleBookingAction(booking.id, "cancel")}
-                      className="mt-3 h-10 rounded-2xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-700 transition-all hover:bg-slate-50"
-                    >
-                      إلغاء الحجز
-                    </button>
-                  )}
-                </div>
+                    )
+                  })}
+                </section>
               )
             })
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm font-bold text-slate-400">
-              لا توجد حجوزات حتى الآن.
+            <div className="empty-state">
+              <p className="t-label italic">لا توجد حجوزات حتى الآن.</p>
             </div>
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="pagination">
+            <button
+              onClick={() => onPageChange((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+              className="pagination-btn"
+            >
+              <ChevronRight size={16} />
+            </button>
+
+            <div className="t-label px-3">
+              الصفحة {currentPage} من {totalPages}
+            </div>
+
+            <button
+              onClick={() => onPageChange((page) => Math.min(totalPages, page + 1))}
+              disabled={currentPage === totalPages}
+              className="pagination-btn"
+            >
+              <ChevronLeft size={16} />
+            </button>
+          </div>
+        )}
       </div>
     </section>
   )

@@ -119,9 +119,6 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.ACCEPTED);
 
-        worker.setAvailability(WorkerAvailability.BUSY);
-        workerRepository.save(worker);
-
         Booking saved = bookingRepository.save(booking);
 
         // Notify User
@@ -176,10 +173,6 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.COMPLETED);
 
-        Worker worker = booking.getWorker();
-        worker.setAvailability(WorkerAvailability.AVAILABLE);
-        workerRepository.save(worker);
-
         Booking saved = bookingRepository.save(booking);
 
         notificationService.sendNotification(
@@ -205,7 +198,15 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
-        return toBookingDto(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+
+        notificationService.sendNotification(
+                booking.getWorker().getUser(),
+                currentUser.getName() + " cancelled the booking request",
+                NotificationType.BOOKING_CANCELLED
+        );
+
+        return toBookingDto(saved);
     }
 
     private BookingResponseDto toBookingDto(Booking booking) {

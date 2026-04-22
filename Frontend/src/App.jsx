@@ -14,13 +14,13 @@ const BecomeWorker = lazy(() => import("./components/BecomeWorker"))
 
 function PageLoader({ message = "جاري تحميل الصفحة..." }) {
   return (
-    <div className="flex min-h-[50vh] items-center justify-center bg-surface-50" dir="rtl">
-      <div className="rounded-3xl border border-surface-200 bg-white px-8 py-6 shadow-lg">
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-surface-100 border-t-primary" />
-          <div>
-            <p className="text-sm font-black text-surface-900">{message}</p>
-            <p className="text-xs font-bold text-surface-400">يتم تجهيز المحتوى المطلوب.</p>
+    <div className="page-shell flex items-center justify-center" dir="rtl">
+      <div className="card-lg">
+        <div className="flex flex-col items-center gap-6">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-surface-100 border-t-primary shadow-sm" />
+          <div className="text-center">
+            <p className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-2">{message}</p>
+            <p className="t-label italic">يتم تجهيز المحتوى المطلوب بأعلى جودة.</p>
           </div>
         </div>
       </div>
@@ -74,8 +74,8 @@ function App() {
 
   if (checkingSession) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface-50" dir="rtl">
-        <div className="rounded-3xl border border-surface-200 bg-white px-8 py-6 shadow-lg">
+      <div className="page-shell flex items-center justify-center" dir="rtl">
+        <div className="card-lg">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-surface-100 border-t-primary" />
             <div>

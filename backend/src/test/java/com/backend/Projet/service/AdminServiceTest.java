@@ -9,6 +9,7 @@ import com.backend.Projet.model.Worker;
 import com.backend.Projet.model.WorkerVerificationStatus;
 import com.backend.Projet.repository.BookingRepository;
 import com.backend.Projet.repository.NotificationRepository;
+import com.backend.Projet.repository.RatingRepository;
 import com.backend.Projet.repository.TaskRepository;
 import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.repository.WorkerRepository;
@@ -36,6 +37,8 @@ class AdminServiceTest {
     private BookingRepository bookingRepository;
     @Mock
     private NotificationRepository notificationRepository;
+    @Mock
+    private RatingRepository ratingRepository;
 
     private AdminService adminService;
 
@@ -48,7 +51,7 @@ class AdminServiceTest {
                 bookingRepository,
                 notificationRepository,
                 new WorkerMapper(),
-                new TaskMapper()
+                new TaskMapper(ratingRepository)
         );
     }
 

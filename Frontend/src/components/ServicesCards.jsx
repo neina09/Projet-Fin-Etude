@@ -21,9 +21,9 @@ function ServicesCards() {
             <h2 className="text-3xl font-black text-slate-950">الفئات</h2>
             <p className="mt-2 text-slate-500 font-medium">اختر المجال الذي تحتاجه لنعرض لك أفضل الخبراء</p>
           </div>
-          <button className="flex items-center gap-2 text-sm font-bold text-brand-blue hover:underline">
+          <button className="flex items-center gap-2 text-xs font-black text-primary hover:underline uppercase tracking-widest">
             عرض الكل
-            <ChevronLeft size={16} />
+            <ChevronLeft size={14} />
           </button>
         </div>
 
@@ -33,10 +33,10 @@ function ServicesCards() {
               key={category.title} 
               className="flex flex-col items-center gap-4 group cursor-pointer"
             >
-              <div className="h-20 w-20 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-brand-blue transition-all duration-300 shadow-sm border border-slate-100 group-hover:border-blue-100 group-hover:shadow-md">
+              <div className="h-20 w-20 rounded-full bg-surface-50 flex items-center justify-center text-slate-400 group-hover:bg-primary/5 group-hover:text-primary transition-all duration-300 shadow-sm border border-surface-100 group-hover:border-primary/20 group-hover:shadow-md">
                 <category.icon size={28} />
               </div>
-              <span className="text-sm font-bold text-slate-700 group-hover:text-brand-blue transition-colors">
+              <span className="text-[10px] font-black text-slate-600 group-hover:text-primary transition-colors uppercase tracking-widest">
                 {category.title}
               </span>
             </div>

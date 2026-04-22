@@ -31,6 +31,9 @@ public interface OfferRepository extends JpaRepository<Offer, Long> {
     boolean      existsByTaskIdAndWorkerId(Long taskId, Long workerId);
 
     @Modifying
+    void deleteByTaskId(Long taskId);
+
+    @Modifying
     void deleteByTaskUserId(Long userId);
 
     @Modifying

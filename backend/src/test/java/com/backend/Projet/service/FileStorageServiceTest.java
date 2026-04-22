@@ -37,7 +37,7 @@ class FileStorageServiceTest {
     @Test
     void storeWorkerImageShouldAcceptValidImageContent() throws IOException {
         tempDirectory = Files.createTempDirectory("file-storage-test");
-        FileStorageService service = new FileStorageService(tempDirectory.toString());
+        FileStorageService service = new FileStorageService(tempDirectory.toString(), 5 * 1024 * 1024);
 
         MockMultipartFile file = new MockMultipartFile(
                 "file",
@@ -55,7 +55,7 @@ class FileStorageServiceTest {
     @Test
     void storeWorkerImageShouldRejectMismatchedImageContent() throws IOException {
         tempDirectory = Files.createTempDirectory("file-storage-test");
-        FileStorageService service = new FileStorageService(tempDirectory.toString());
+        FileStorageService service = new FileStorageService(tempDirectory.toString(), 5 * 1024 * 1024);
 
         MockMultipartFile file = new MockMultipartFile(
                 "file",
@@ -72,7 +72,7 @@ class FileStorageServiceTest {
     @Test
     void storeWorkerDocumentShouldRejectInvalidPdfContent() throws IOException {
         tempDirectory = Files.createTempDirectory("file-storage-test");
-        FileStorageService service = new FileStorageService(tempDirectory.toString());
+        FileStorageService service = new FileStorageService(tempDirectory.toString(), 5 * 1024 * 1024);
 
         MockMultipartFile file = new MockMultipartFile(
                 "file",
@@ -84,6 +84,23 @@ class FileStorageServiceTest {
         BusinessException exception = assertThrows(BusinessException.class, () -> service.storeWorkerDocument(file));
 
         assertEquals("Invalid PDF file", exception.getMessage());
+    }
+
+    @Test
+    void storeWorkerImageShouldRejectOversizedFiles() throws IOException {
+        tempDirectory = Files.createTempDirectory("file-storage-test");
+        FileStorageService service = new FileStorageService(tempDirectory.toString(), 10);
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "avatar.png",
+                "image/png",
+                createPngBytes()
+        );
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> service.storeWorkerImage(file));
+
+        assertEquals("File exceeds the maximum allowed size", exception.getMessage());
     }
 
     private byte[] createPngBytes() throws IOException {

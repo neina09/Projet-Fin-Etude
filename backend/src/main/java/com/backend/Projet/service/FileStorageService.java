@@ -37,9 +37,14 @@ public class FileStorageService {
     );
 
     private final Path uploadRoot;
+    private final long maxUploadBytes;
 
-    public FileStorageService(@Value("${app.storage.upload-dir:uploads}") String uploadDir) {
+    public FileStorageService(
+            @Value("${app.storage.upload-dir:uploads}") String uploadDir,
+            @Value("${app.storage.max-upload-bytes:5242880}") long maxUploadBytes
+    ) {
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
+        this.maxUploadBytes = maxUploadBytes;
     }
 
     public String storeWorkerImage(MultipartFile file) {
@@ -115,13 +120,22 @@ public class FileStorageService {
         }
 
         String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() == null ? "" : file.getOriginalFilename());
+        if (originalFilename.contains("..")) {
+            throw new BusinessException("Invalid file name");
+        }
         String extension = getExtension(originalFilename);
         if (!allowedExtensions.contains(extension)) {
             throw new BusinessException("Unsupported file type");
         }
+        if (file.getSize() > maxUploadBytes) {
+            throw new BusinessException("File exceeds the maximum allowed size");
+        }
 
         try {
             byte[] fileBytes = file.getBytes();
+            if (fileBytes.length > maxUploadBytes) {
+                throw new BusinessException("File exceeds the maximum allowed size");
+            }
             validateFileContent(fileBytes, extension, file.getContentType(), allowedExtensions);
 
             Path targetDirectory = uploadRoot.resolve(subDirectory).normalize();
@@ -170,6 +184,9 @@ public class FileStorageService {
             BufferedImage image = ImageIO.read(imageStream);
             if (image == null || image.getWidth() <= 0 || image.getHeight() <= 0) {
                 throw new BusinessException("Invalid image file");
+            }
+            if (image.getWidth() > 5000 || image.getHeight() > 5000) {
+                throw new BusinessException("Image dimensions exceed the maximum allowed size");
             }
         } catch (IOException exception) {
             throw new BusinessException("Invalid image file");

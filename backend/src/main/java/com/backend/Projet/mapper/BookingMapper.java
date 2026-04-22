@@ -11,13 +11,21 @@ public class BookingMapper {
         if (booking == null) {
             return null;
         }
+        String workerImageUrl = booking.getWorker().getImageUrl();
+        if ((workerImageUrl == null || workerImageUrl.isBlank())
+                && booking.getWorker().getUser() != null
+                && booking.getWorker().getUser().getImageUrl() != null
+                && !booking.getWorker().getUser().getImageUrl().isBlank()) {
+            workerImageUrl = booking.getWorker().getUser().getImageUrl();
+        }
+
         return BookingResponseDto.builder()
                 .id(booking.getId())
                 .workerId(booking.getWorker().getId())
                 .workerUserId(booking.getWorker().getUser().getId())
                 .workerName(booking.getWorker().getName())
                 .workerJob(booking.getWorker().getJob())
-                .workerImageUrl(booking.getWorker().getImageUrl())
+                .workerImageUrl(workerImageUrl)
                 .userId(booking.getUser().getId())
                 .userName(booking.getUser().getName())
                 .userImageUrl(booking.getUser().getImageUrl())

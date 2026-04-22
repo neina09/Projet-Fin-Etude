@@ -1,18 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import {
   Bell,
-  Search,
   LogOut,
-  ClipboardList,
-  Users,
   ChevronDown,
-  Briefcase,
-  Home,
-  Star,
-  Shield
+  User,
+  Menu,
+  X
 } from "lucide-react"
 import NotificationList from "./NotificationList"
-import { getMyNotifications, isAuthenticationError, markNotificationRead, resolveAssetUrl } from "../api"
+import {
+  getMyNotifications,
+  getUnreadNotificationsCount,
+  isAuthenticationError,
+  markAllNotificationsRead,
+  markNotificationRead,
+  resolveAssetUrl
+} from "../api"
 import { AnimatePresence, motion } from "framer-motion"
 import logo from "../assets/logo.png"
 
@@ -24,8 +27,9 @@ const normalizeNotification = (notification) => ({
 export default function DashboardHeader({ user, activePage, onNavigate, onLogout }) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [notifications, setNotifications] = useState([])
-  const [hiddenNotificationIds, setHiddenNotificationIds] = useState([])
+  const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
 
   const isAdmin = user?.role === "ADMIN"
@@ -33,213 +37,240 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
   const fetchNotifications = useCallback(async () => {
     if (!notificationsEnabled) return
     try {
-      const data = await getMyNotifications()
-      const list = (Array.isArray(data) ? data : []).map(normalizeNotification)
-      setNotifications(
-        list
-          .map((n) => hiddenNotificationIds.includes(n.id) ? { ...n, isRead: true } : n)
-          .filter((n) => !n.isRead)
-      )
+      const [notificationsData, unreadPayload] = await Promise.all([
+        getMyNotifications(),
+        getUnreadNotificationsCount()
+      ])
+      const list = (Array.isArray(notificationsData) ? notificationsData : []).map(normalizeNotification)
+      setNotifications(list.slice(0, 12))
+      setUnreadCount(Number(unreadPayload?.count ?? unreadPayload?.unreadCount ?? 0))
     } catch (error) {
       if (isAuthenticationError(error)) {
         setNotificationsEnabled(false)
         setNotifications([])
-        return
+        setUnreadCount(0)
       }
-      console.error("Failed to fetch notifications:", error)
     }
-  }, [hiddenNotificationIds, notificationsEnabled])
+  }, [notificationsEnabled])
 
   useEffect(() => {
     if (!notificationsEnabled) return undefined
-    const initialTimer = setTimeout(() => fetchNotifications(), 0)
     const interval = setInterval(fetchNotifications, 8000)
-    return () => { clearTimeout(initialTimer); clearInterval(interval) }
+    fetchNotifications()
+    return () => clearInterval(interval)
   }, [fetchNotifications, notificationsEnabled])
 
   const handleMarkRead = async (id) => {
     try {
       await markNotificationRead(id)
-      setHiddenNotificationIds((c) => (c.includes(id) ? c : [...c, id]))
-      setNotifications((c) => c.filter((n) => n.id !== id))
+      setNotifications((current) =>
+        current.map((n) => (n.id === id ? { ...n, isRead: true, read: true } : n))
+      )
+      setUnreadCount((current) => Math.max(0, current - 1))
     } catch (error) {
       if (isAuthenticationError(error)) {
         setNotificationsEnabled(false)
         setNotifications([])
-        return
+        setUnreadCount(0)
       }
-      console.error("Failed to mark notification as read:", error)
     }
   }
 
-  const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.isRead).length,
-    [notifications]
-  )
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllNotificationsRead()
+      setNotifications((current) => current.map((n) => ({ ...n, isRead: true, read: true })))
+      setUnreadCount(0)
+    } catch (error) {
+      if (isAuthenticationError(error)) {
+        setNotificationsEnabled(false)
+        setNotifications([])
+        setUnreadCount(0)
+      }
+    }
+  }
 
-  // Navigation tabs — added tasks-verification for admin
-  const headerNavItems = [
-    { id: isAdmin ? "admin" : "dashboard", label: "الرئيسية", icon: Home },
-    { id: "workers", label: "سوق العمال", icon: Users },
-    { id: "tasks", label: "المهام والعروض", icon: ClipboardList },
-    ...(isAdmin
-      ? [{ id: "tasksVerification", label: "المهام والتوثيق", icon: Shield }]
-      : []),
-    { id: "ratings", label: "التقييمات", icon: Star }
+  // نفس ترتيب الـ landing: الرئيسية، الخبراء، الخدمات، كيف يعمل
+  const navItems = [
+    { id: isAdmin ? "admin" : "dashboard", label: "الرئيسية" },
+    { id: "workers", label: "الخبراء" },
+    { id: "tasks", label: "المهام والعروض" },
+    { id: "myRequests", label: "طلباتي" },
+    { id: "ratings", label: "التقييمات" },
+    ...(isAdmin ? [{ id: "tasksVerification", label: "الإدارة" }] : []),
   ]
 
   return (
-    <header className="sticky top-0 z-[50] flex flex-col border-b border-slate-100 bg-white/95 backdrop-blur-3xl transition-all duration-500 shadow-sm">
-      {/* Top Row */}
-      <div className="flex h-20 items-center justify-between px-6 lg:px-12">
-        <div className="flex items-center gap-8">
-          <div
-            className="flex items-center gap-4 cursor-pointer"
+    <header dir="rtl" className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-100">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="flex h-[64px] items-center justify-between">
+
+          {/* ===== يمين: Logo — نفس الـ landing ===== */}
+          <button
             onClick={() => onNavigate(isAdmin ? "admin" : "dashboard")}
+            className="flex items-center gap-2 flex-shrink-0"
           >
-            <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-lg border border-slate-100 p-1.5 overflow-hidden">
-              <img src={logo} alt="L" className="h-full w-full object-contain" />
-            </div>
-            <div className="hidden sm:block">
-              <h1 className="text-xl font-black text-slate-950 uppercase tracking-tight">عاملك</h1>
-              <p className="text-[8px] font-black text-[#1d4ed8] tracking-[0.2em] uppercase opacity-60">Aamilak Node</p>
-            </div>
-          </div>
-        </div>
+            <img src={logo} alt="عاملك" className="h-8 w-8 object-contain" />
+            <span className="text-xl font-black tracking-tight text-slate-900">عاملك</span>
+          </button>
 
-        <div className="flex items-center gap-5">
-          {/* Search Bar */}
-          <div className="group relative hidden xl:flex">
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#1d4ed8] transition-colors" size={18} />
-            <input
-              type="text"
-              placeholder="البحث الذكي في النظام..."
-              className="w-72 rounded-2xl border border-slate-100 bg-slate-50 py-2.5 pr-12 pl-4 text-sm font-bold text-slate-900 transition-all focus:border-blue-500/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/5 placeholder:text-slate-400"
-            />
-          </div>
+          {/* ===== وسط: Nav links — نفس الـ landing بالضبط ===== */}
+          <nav className="hidden lg:flex items-center gap-8">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                className={`
+                  text-sm font-semibold transition-colors duration-150
+                  ${activePage === item.id
+                    ? "text-slate-900"
+                    : "text-slate-500 hover:text-slate-900"
+                  }
+                `}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
 
-          {/* Notifications */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowNotifications((c) => !c)}
-              className={`relative flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-300 ${
-                showNotifications
-                  ? "bg-[#1d4ed8] text-white shadow-lg shadow-blue-500/20"
-                  : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-900 shadow-sm"
-              }`}
-            >
-              <Bell size={19} />
-              {unreadCount > 0 && (
-                <span className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[9px] font-black text-white ring-3 ring-white">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
+          {/* ===== يسار: Bell + زر المستخدم الأزرق — بدل "دخول" و"ابدأ الآن" ===== */}
+          <div className="flex items-center gap-3">
 
-            <AnimatePresence>
-              {showNotifications && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute left-0 mt-4 z-50 origin-top-left"
-                >
-                  <NotificationList notifications={notifications} onMarkAsRead={handleMarkRead} />
-                  <div className="fixed inset-0 z-[-1]" onClick={() => setShowNotifications(false)} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div className="h-8 w-[1px] bg-slate-100" />
-
-          {/* User Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className={`flex items-center gap-3 p-1.5 rounded-2xl border transition-all duration-300 ${
-                showUserMenu
-                  ? "bg-slate-50 border-blue-500/20 shadow-sm"
-                  : "bg-white border-slate-100 hover:border-slate-200 shadow-sm"
-              }`}
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100/50 text-sm font-black text-[#1d4ed8] overflow-hidden">
-                {user?.imageUrl ? (
-                  <img src={resolveAssetUrl(user.imageUrl)} alt={user?.username || "User"} className="h-full w-full object-cover" />
-                ) : (
-                  user?.username?.[0]?.toUpperCase() || "U"
+            {/* إشعارات */}
+            <div className="relative">
+              <button
+                onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false) }}
+                className="relative flex items-center justify-center h-9 w-9 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white" />
                 )}
-              </div>
-              <div className="hidden sm:flex flex-col items-end gap-0.5 ml-2">
-                <span className="text-[12px] font-black text-slate-900 leading-tight">{user?.username || "Guest User"}</span>
-                <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5">
-                  Online <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-                </span>
-              </div>
-              <ChevronDown size={15} className={`text-slate-400 transition-transform duration-500 ${showUserMenu ? "rotate-180" : ""}`} />
-            </button>
+              </button>
 
-            <AnimatePresence>
-              {showUserMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute left-0 mt-4 w-72 origin-top-left rounded-[2rem] bg-white border border-slate-100 p-3 shadow-2xl z-50"
-                >
-                  <div className="mt-2 pt-2 border-t border-slate-50">
-                    <button
-                      onClick={onLogout}
-                      className="flex w-full items-center gap-4 rounded-2xl px-5 py-3.5 text-sm font-bold text-red-500 transition-all hover:bg-red-50 group"
+              <AnimatePresence>
+                {showNotifications && (
+                  <>
+                    <div className="fixed inset-0 z-[99]" onClick={() => setShowNotifications(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute left-0 z-[200] mt-2 w-80"
                     >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-400 group-hover:bg-red-500 group-hover:text-white transition-all">
-                        <LogOut size={18} />
-                      </div>
-                      تسجيل الخروج
-                    </button>
-                  </div>
+                      <NotificationList
+                        notifications={notifications}
+                        onMarkAsRead={handleMarkRead}
+                        onMarkAllAsRead={handleMarkAllRead}
+                        unreadCount={unreadCount}
+                      />
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
 
-                  <div className="fixed inset-0 z-[-1]" onClick={() => setShowUserMenu(false)} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* زر المستخدم — نفس شكل زر "ابدأ الآن" الأزرق */}
+            <div className="relative">
+              <button
+                onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false) }}
+                className="flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-bold transition-colors shadow-sm"
+              >
+                <div className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-white/25 text-[11px] font-black flex-shrink-0">
+                  {user?.imageUrl ? (
+                    <img src={resolveAssetUrl(user.imageUrl)} alt="Avatar" className="h-full w-full object-cover rounded-full" />
+                  ) : (
+                    user?.username?.[0]?.toUpperCase()
+                  )}
+                </div>
+                <span className="hidden sm:block max-w-[80px] truncate">
+                  {user?.username || "حسابي"}
+                </span>
+                <ChevronDown size={13} className={`transition-transform duration-200 opacity-80 ${showUserMenu ? "rotate-180" : ""}`} />
+              </button>
+
+              <AnimatePresence>
+                {showUserMenu && (
+                  <>
+                    <div className="fixed inset-0 z-[99]" onClick={() => setShowUserMenu(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute left-0 z-[200] mt-2 w-52 rounded-2xl border border-slate-100 bg-white shadow-lg shadow-slate-200/50 overflow-hidden"
+                    >
+                      <div className="px-4 py-3 border-b border-slate-50">
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">مسجل كـ</p>
+                        <p className="text-sm font-black text-slate-900 truncate">{user?.username}</p>
+                      </div>
+                      <div className="p-1.5">
+                        <button
+                          onClick={() => { onNavigate("profile"); setShowUserMenu(false) }}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                        >
+                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                            <User size={13} />
+                          </div>
+                          الملف الشخصي
+                        </button>
+                        <div className="my-1 mx-1 h-px bg-slate-50" />
+                        <button
+                          onClick={onLogout}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors"
+                        >
+                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-50 text-red-500">
+                            <LogOut size={13} />
+                          </div>
+                          تسجيل الخروج
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="flex lg:hidden items-center justify-center h-9 w-9 rounded-full text-slate-500 hover:bg-slate-50 transition-colors"
+            >
+              {showMobileMenu ? <X size={18} /> : <Menu size={18} />}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Bottom Navigation Bar */}
-      <div className="flex items-center gap-1 px-6 lg:px-12 -mb-px overflow-x-auto">
-        {headerNavItems.map((item) => {
-          const Icon = item.icon
-          const isActive =
-            activePage === item.id ||
-            (item.id === "dashboard" && activePage === "admin" && !isAdmin)
-
-          return (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`flex shrink-0 items-center gap-2.5 px-5 py-3 text-[12px] font-black tracking-wide transition-all duration-300 border-b-[3px] ${
-                isActive
-                  ? "border-[#1d4ed8] text-[#1d4ed8] bg-blue-50/50"
-                  : "border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-50/50"
-              }`}
-            >
-              <Icon size={16} />
-              {item.label}
-              {/* Highlight badge for tasks-verification tab when it's admin */}
-              {item.id === "tasksVerification" && (
-                <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black ${
-                  isActive ? "bg-blue-100 text-blue-700" : "bg-red-50 text-red-500"
-                }`}>
-                  إدارة
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
+      {/* Mobile nav */}
+      <AnimatePresence>
+        {showMobileMenu && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.18 }}
+            className="lg:hidden border-t border-slate-100 bg-white overflow-hidden"
+          >
+            <div className="px-6 py-4 flex flex-col gap-1">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => { onNavigate(item.id); setShowMobileMenu(false) }}
+                  className={`px-3 py-2.5 rounded-xl text-sm font-semibold text-right transition-colors ${
+                    activePage === item.id
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   )
 }

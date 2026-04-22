@@ -1,23 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react"
-import { CheckCircle2, ShieldCheck, Star, Trash2 } from "lucide-react"
+import { CheckCircle2, ShieldCheck, Trash2 } from "lucide-react"
 import {
   changePassword,
-  createRating,
   deleteAccount,
-  getMyBookingRequests,
-  getMyBookings,
-  getWorkerRatings,
-  updateBookingStatus,
-  updateProfile,
   getMyWorkerProfile,
+  updateProfile,
+  updateWorkerAvailability,
   uploadUserImage,
   uploadWorkerImage
 } from "../api"
 
 import AccountSettings from "./profile/AccountSettings"
 import SecuritySettings from "./profile/SecuritySettings"
-import BookingHistory from "./profile/BookingHistory"
-import WorkerRequestsList from "./profile/WorkerRequestsList"
 
 export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, onBecomeWorker }) {
   const [username, setUsername] = useState(user?.username || "")
@@ -26,37 +20,38 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
   const [newPassword, setNewPassword] = useState("")
   const [msg, setMsg] = useState({ type: "", text: "" })
   const [loading, setLoading] = useState(false)
-  const [bookings, setBookings] = useState([])
-  const [requests, setRequests] = useState([])
-  const [ratings, setRatings] = useState([])
-  const [ratingForm, setRatingForm] = useState({})
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const [workerProfile, setWorkerProfile] = useState(null)
   const [workerProfileLoading, setWorkerProfileLoading] = useState(false)
   const [userImageFile, setUserImageFile] = useState(null)
   const [userImageFailed, setUserImageFailed] = useState(false)
+
   const isWorker = user?.role === "WORKER"
+
+  const publishMessage = (type, text) => {
+    setMsg({ type, text })
+    setTimeout(() => setMsg({ type: "", text: "" }), 5000)
+  }
 
   const loadProfileData = useCallback(async () => {
     if (isWorker) setWorkerProfileLoading(true)
 
-    const [bookingsResult, requestsResult, workerProfileResult] = await Promise.allSettled([
-      getMyBookings(),
-      isWorker ? getMyBookingRequests() : Promise.resolve([]),
-      isWorker ? getMyWorkerProfile() : Promise.resolve(null)
-    ])
-
-    if (bookingsResult.status === "fulfilled") {
-      setBookings(Array.isArray(bookingsResult.value) ? bookingsResult.value : [])
+    try {
+      const workerProfileResult = await getMyWorkerProfile()
+      if (workerProfileResult) {
+        setWorkerProfile(workerProfileResult)
+      }
+    } catch (err) {
+      console.error("Failed to load worker profile", err)
+    } finally {
+      if (isWorker) setWorkerProfileLoading(false)
     }
-    if (requestsResult.status === "fulfilled") {
-      setRequests(Array.isArray(requestsResult.value) ? requestsResult.value : [])
-    }
-    if (workerProfileResult.status === "fulfilled" && workerProfileResult.value) {
-      setWorkerProfile(workerProfileResult.value)
-    }
-
-    if (isWorker) setWorkerProfileLoading(false)
   }, [isWorker])
+
+  const refreshAll = async () => {
+    await loadProfileData()
+    await onRefresh?.()
+  }
 
   useEffect(() => {
     setUsername(user?.username || "")
@@ -71,25 +66,8 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
     loadProfileData()
   }, [loadProfileData])
 
-  useEffect(() => {
-    if (!workerProfile?.id) {
-      setRatings([])
-      return
-    }
-    getWorkerRatings(workerProfile.id)
-      .then((data) => setRatings(Array.isArray(data) ? data : []))
-      .catch(() => setRatings([]))
-  }, [workerProfile?.id])
-
-  const publishMessage = (type, text) => setMsg({ type, text })
-
-  const refreshAll = async () => {
-    await loadProfileData()
-    await onRefresh?.()
-  }
-
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault()
+  const handleUpdateProfile = async (event) => {
+    event.preventDefault()
     setLoading(true)
     try {
       const updated = await updateProfile({ username, phone })
@@ -120,9 +98,10 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
 
   const handleUserImageUpload = async () => {
     if (!userImageFile) {
-      publishMessage("error", "اختر صورة أولاً.")
+      publishMessage("error", "اختر صورة أولًا.")
       return
     }
+
     setLoading(true)
     try {
       const updated = await uploadUserImage(userImageFile)
@@ -131,8 +110,8 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
       if (isWorker && workerProfile?.id) {
         try {
           await uploadWorkerImage(workerProfile.id, userImageFile)
-        } catch (e) {
-          console.error("Failed to sync worker image", e)
+        } catch (error) {
+          console.error("Failed to sync worker image", error)
         }
       }
 
@@ -146,44 +125,25 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
     }
   }
 
-  const handleBookingAction = async (bookingId, action) => {
-    setLoading(true)
+  const handleAvailabilityChange = async (nextAvailability) => {
+    if (!workerProfile?.id || availabilityLoading) return
+
+    setAvailabilityLoading(true)
     try {
-      await updateBookingStatus(bookingId, action)
-      publishMessage("success", "تم تحديث حالة الحجز بنجاح.")
-      await refreshAll()
+      const updatedWorker = await updateWorkerAvailability(workerProfile.id, nextAvailability)
+      setWorkerProfile(updatedWorker)
+      publishMessage("success", `تم تحديث حالة العامل إلى ${nextAvailability === "AVAILABLE" ? "متاح" : "مشغول"}.`)
+      await onRefresh?.()
     } catch (err) {
       publishMessage("error", err.message)
     } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleRateWorker = async (bookingId) => {
-    const payload = ratingForm[bookingId]
-    if (!payload?.stars) {
-      publishMessage("error", "اختر عدد النجوم قبل إرسال التقييم.")
-      return
-    }
-    try {
-      await createRating(bookingId, {
-        stars: payload.stars,
-        comment: payload.comment || ""
-      })
-      publishMessage("success", "تم إرسال تقييم العامل بنجاح.")
-      setRatingForm((current) => {
-        const next = { ...current }
-        delete next[bookingId]
-        return next
-      })
-      await refreshAll()
-    } catch (err) {
-      publishMessage("error", err.message)
+      setAvailabilityLoading(false)
     }
   }
 
   const handleDeleteAccount = async () => {
     if (!window.confirm("هل أنت متأكد من حذف الحساب نهائيًا؟")) return
+
     setLoading(true)
     try {
       await deleteAccount()
@@ -195,12 +155,13 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 pb-12 pt-2 font-sans sm:px-6 lg:px-8" dir="rtl">
+    <div className="page-shell mx-auto max-w-[1200px]" dir="rtl">
       <div className="mb-12 flex flex-col items-center text-center">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-amber-100 px-4 py-1.5 text-xs font-black text-amber-800">
+        <div className="mb-6 badge badge-amber gap-2 px-4 py-1.5">
           <ShieldCheck size={16} />
           {isWorker ? "هويتك على المنصة" : "ملفك الشخصي"}
         </div>
+
         <h1 className="mb-4 text-3xl font-black tracking-tight text-slate-900 md:text-4xl lg:text-5xl">
           {isWorker ? (
             <>
@@ -212,10 +173,11 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
             </>
           )}
         </h1>
+
         <p className="max-w-2xl text-sm font-bold leading-relaxed text-slate-500 md:text-base">
           {isWorker
-            ? "حدّث صورتك واسم المستخدم ورقم الهاتف وكلمة المرور بنفس ألوان وتنسيق باقي المنصة، واطلع على طلبات العملاء وتقييماتك."
-            : "حدّث بياناتك وراقب حجوزاتك بنفس أسلوب صفحات المنصة (أزرق، بطاقات مستديرة، خلفية فاتحة)."}
+            ? "حدّث صورتك وبياناتك واطلع على طلبات العملاء وتقييماتك، وتحكم بحالتك بنفسك من هذه الصفحة."
+            : "حدّث بياناتك وراقب حجوزاتك بنفس أسلوب صفحات المنصة."}
         </p>
       </div>
 
@@ -243,6 +205,7 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
           onSubmit={handleUpdateProfile}
           loading={loading}
         />
+
         <SecuritySettings
           currentPassword={currentPassword}
           setCurrentPassword={setCurrentPassword}
@@ -253,8 +216,8 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
         />
       </div>
 
-      {!isWorker && !workerProfileLoading && user?.role !== "ADMIN" && (
-        <div className="mt-10 rounded-[2rem] border border-slate-100 bg-white p-8 shadow-sm">
+      {!isWorker && user?.role !== "ADMIN" && (
+        <div className="mt-10 card-lg">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="text-right">
               <h2 className="text-2xl font-black text-slate-900">انضم كعامل</h2>
@@ -262,10 +225,11 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
                 استقبل الطلبات واملأ الاسم والصورة والهوية كما في نموذج الانضمام الموحّد.
               </p>
             </div>
+
             <button
               type="button"
               onClick={onBecomeWorker}
-              className="h-14 shrink-0 rounded-2xl bg-[#1d4ed8] px-10 text-sm font-black text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-[0.99] md:px-12"
+              className="btn btn-primary btn-lg shrink-0"
             >
               بدء طلب الانضمام
             </button>
@@ -273,49 +237,44 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
         </div>
       )}
 
-      {!isWorker && user?.role !== "ADMIN" && (
-        <BookingHistory
-          bookings={bookings}
-          ratingForm={ratingForm}
-          updateRatingField={(id, f, v) => setRatingForm(curr => ({ ...curr, [id]: { ...curr[id], [f]: v } }))}
-          handleRateWorker={handleRateWorker}
-          handleBookingAction={handleBookingAction}
-          onBecomeWorker={onBecomeWorker}
-        />
-      )}
-
       {isWorker && (
-        <section className="mt-10 grid grid-cols-1 gap-8 xl:grid-cols-2">
-          <WorkerRequestsList
-            requests={requests}
-            handleBookingAction={handleBookingAction}
-          />
-          <div className="rounded-[2rem] border border-slate-100 bg-white p-8 shadow-sm">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                <Star size={20} />
+        <section className="mt-10">
+          <div className="card-lg">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-slate-900">حالة العامل</h2>
+                  <p className="t-label italic">العامل وحده يتحكم في حالته من هنا.</p>
+                </div>
               </div>
-              <h2 className="text-xl font-black text-slate-900">تقييماتي</h2>
+
+              <span className={`badge ${workerProfile?.availability === "AVAILABLE" ? "badge-green" : "badge-amber"}`}>
+                {workerProfile?.availability === "AVAILABLE" ? "متاح" : "مشغول"}
+              </span>
             </div>
-            {workerProfileLoading ? (
-              <p className="py-10 text-center text-sm font-bold text-slate-400">جاري تحميل التقييمات...</p>
-            ) : (
-              <div className="space-y-4">
-                {ratings.length ? ratings.map(r => (
-                  <div key={r.id} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-black text-slate-900">{r.userName || "عميل"}</span>
-                      <div className="flex gap-0.5">
-                        {[1,2,3,4,5].map(v => (
-                          <Star key={v} size={12} className={v <= r.stars ? "fill-amber-400 text-amber-400" : "text-slate-200"} />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-xs font-bold leading-relaxed text-slate-600">{r.comment}</p>
-                  </div>
-                )) : <p className="py-10 text-center text-sm font-bold text-slate-400">لا توجد تقييمات بعد.</p>}
-              </div>
-            )}
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => handleAvailabilityChange("AVAILABLE")}
+                disabled={availabilityLoading || workerProfile?.availability === "AVAILABLE"}
+                className={`btn btn-lg ${workerProfile?.availability === "AVAILABLE" ? "bg-emerald-600 text-white hover:bg-emerald-600" : "btn-secondary"}`}
+              >
+                {availabilityLoading && workerProfile?.availability !== "AVAILABLE" ? "جارٍ التحديث..." : "متاح الآن"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAvailabilityChange("BUSY")}
+                disabled={availabilityLoading || workerProfile?.availability === "BUSY"}
+                className={`btn btn-lg ${workerProfile?.availability === "BUSY" ? "bg-amber-500 text-white hover:bg-amber-500" : "btn-secondary"}`}
+              >
+                {availabilityLoading && workerProfile?.availability !== "BUSY" ? "جارٍ التحديث..." : "مشغول الآن"}
+              </button>
+            </div>
           </div>
         </section>
       )}
@@ -323,10 +282,10 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
       <div className="mt-12 flex justify-center">
         <button
           onClick={handleDeleteAccount}
-          className="flex items-center gap-2 text-sm font-black text-red-500 hover:text-red-700 transition-colors"
+          className="flex items-center gap-2 text-sm font-black text-red-500 transition-colors hover:text-red-700"
         >
           <Trash2 size={16} />
-          حذف الحساب نهائياً
+          حذف الحساب نهائيًا
         </button>
       </div>
     </div>

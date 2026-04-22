@@ -17,6 +17,7 @@ import com.backend.Projet.model.Worker;
 import com.backend.Projet.model.WorkerAvailability;
 import com.backend.Projet.model.WorkerVerificationStatus;
 import com.backend.Projet.repository.OfferRepository;
+import com.backend.Projet.repository.RatingRepository;
 import com.backend.Projet.repository.TaskRepository;
 import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.repository.WorkerRepository;
@@ -51,6 +52,9 @@ class TaskServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private RatingRepository ratingRepository;
+
     private TaskService taskService;
 
     @BeforeEach
@@ -61,7 +65,7 @@ class TaskServiceTest {
                 workerRepository,
                 userRepository,
                 notificationService,
-                new TaskMapper(),
+                new TaskMapper(ratingRepository),
                 new OfferMapper()
         );
     }

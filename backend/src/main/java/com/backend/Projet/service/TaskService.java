@@ -121,6 +121,9 @@ public class TaskService {
     public TaskResponseDto getTaskById(Long id, Double userLatitude, Double userLongitude) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        if (task.getStatus() != TaskStatus.OPEN) {
+            throw new ResourceNotFoundException("Task not found");
+        }
         return toTaskDto(task, userLatitude, userLongitude);
     }
 

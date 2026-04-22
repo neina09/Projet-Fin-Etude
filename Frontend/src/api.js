@@ -625,17 +625,39 @@ export const createTaskRating = async (taskId, ratingData) =>
   })
 
 export const getWorkerRatings = async (workerId) =>
-  await request(`/api/ratings/worker/${workerId}`, {
+  (await request(`/api/ratings/worker/${workerId}`, {
     headers: buildHeaders()
-  })
+  })).map((rating) => ({
+    ...rating,
+    userImageUrl: resolveAssetUrl(rating?.userImageUrl)
+  }))
 
 export const getMyNotifications = async () =>
   (await request("/api/notifications", {
     headers: buildHeaders({}, true)
   })).map(normalizeNotification)
 
+export const getUnreadNotificationsCount = async () =>
+  {
+    const payload = await request("/api/notifications/unread-count", {
+      headers: buildHeaders({}, true)
+    })
+
+    return {
+      ...payload,
+      count: Number(payload?.count ?? payload?.unreadCount ?? 0),
+      unreadCount: Number(payload?.unreadCount ?? payload?.count ?? 0)
+    }
+  }
+
 export const markNotificationRead = async (notificationId) =>
   request(`/api/notifications/${notificationId}/read`, {
+    method: "PATCH",
+    headers: buildHeaders({}, true)
+  })
+
+export const markAllNotificationsRead = async () =>
+  request("/api/notifications/read-all", {
     method: "PATCH",
     headers: buildHeaders({}, true)
   })

@@ -32,6 +32,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -99,6 +100,7 @@ class AuthenticationServiceTest {
 
         when(userRepository.findByPhone("22123456")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(dto.getPassword())).thenReturn("hashed-password");
+        when(passwordEncoder.encode(argThat(value -> value != null && value.toString().matches("\\d{6}")))).thenReturn("hashed-verification");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
             user.setId(1L);
@@ -116,7 +118,7 @@ class AuthenticationServiceTest {
         User savedUser = captor.getValue();
         assertEquals("22123456", savedUser.getPhone());
         assertFalse(savedUser.isEnabled());
-        assertNotNull(savedUser.getVerificationCode());
+        assertEquals("hashed-verification", savedUser.getVerificationCode());
         assertNotNull(savedUser.getVerificationCodeExpiresAt());
         verify(smsService).sendVerificationCode(eq("22123456"), anyString());
     }
@@ -151,11 +153,12 @@ class AuthenticationServiceTest {
 
         User user = new User();
         user.setPhone("22123456");
-        user.setVerificationCode("12345678");
+        user.setVerificationCode("hashed-code");
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(5));
         user.setEnabled(false);
 
         when(userRepository.findByPhone(dto.getPhone())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("12345678", "hashed-code")).thenReturn(true);
 
         authenticationService.verifyUser(dto);
 
@@ -180,15 +183,15 @@ class AuthenticationServiceTest {
         dto.setNewPassword("new-secret");
 
         User user = new User();
-        user.setResetPasswordToken("expired-token");
+        user.setResetPasswordToken("hashed-expired-token");
         user.setResetPasswordExpiresAt(LocalDateTime.now().minusMinutes(1));
 
-        when(userRepository.findByResetPasswordToken("expired-token")).thenReturn(Optional.of(user));
+        when(userRepository.findByResetPasswordExpiresAtAfter(any(LocalDateTime.class))).thenReturn(java.util.List.of());
 
-        BusinessException exception = assertThrows(BusinessException.class,
+        com.backend.Projet.exception.ResourceNotFoundException exception = assertThrows(com.backend.Projet.exception.ResourceNotFoundException.class,
                 () -> authenticationService.resetPassword(dto));
 
-        assertEquals("Reset token has expired", exception.getMessage());
+        assertEquals("Invalid or expired reset token", exception.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -198,13 +201,13 @@ class AuthenticationServiceTest {
         user.setPhone("22123456");
 
         when(userRepository.findByPhone("22123456")).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode(argThat(value -> value != null && value.toString().matches("\\d{8}")))).thenReturn("hashed-reset-token");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         authenticationService.forgotPassword("22123456");
 
-        assertNotNull(user.getResetPasswordToken());
-        assertEquals(8, user.getResetPasswordToken().length());
-        verify(smsService).sendPasswordResetToken(eq("22123456"), eq(user.getResetPasswordToken()));
+        assertEquals("hashed-reset-token", user.getResetPasswordToken());
+        verify(smsService).sendPasswordResetToken(eq("22123456"), argThat(token -> token != null && token.matches("\\d{8}")));
     }
 
     @Test
