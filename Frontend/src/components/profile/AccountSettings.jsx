@@ -1,5 +1,5 @@
 import React from "react"
-import { Phone, Save, User, Camera } from "lucide-react"
+import { Camera, Phone, Save, User } from "lucide-react"
 import FilePreview from "../FilePreview"
 import { resolveAssetUrl } from "../../api"
 
@@ -30,17 +30,12 @@ export default function AccountSettings({
         </div>
 
         <p className="mb-6 text-center text-xs font-bold leading-relaxed text-slate-500">
-          نفس أسلوب «انضم كعامل»: صورة دائرية واضحة للظهور في المنصة.
+          صورة واضحة تظهر بشكل احترافي في المنصة.
         </p>
 
         <div className="flex flex-col items-center justify-center">
           <label className="group relative flex cursor-pointer flex-col items-center">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setUserImageFile(e.target.files?.[0] || null)}
-              className="hidden"
-            />
+            <input type="file" accept="image/*" onChange={(event) => setUserImageFile(event.target.files?.[0] || null)} className="hidden" />
             <div className="mb-4 flex h-32 w-32 flex-col items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition-all group-hover:border-[#1d4ed8] group-hover:text-[#1d4ed8]">
               {userImageFile ? (
                 <img src={URL.createObjectURL(userImageFile)} alt="" className="h-full w-full object-cover" />
@@ -66,12 +61,7 @@ export default function AccountSettings({
 
         <FilePreview file={userImageFile} label="معاينة قبل الرفع" onClear={() => setUserImageFile(null)} />
 
-        <button
-          type="button"
-          onClick={onImageUpload}
-          disabled={loading || !userImageFile}
-          className="btn btn-primary btn-lg mt-6 w-full"
-        >
+        <button type="button" onClick={onImageUpload} disabled={loading || !userImageFile} className="btn btn-primary btn-lg mt-6 w-full">
           {loading ? "جارٍ رفع الصورة..." : "تحديث الصورة الشخصية"}
         </button>
       </div>
@@ -87,7 +77,7 @@ export default function AccountSettings({
         <form onSubmit={onSubmit} className="space-y-6">
           <div className="field">
             <label className="t-label">اسم المستخدم</label>
-            <input value={username} onChange={(e) => setUsername(e.target.value)} maxLength={15} className={inputClass} />
+            <input value={username} onChange={(event) => setUsername(event.target.value)} maxLength={15} className={inputClass} />
           </div>
 
           <div className="field">
@@ -96,19 +86,15 @@ export default function AccountSettings({
               <Phone size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" />
               <input
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                dir="ltr"
-                placeholder="05xxxxxxxxx"
-                className={`${inputClass} pr-11 text-left`}
+                onChange={(event) => setPhone(event.target.value)}
+                dir="auto"
+                placeholder="05xxxxxxxx"
+                className={`${inputClass} pr-11 text-right placeholder:text-right`}
               />
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-secondary btn-lg w-full"
-          >
+          <button type="submit" disabled={loading} className="btn btn-secondary btn-lg w-full">
             <Save size={18} />
             {loading ? "جارٍ الحفظ..." : "حفظ معلومات الحساب"}
           </button>

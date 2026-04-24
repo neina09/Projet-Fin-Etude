@@ -1,6 +1,9 @@
+import { AUTH_STORAGE_KEYS, clearStoredSession, getStoredToken } from "./utils/auth"
+
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "")
 const OPENROUTESERVICE_API_KEY = import.meta.env.VITE_OPENROUTESERVICE_API_KEY || ""
-const UPLOADS_ASSET_VERSION_KEY = "uploadsAssetVersion"
+const UPLOADS_ASSET_VERSION_KEY = AUTH_STORAGE_KEYS.uploadsAssetVersion
+const REQUEST_TIMEOUT_MS = 15000
 
 const getUploadsAssetVersion = () => {
   const raw = localStorage.getItem(UPLOADS_ASSET_VERSION_KEY)
@@ -57,24 +60,62 @@ export const resolveAssetUrl = (value) => {
   return withAssetVersion(`${BASE_URL}/${trimmed}`)
 }
 
-const getToken = () => localStorage.getItem("token")
+const getToken = () => getStoredToken()
+const isLocalHost = (hostname) => hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1"
+
+const resolveApiUrl = (path = "/") => {
+  const base = BASE_URL || window.location.origin
+  return new URL(path, `${base}${base.endsWith("/") ? "" : "/"}`)
+}
+
+const assertSecureAuthTransport = () => {
+  const apiUrl = resolveApiUrl("/")
+
+  if (apiUrl.protocol !== "https:" && !isLocalHost(apiUrl.hostname)) {
+    throw new Error("تم إيقاف إرسال الجلسة إلى واجهة API غير آمنة. استخدم HTTPS أو localhost.")
+  }
+}
 
 const buildHeaders = (extraHeaders = {}, withAuth = false) => {
-  const headers = { ...extraHeaders }
+  const headers = {
+    Accept: "application/json, text/plain, */*",
+    ...extraHeaders
+  }
   const token = getToken()
 
   if (withAuth && token) {
+    assertSecureAuthTransport()
     headers.Authorization = `Bearer ${token}`
   }
 
   return headers
 }
 
+const toArray = (value) => Array.isArray(value) ? value : []
+
+const fetchWithTimeout = (input, init = {}, timeoutMs = REQUEST_TIMEOUT_MS) => {
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs)
+
+  return fetch(input, {
+    ...init,
+    credentials: "omit",
+    referrerPolicy: "strict-origin-when-cross-origin",
+    signal: controller.signal
+  }).finally(() => {
+    window.clearTimeout(timeoutId)
+  })
+}
+
 const parseResponseBody = async (response) => {
   const contentType = response.headers.get("content-type") || ""
 
   if (contentType.includes("application/json")) {
-    return response.json()
+    try {
+      return await response.json()
+    } catch {
+      return response.text()
+    }
   }
 
   return response.text()
@@ -116,9 +157,7 @@ const request = async (path, options = {}) => {
     const error = new Error(getErrorMessage(payload))
     error.status = response.status
 
-    if (response.status === 401) {
-      localStorage.removeItem("token")
-    }
+    if (response.status === 401) clearStoredSession()
 
     throw error
   }
@@ -129,19 +168,82 @@ const request = async (path, options = {}) => {
 const normalizeWorker = (worker) => {
   if (!worker || typeof worker !== "object") return worker
 
-  const verificationStatus = worker.verificationStatus || (worker.verified ? "VERIFIED" : undefined)
-  const workerJob = worker.job || worker.profession || worker.specialty || ""
-  const workerImage = worker.imageUrl || worker.workerImageUrl || worker.profileImageUrl || worker.userImageUrl || ""
+  const firstNonEmpty = (...values) =>
+    values.find((value) => value !== undefined && value !== null && String(value).trim() !== "")
+
+  const normalizedNameCandidates = [
+    worker.name,
+    worker.full_name,
+    worker.fullName,
+    worker.displayName,
+    worker.workerName,
+    worker.worker_name,
+    worker.userFullName,
+    worker.user_full_name
+  ].filter((value) => typeof value === "string" && value.trim())
+
+  const looksLikeNumericIdentifier = (value) => /^\d+$/.test(String(value || "").trim())
+  const normalizedName = normalizedNameCandidates.find((value) => !looksLikeNumericIdentifier(value))
+    || normalizedNameCandidates[0]
+    || ""
+  const verificationStatus = firstNonEmpty(worker.verificationStatus, worker.verification_status, worker.status)
+    || (worker.verified ? "VERIFIED" : undefined)
+  const workerJob = firstNonEmpty(worker.job, worker.profession, worker.specialty, worker.worker_job) || ""
+  const workerImage = firstNonEmpty(
+    worker.imageUrl,
+    worker.image_url,
+    worker.workerImageUrl,
+    worker.profileImageUrl,
+    worker.profile_image_url,
+    worker.userImageUrl,
+    worker.user_image_url
+  ) || ""
+  const nationalIdNumber = firstNonEmpty(
+    worker.nationalIdNumber,
+    worker.national_id_number,
+    worker.nationalId,
+    worker.national_id,
+    worker.identityNumber,
+    worker.identity_number,
+    worker.idCardNumber,
+    worker.id_card_number
+  ) || ""
+  const identityDocumentUrl = firstNonEmpty(
+    worker.identityDocumentUrl,
+    worker.identity_document_url,
+    worker.identityUrl,
+    worker.identity_url,
+    worker.idCardImageUrl,
+    worker.id_card_image_url,
+    worker.nationalIdImageUrl,
+    worker.national_id_image_url
+  ) || ""
+  const username = firstNonEmpty(worker.username, worker.userName, worker.user_name, worker.login) || ""
+  const userPhone = firstNonEmpty(worker.userPhone, worker.user_phone, worker.phone, worker.phone_number, worker.userPhoneNumber, worker.user_phone_number) || ""
+  const address = firstNonEmpty(worker.address, worker.adresse, worker.workerAddress, worker.worker_address) || ""
+  const phoneNumber = firstNonEmpty(worker.phoneNumber, worker.phone_number, worker.workerPhone, worker.worker_phone) || ""
+  const averageRating = firstNonEmpty(worker.averageRating, worker.average_rating, worker.rating) ?? 0
+  const userId = firstNonEmpty(worker.userId, worker.user_id)
 
   return {
     ...worker,
+    name: normalizedName,
+    username,
+    userName: worker.userName || username,
+    userPhone,
+    address,
+    phoneNumber,
     job: workerJob,
     profession: worker.profession || workerJob,
+    averageRating: Number(averageRating || 0),
     verificationStatus,
+    verificationNotes: firstNonEmpty(worker.verificationNotes, worker.verification_notes, worker.notes) || "",
     verified: Boolean(worker.verified ?? verificationStatus === "VERIFIED"),
     available: Boolean(worker.available ?? worker.availability === "AVAILABLE"),
+    userId: userId != null ? Number(userId) : userId,
+    nationalIdNumber,
     imageUrl: resolveAssetUrl(workerImage),
-    identityDocumentUrl: resolveAssetUrl(worker.identityDocumentUrl)
+    identityDocumentUrl: resolveAssetUrl(identityDocumentUrl)
   }
 }
 
@@ -150,6 +252,7 @@ const normalizeBooking = (booking) => {
 
   return {
     ...booking,
+    status: normalizeWorkflowStatus(booking.status, "booking"),
     workerJob: booking.workerJob || booking.workerProfession || "",
     isRated: Boolean(booking.isRated ?? booking.rated),
     rated: Boolean(booking.rated ?? booking.isRated),
@@ -158,10 +261,66 @@ const normalizeBooking = (booking) => {
   }
 }
 
+const normalizeWorkflowStatus = (status, type = "task") => {
+  const normalized = String(status || "").trim().toUpperCase()
+
+  if (!normalized) {
+    if (type === "booking" || type === "offer") return "PENDING"
+    return "OPEN"
+  }
+
+  const sharedAliases = {
+    CANCELED: "CANCELLED",
+    CANCEL: "CANCELLED",
+    COMPLETE: "COMPLETED",
+    DONE: "COMPLETED",
+    FINISHED: "COMPLETED"
+  }
+
+  const taskAliases = {
+    ASSIGNED: "IN_PROGRESS",
+    ACCEPTED: "IN_PROGRESS",
+    STARTED: "IN_PROGRESS",
+    ACTIVE: "IN_PROGRESS",
+    APPROVED: "OPEN",
+    PUBLISHED: "OPEN",
+    PENDING: "PENDING_REVIEW"
+  }
+
+  const bookingAliases = {
+    CONFIRMED: "ACCEPTED",
+    APPROVED: "ACCEPTED",
+    DECLINED: "REJECTED",
+    REFUSED: "REJECTED"
+  }
+
+  const offerAliases = {
+    DECLINED: "REFUSED",
+    REJECTED: "REFUSED",
+    ACTIVE: "IN_PROGRESS",
+    STARTED: "IN_PROGRESS",
+    DONE: "COMPLETED",
+    FINISHED: "COMPLETED"
+  }
+
+  const aliases = type === "booking"
+    ? { ...sharedAliases, ...bookingAliases }
+    : type === "offer"
+      ? { ...sharedAliases, ...offerAliases }
+      : { ...sharedAliases, ...taskAliases }
+
+  return aliases[normalized] || normalized
+}
+
 const normalizeTask = (task) => {
   if (!task || typeof task !== "object") return task
   return {
     ...task,
+    status: normalizeWorkflowStatus(task.status, "task"),
+    id: task.id != null ? Number(task.id) : task.id,
+    userId: task.userId != null ? Number(task.userId) : task.userId,
+    assignedWorkerId: task.assignedWorkerId != null ? Number(task.assignedWorkerId) : task.assignedWorkerId,
+    assignedWorkerUserId: task.assignedWorkerUserId != null ? Number(task.assignedWorkerUserId) : task.assignedWorkerUserId,
     userImageUrl: resolveAssetUrl(task.userImageUrl),
     assignedWorkerImageUrl: resolveAssetUrl(task.assignedWorkerImageUrl),
     workerName: task.assignedWorkerName || task.workerName || "",
@@ -175,6 +334,7 @@ const normalizeOffer = (offer) => {
 
   return {
     ...offer,
+    status: normalizeWorkflowStatus(offer.status, "offer"),
     workerJob: offer.workerJob || offer.workerProfession || "",
     workerImageUrl: resolveAssetUrl(offer.workerImageUrl),
     taskUserImageUrl: resolveAssetUrl(offer.taskUserImageUrl)
@@ -338,7 +498,7 @@ export const getMyTasks = async (page = 0, size = 10) =>
   )
 
 export const getTasksAssignedToMe = async () =>
-  (await request("/api/tasks/assigned-to-me", {
+  toArray(await request("/api/tasks/assigned-to-me", {
     headers: buildHeaders({}, true)
   })).map(normalizeTask)
 
@@ -360,11 +520,20 @@ export const updateTask = async (taskId, taskData) =>
     })
   )
 
-export const deleteTask = async (taskId) =>
-  request(`/api/tasks/${taskId}`, {
-    method: "DELETE",
-    headers: buildHeaders({}, true)
-  })
+export const deleteTask = async (taskId) => {
+  try {
+    return await request(`/api/tasks/${taskId}`, {
+      method: "DELETE",
+      headers: buildHeaders({}, true)
+    })
+  } catch (error) {
+    if (error?.status === 404) {
+      return { success: true, alreadyDeleted: true }
+    }
+
+    throw error
+  }
+}
 
 export const markTaskDone = async (taskId) =>
   normalizeTask(
@@ -383,12 +552,12 @@ export const cancelTaskRequest = async (taskId) =>
   )
 
 export const getOffersForTask = async (taskId) =>
-  (await request(`/api/tasks/${taskId}/offers`, {
+  toArray(await request(`/api/tasks/${taskId}/offers`, {
     headers: buildHeaders({}, true)
   })).map(normalizeOffer)
 
 export const getMyOffers = async () =>
-  (await request("/api/tasks/my-offers", {
+  toArray(await request("/api/tasks/my-offers", {
     headers: buildHeaders({}, true)
   })).map(normalizeOffer)
 
@@ -467,14 +636,42 @@ export const getWorkers = async (page = 0, size = 12) =>
 export const getWorkerById = async (workerId) =>
   normalizeWorker(
     await request(`/api/workers/${workerId}`, {
-      headers: buildHeaders()
+      headers: buildHeaders({}, true)
+    })
+  )
+
+export const getManagedWorkerById = async (workerId) =>
+  normalizeWorker(
+    await request(`/api/workers/${workerId}/manage`, {
+      headers: buildHeaders({}, true)
     })
   )
 
 export const getPendingWorkers = async () =>
-  (await request("/api/workers/admin/pending", {
+  toArray(await request("/api/workers/admin/pending", {
     headers: buildHeaders({}, true)
   })).map(normalizeWorker)
+
+export const getManageWorkers = async () =>
+  {
+    try {
+      return toArray(await request("/api/workers/admin/all", {
+        headers: buildHeaders({}, true)
+      })).map(normalizeWorker)
+    } catch (error) {
+      const [verifiedPage, pendingWorkers] = await Promise.all([
+        getWorkers(0, 100),
+        getPendingWorkers()
+      ])
+
+      return Array.from(
+        new Map([
+          ...(verifiedPage?.content || []),
+          ...(pendingWorkers || [])
+        ].map((worker) => [worker.id, worker])).values()
+      )
+    }
+  }
 
 export const getMyWorkerProfile = async () =>
   normalizeWorker(
@@ -508,6 +705,12 @@ export const updateWorkerProfile = async (workerId, workerData) =>
       body: JSON.stringify(workerData)
     })
   )
+
+export const deleteWorkerProfile = async (workerId) =>
+  request(`/api/workers/${workerId}`, {
+    method: "DELETE",
+    headers: buildHeaders({}, true)
+  })
 
 export const updateWorkerAvailability = async (workerId, availability) =>
   normalizeWorker(
@@ -548,7 +751,7 @@ export const uploadIdentityDocument = async (workerId, file) => {
  * يعيد رابط blob يجب استدعاء URL.revokeObjectURL عليه عند الانتهاء.
  */
 export const fetchWorkerIdentityDocumentPreview = async (workerId) => {
-  const response = await fetch(`${BASE_URL}/api/workers/${workerId}/identity-document`, {
+  const response = await fetchWithTimeout(resolveApiUrl(`/api/workers/${workerId}/identity-document`), {
     method: "GET",
     headers: buildHeaders({}, true)
   })
@@ -588,12 +791,12 @@ export const rejectWorker = async (workerId) =>
   )
 
 export const getMyBookings = async () =>
-  (await request("/api/bookings/my-bookings", {
+  toArray(await request("/api/bookings/my-bookings", {
     headers: buildHeaders({}, true)
   })).map(normalizeBooking)
 
 export const getMyBookingRequests = async () =>
-  (await request("/api/bookings/my-requests", {
+  toArray(await request("/api/bookings/my-requests", {
     headers: buildHeaders({}, true)
   })).map(normalizeBooking)
 
@@ -625,7 +828,7 @@ export const createTaskRating = async (taskId, ratingData) =>
   })
 
 export const getWorkerRatings = async (workerId) =>
-  (await request(`/api/ratings/worker/${workerId}`, {
+  toArray(await request(`/api/ratings/worker/${workerId}`, {
     headers: buildHeaders()
   })).map((rating) => ({
     ...rating,
@@ -633,7 +836,7 @@ export const getWorkerRatings = async (workerId) =>
   }))
 
 export const getMyNotifications = async () =>
-  (await request("/api/notifications", {
+  toArray(await request("/api/notifications", {
     headers: buildHeaders({}, true)
   })).map(normalizeNotification)
 
@@ -662,10 +865,19 @@ export const markAllNotificationsRead = async () =>
     headers: buildHeaders({}, true)
   })
 
-export const getAdminDashboard = async () =>
-  request("/api/admin/dashboard", {
+export const getAdminDashboard = async () => {
+  const payload = await request("/api/admin/dashboard", {
     headers: buildHeaders({}, true)
   })
+
+  return {
+    ...payload,
+    latestPendingWorkers: toArray(payload?.latestPendingWorkers).map(normalizeWorker),
+    latestVerifiedWorkers: toArray(payload?.latestVerifiedWorkers).map(normalizeWorker),
+    latestWorkers: toArray(payload?.latestWorkers).map(normalizeWorker),
+    latestPendingTasks: toArray(payload?.latestPendingTasks).map(normalizeTask)
+  }
+}
 
 export const getAllUsers = async () =>
   request("/users", {

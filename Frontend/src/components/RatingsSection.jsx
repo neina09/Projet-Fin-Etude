@@ -9,25 +9,11 @@ const Pagination = ({ page, totalPages, onChange }) => {
 
   return (
     <div className="pagination">
-      <button
-        type="button"
-        onClick={() => onChange((current) => Math.max(1, current - 1))}
-        disabled={page === 1}
-        className="pagination-btn"
-      >
+      <button type="button" onClick={() => onChange((current) => Math.max(1, current - 1))} disabled={page === 1} className="pagination-btn">
         <ChevronRight size={16} />
       </button>
-
-      <div className="t-label px-3">
-        الصفحة {page} من {totalPages}
-      </div>
-
-      <button
-        type="button"
-        onClick={() => onChange((current) => Math.min(totalPages, current + 1))}
-        disabled={page === totalPages}
-        className="pagination-btn"
-      >
+      <div className="t-label px-3">الصفحة {page} من {totalPages}</div>
+      <button type="button" onClick={() => onChange((current) => Math.min(totalPages, current + 1))} disabled={page === totalPages} className="pagination-btn">
         <ChevronLeft size={16} />
       </button>
     </div>
@@ -37,13 +23,9 @@ const Pagination = ({ page, totalPages, onChange }) => {
 const ReviewerAvatar = ({ name, imageUrl }) => (
   <div className="flex items-center gap-3">
     <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 text-xs font-black text-blue-600">
-      {imageUrl ? (
-        <img src={imageUrl} alt={name || "عميل"} className="h-full w-full object-cover" />
-      ) : (
-        name?.[0]?.toUpperCase() || "ع"
-      )}
+      {imageUrl ? <img src={imageUrl} alt={name || "عميل"} className="h-full w-full object-cover" /> : name?.[0]?.toUpperCase() || "ع"}
     </div>
-    <span className="text-[11px] font-black text-slate-900">{name || "عميل مميز"}</span>
+    <span className="text-[11px] font-black text-slate-900">{name || "عميل"}</span>
   </div>
 )
 
@@ -125,9 +107,9 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
       setTaskToRate(null)
       setRatingComment("")
       setRatingScore(5)
-      if (onRefresh) await onRefresh()
+      await onRefresh?.()
     } catch (err) {
-      alert("فشل التقييم: " + err.message)
+      alert(`فشل التقييم: ${err.message}`)
     } finally {
       setSubmittingRating(false)
     }
@@ -139,29 +121,35 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
 
   return (
     <div className="page-shell" dir="rtl">
-      <div className="card-lg mb-12 flex flex-col justify-between md:flex-row md:items-center">
-        <div className="space-y-1">
-          <h2 className="flex items-center gap-3 text-xl font-black text-slate-900">
-            <Star className="fill-amber-500 text-amber-500" size={24} />
-            {isWorker ? "سجل أدائي وتقييماتي" : "إدارة تقييمات الخدمة"}
-          </h2>
-          <p className="t-label italic">مراقبة الجودة والآراء المهنية مع صور أصحاب التقييم.</p>
-        </div>
-
-        {isWorker && (
-          <div className="mt-4 flex items-center gap-4 rounded-2xl border border-slate-100 bg-white px-6 py-3 shadow-sm md:mt-0">
-            <div className="text-3xl font-black text-amber-500">{avgRating}</div>
-            <div className="flex flex-col">
-              <div className="flex gap-0.5 text-amber-500">
-                {[1, 2, 3, 4, 5].map((index) => (
-                  <Star key={index} size={10} fill={index <= Math.round(Number(avgRating)) ? "currentColor" : "none"} />
-                ))}
-              </div>
-              <p className="t-label">المعدل العام</p>
-            </div>
+      <section className="app-page-header">
+        <div className="app-page-header-row">
+          <div>
+            <span className="app-page-eyebrow">التقييمات</span>
+            <h1 className="app-page-title mt-4">
+              {isWorker ? "سجل" : "إدارة"} <span className="text-[#1d4ed8]">التقييمات</span>
+            </h1>
+            <p className="app-page-subtitle">
+              {isWorker
+                ? "تابع آراء العملاء ومتوسط تقييمك والعروض النشطة من نفس الصفحة."
+                : "راجع الخدمات المكتملة، أرسل تقييمك، واحتفظ بسجل واضح للخدمات المنجزة."}
+            </p>
           </div>
-        )}
-      </div>
+
+          {isWorker && (
+            <div className="mt-4 flex items-center gap-4 rounded-2xl border border-slate-100 bg-white px-6 py-3 shadow-sm md:mt-0">
+              <div className="text-3xl font-black text-amber-500">{avgRating}</div>
+              <div className="flex flex-col">
+                <div className="flex gap-0.5 text-amber-500">
+                  {[1, 2, 3, 4, 5].map((index) => (
+                    <Star key={index} size={10} fill={index <= Math.round(Number(avgRating)) ? "currentColor" : "none"} />
+                  ))}
+                </div>
+                <p className="t-label">المعدل العام</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <div className="space-y-6">
@@ -177,7 +165,7 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
               ) : ratingError ? (
                 <div className="empty-state">{ratingError}</div>
               ) : ratings.length === 0 ? (
-                <div className="empty-state">لا توجد مراجعات حاليًا.</div>
+                <div className="empty-state">لا توجد تقييمات حالياً.</div>
               ) : (
                 <>
                   {pagedMainList.map((rating) => (
@@ -197,7 +185,7 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
                 </>
               )
             ) : unratedTasks.length === 0 ? (
-              <div className="empty-state">تم تقييم جميع المهام بنجاح.</div>
+              <div className="empty-state">تم تقييم جميع الخدمات المكتملة.</div>
             ) : (
               <>
                 {pagedMainList.map((task) => (
@@ -226,14 +214,14 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
 
         <div className="space-y-6">
           <div className="mb-4 flex items-center gap-3">
-            <div className="h-2 w-2 rounded-full bg-slate-200" />
-            <h3 className="t-label">{isWorker ? "العروض النشطة" : "أرشيف السجل"}</h3>
+            <div className="h-2 w-2 rounded-full bg-slate-300" />
+            <h3 className="t-label">{isWorker ? "العروض الحالية" : "الأرشيف"}</h3>
           </div>
 
           <div className="space-y-4">
             {isWorker ? (
               secondaryList.length === 0 ? (
-                <div className="empty-state">لا توجد عروض حاليًا.</div>
+                <div className="empty-state">لا توجد عروض حالياً.</div>
               ) : (
                 <>
                   {pagedSecondaryList.map((offer) => (
@@ -243,19 +231,35 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
                         <span className={`rounded-lg border px-3 py-1 text-[8px] font-black ${
                           offer.status === "SELECTED"
                             ? "border-emerald-100 bg-emerald-50 text-emerald-600"
-                            : "border-blue-100 bg-blue-50 text-blue-600"
+                            : offer.status === "IN_PROGRESS"
+                              ? "border-blue-100 bg-blue-50 text-blue-600"
+                              : offer.status === "COMPLETED"
+                                ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                                : offer.status === "CLOSED" || offer.status === "REFUSED" || offer.status === "WORKER_REFUSED"
+                                  ? "border-red-100 bg-red-50 text-red-600"
+                                  : "border-slate-200 bg-slate-50 text-slate-600"
                         }`}>
-                          {offer.status === "SELECTED" ? "تم الاختيار" : "قيد الدراسة"}
+                          {offer.status === "SELECTED"
+                            ? "بانتظار قبول العامل"
+                            : offer.status === "IN_PROGRESS"
+                              ? "قيد التنفيذ"
+                              : offer.status === "COMPLETED"
+                                ? "مكتمل"
+                                : offer.status === "CLOSED"
+                                  ? "مغلق"
+                                  : offer.status === "REFUSED" || offer.status === "WORKER_REFUSED"
+                                    ? "مرفوض"
+                                    : "قيد الدراسة"}
                         </span>
                       </div>
-                      <p className="t-label italic">"{offer.message}"</p>
+                      <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold leading-relaxed text-slate-600">{offer.message}</p>
                     </div>
                   ))}
                   <Pagination page={secondaryPage} totalPages={secondaryTotalPages} onChange={setSecondaryPage} />
                 </>
               )
             ) : secondaryList.length === 0 ? (
-              <div className="empty-state">الأرشيف فارغ حاليًا.</div>
+              <div className="empty-state">الأرشيف فارغ حالياً.</div>
             ) : (
               <>
                 {pagedSecondaryList.map((task) => (
@@ -264,7 +268,7 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
                       <CheckCircle2 size={16} className="text-emerald-500" />
                       <div>
                         <p className="text-xs font-black text-slate-800">{task.title}</p>
-                        <p className="text-[10px] font-bold uppercase tracking-tight text-slate-400">مكتمل ومؤرشف</p>
+                        <p className="text-[10px] font-bold text-slate-400">خدمة مكتملة ومؤرشفة</p>
                       </div>
                     </div>
                   </div>
@@ -284,11 +288,7 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
                 <h3 className="text-lg font-black text-slate-900">تقييم الخدمة</h3>
                 <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">{taskToRate.title}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setRatingModalOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-all hover:text-slate-900"
-              >
+              <button type="button" onClick={() => setRatingModalOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-all hover:text-slate-900">
                 ×
               </button>
             </div>
@@ -301,9 +301,7 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
                     type="button"
                     onClick={() => setRatingScore(score)}
                     className={`flex h-12 w-12 items-center justify-center rounded-xl border transition-all ${
-                      ratingScore >= score
-                        ? "border-amber-100 bg-amber-50 text-amber-500"
-                        : "border-slate-100 bg-slate-50 text-slate-200"
+                      ratingScore >= score ? "border-amber-100 bg-amber-50 text-amber-500" : "border-slate-100 bg-slate-50 text-slate-200"
                     }`}
                   >
                     <Star size={20} fill={ratingScore >= score ? "currentColor" : "none"} />
@@ -318,13 +316,8 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
                 className="input h-28 resize-none"
               />
 
-              <button
-                type="button"
-                onClick={handleRateSubmit}
-                disabled={submittingRating}
-                className="btn btn-primary btn-lg w-full"
-              >
-                {submittingRating ? "جارٍ الحفظ..." : "تأكيد والتقييم الآن"}
+              <button type="button" onClick={handleRateSubmit} disabled={submittingRating} className="btn btn-primary btn-lg w-full">
+                {submittingRating ? "جارٍ الحفظ..." : "تأكيد التقييم"}
               </button>
             </div>
           </div>

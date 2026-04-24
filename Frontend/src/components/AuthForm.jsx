@@ -91,7 +91,6 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
     try {
       const data = await loginUser(formData.phone, formData.password)
       storeSessionToken(data.token)
-      localStorage.setItem(AUTH_STORAGE_KEYS.userInfo, JSON.stringify({ phone: formData.phone }))
       onLoginSuccess(data.token)
     } catch (err) {
       if (err.message.includes("User not found")) {

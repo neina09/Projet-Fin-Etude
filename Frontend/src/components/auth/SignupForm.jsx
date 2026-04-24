@@ -1,10 +1,10 @@
 import React from "react"
-import { Lock, Phone, User, Users, Briefcase, ChevronLeft } from "lucide-react"
+import { Lock, Phone, User, ChevronLeft } from "lucide-react"
 
 function StatusMessage({ error, success }) {
   if (error) {
     return (
-      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50/50 px-4 py-3 text-sm font-bold text-red-600 animate-in fade-in slide-in-from-top-2 duration-300">
+      <div className="animate-in fade-in slide-in-from-top-2 mb-6 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50/50 px-4 py-3 text-sm font-bold text-red-600 duration-300">
         <div className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-red-400" />
         {error}
       </div>
@@ -13,7 +13,7 @@ function StatusMessage({ error, success }) {
 
   if (success) {
     return (
-      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm font-bold text-primary animate-in fade-in slide-in-from-top-2 duration-300">
+      <div className="animate-in fade-in slide-in-from-top-2 mb-6 flex items-center gap-3 rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm font-bold text-primary duration-300">
         <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
         {success}
       </div>
@@ -23,14 +23,12 @@ function StatusMessage({ error, success }) {
   return null
 }
 
-export default function SignupForm({ formData, setFormData, handleChange, handleSubmit, onSwitch, loading, error, success }) {
-  const isWorker = formData.userType === "WORKER"
-
+export default function SignupForm({ formData, handleChange, handleSubmit, onSwitch, loading, error, success }) {
   return (
-    <div className="w-full max-w-sm mx-auto animate-in fade-in slide-in-from-right-4 duration-500" dir="rtl">
-      <div className="text-right mb-10">
-        <h1 className="text-4xl font-black text-slate-800 mb-3 tracking-tight">إنشاء حساب</h1>
-        <p className="text-slate-400 font-bold leading-relaxed">
+    <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-sm duration-500" dir="rtl">
+      <div className="mb-10 text-right">
+        <h1 className="mb-3 text-3xl font-black tracking-tight text-slate-800 sm:text-4xl">إنشاء حساب</h1>
+        <p className="font-bold leading-relaxed text-slate-400">
           انضم إلى مجتمع المحترفين الأكبر في المنطقة وابدأ رحلة النجاح اليوم.
         </p>
       </div>
@@ -38,9 +36,8 @@ export default function SignupForm({ formData, setFormData, handleChange, handle
       <StatusMessage error={error} success={success} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
-
         <div className="space-y-2">
-          <label className="auth-label block mr-1">الاسم الكامل</label>
+          <label className="auth-label mr-1 block">الاسم الكامل</label>
           <div className="auth-input-group">
             <input
               type="text"
@@ -49,15 +46,15 @@ export default function SignupForm({ formData, setFormData, handleChange, handle
               value={formData.name}
               onChange={handleChange}
               maxLength={15}
-              className="auth-input pr-12 bg-[#F8FAFC]"
+              className="auth-input input-with-icon-end bg-[#F8FAFC] text-right placeholder:text-right"
               required
             />
-            <User className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <User className="field-icon field-icon-end" size={18} />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="auth-label block mr-1">رقم الهاتف</label>
+          <label className="auth-label mr-1 block">رقم الهاتف</label>
           <div className="auth-input-group">
             <input
               type="tel"
@@ -65,16 +62,16 @@ export default function SignupForm({ formData, setFormData, handleChange, handle
               placeholder="4X XX XX XX"
               value={formData.phone}
               onChange={handleChange}
-              className="auth-input pr-12 text-left bg-[#F8FAFC]"
-              dir="ltr"
+              className="auth-input input-with-icon-end bg-[#F8FAFC] text-right placeholder:text-right"
+              dir="auto"
               required
             />
-            <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Phone className="field-icon field-icon-end" size={18} />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="auth-label block mr-1">كلمة المرور</label>
+          <label className="auth-label mr-1 block">كلمة المرور</label>
           <div className="auth-input-group">
             <input
               type="password"
@@ -83,16 +80,16 @@ export default function SignupForm({ formData, setFormData, handleChange, handle
               value={formData.password}
               onChange={handleChange}
               maxLength={8}
-              className="auth-input pr-12 text-left bg-[#F8FAFC]"
+              className="auth-input input-with-icon-end bg-[#F8FAFC] text-right"
               dir="ltr"
               required
             />
-            <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Lock className="field-icon field-icon-end" size={18} />
           </div>
         </div>
-        
+
         <div className="space-y-2">
-          <label className="auth-label block mr-1">تأكيد كلمة المرور</label>
+          <label className="auth-label mr-1 block">تأكيد كلمة المرور</label>
           <div className="auth-input-group">
             <input
               type="password"
@@ -101,11 +98,11 @@ export default function SignupForm({ formData, setFormData, handleChange, handle
               value={formData.confirmPassword}
               onChange={handleChange}
               maxLength={8}
-              className="auth-input pr-12 text-left bg-[#F8FAFC]"
+              className="auth-input input-with-icon-end bg-[#F8FAFC] text-right"
               dir="ltr"
               required
             />
-            <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Lock className="field-icon field-icon-end" size={18} />
           </div>
         </div>
 
@@ -113,28 +110,24 @@ export default function SignupForm({ formData, setFormData, handleChange, handle
           <button
             type="submit"
             disabled={loading}
-            className="btn-auth-primary w-full h-14 text-lg flex items-center justify-center gap-3 group"
+            className="btn-auth-primary group flex h-14 w-full items-center justify-center gap-3 text-lg"
           >
-            <span>إنشاء حساب</span>
+            <span>{loading ? "جارٍ الإنشاء..." : "إنشاء حساب"}</span>
             <ChevronLeft size={24} className="transition-transform group-hover:-translate-x-1" />
           </button>
         </div>
       </form>
 
       <div className="mt-8 text-center">
-        <p className="text-slate-400 font-bold">
+        <p className="font-bold text-slate-400">
           لديك حساب بالفعل؟{" "}
-          <button
-            onClick={onSwitch}
-            className="text-primary hover:text-primary-hover transition-all p-1 font-black"
-          >
+          <button onClick={onSwitch} className="p-1 font-black text-primary transition-all hover:text-primary-hover">
             تسجيل الدخول الآن
           </button>
         </p>
       </div>
-      
-      {/* Absolute Bottom Links */}
-      <div className="mt-12 flex items-center justify-center gap-6 text-[10px] font-bold text-slate-300 uppercase tracking-widest whitespace-nowrap">
+
+      <div className="mt-12 flex flex-wrap items-center justify-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-300 sm:gap-6">
         <button type="button" className="hover:text-slate-500">الشروط والأحكام</button>
         <button type="button" className="hover:text-slate-500">سياسة الخصوصية</button>
         <button type="button" className="hover:text-slate-500">اتصل بنا</button>

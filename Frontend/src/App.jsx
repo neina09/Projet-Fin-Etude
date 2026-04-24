@@ -1,10 +1,8 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from "react"
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom"
-import AuthForm from "./components/AuthForm"
 import AuthPage from "./pages/AuthPage"
 import ProtectedRoute from "./components/ProtectedRoute"
 import { getMe } from "./api"
-import authBg from "./assets/worker-bg.jpg"
 import "leaflet/dist/leaflet.css"
 import { clearStoredSession, hasStoredSession, storeSessionToken } from "./utils/auth"
 
@@ -12,15 +10,15 @@ const LandingPage = lazy(() => import("./pages/LandingPage"))
 const Dashboard = lazy(() => import("./components/Dashboard"))
 const BecomeWorker = lazy(() => import("./components/BecomeWorker"))
 
-function PageLoader({ message = "جاري تحميل الصفحة..." }) {
+function PageLoader({ message = "جارٍ تحميل الصفحة..." }) {
   return (
     <div className="page-shell flex items-center justify-center" dir="rtl">
       <div className="card-lg">
         <div className="flex flex-col items-center gap-6">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-surface-100 border-t-primary shadow-sm" />
           <div className="text-center">
-            <p className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-2">{message}</p>
-            <p className="t-label italic">يتم تجهيز المحتوى المطلوب بأعلى جودة.</p>
+            <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-slate-900">{message}</p>
+            <p className="t-label italic">يتم تجهيز المحتوى المطلوب بأفضل جودة ممكنة.</p>
           </div>
         </div>
       </div>
@@ -80,7 +78,7 @@ function App() {
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-surface-100 border-t-primary" />
             <div>
               <p className="text-sm font-black text-surface-900">جارٍ التحقق من الجلسة</p>
-              <p className="text-xs font-bold text-surface-400">يتم فحص صلاحية الدخول قبل فتح اللوحة.</p>
+              <p className="text-xs font-bold text-surface-400">يتم فحص صلاحية تسجيل الدخول قبل فتح اللوحة.</p>
             </div>
           </div>
         </div>
@@ -114,6 +112,5 @@ function App() {
     </Suspense>
   )
 }
-
 
 export default App

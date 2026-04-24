@@ -6,32 +6,32 @@ export default function CtaSection() {
   const navigate = useNavigate()
 
   return (
-    <section className="py-24 bg-white" dir="rtl">
-      <div className="mx-auto max-w-7xl px-6 lg:px-12">
-        <div className="relative overflow-hidden rounded-[4rem] bg-primary p-12 lg:p-24 shadow-2xl shadow-primary/30 text-center">
-          {/* Decorative Elements */}
+    <section className="bg-white py-20 sm:py-24" dir="rtl">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-primary px-6 py-10 text-center shadow-2xl shadow-primary/30 sm:rounded-[3rem] sm:p-12 lg:rounded-[4rem] lg:p-24">
           <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
-          <div className="absolute -right-32 -bottom-32 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05)_0%,transparent_70%)]" />
-          
-          <div className="relative z-10 max-w-4xl mx-auto">
-            <h2 className="text-4xl font-black text-white md:text-5xl lg:text-7xl leading-[1.1] tracking-tight">
-              ابدأ الآن واحصل على <span className="text-secondary">أفضل العمال</span> في مدينتك
+          <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
+          <div className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05)_0%,transparent_70%)]" />
+
+          <div className="relative z-10 mx-auto max-w-4xl">
+            <h2 className="text-3xl font-black leading-[1.1] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-7xl">
+              ابدأ الآن واحصل على <span className="text-blue-100">أفضل العمال</span> في مدينتك
             </h2>
-            <p className="mt-8 text-lg font-bold text-blue-100/80 leading-relaxed max-w-2xl mx-auto italic">
-              انضم إلى آلاف المستخدمين الذين يثقون في منصتنا للحصول على خدمات منزلية وميدانية سريعة ومضمونة.
+            <p className="mx-auto mt-6 max-w-2xl text-base font-bold leading-relaxed text-blue-100/80 sm:mt-8 sm:text-lg">
+              انضم إلى آلاف المستخدمين الذين يثقون في منصتنا للحصول على خدمات منزلية وميدانية
+              سريعة ومضمونة.
             </p>
-            
-            <div className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button 
+
+            <div className="mt-10 flex flex-col items-stretch justify-center gap-4 sm:mt-14 sm:flex-row sm:items-center">
+              <button
                 onClick={() => navigate("/auth")}
-                className="w-full sm:w-auto h-16 rounded-[1.25rem] bg-white px-12 text-[11px] font-black text-primary shadow-xl transition-all hover:scale-105 active:scale-95 uppercase tracking-widest"
+                className="h-14 w-full rounded-[1.25rem] bg-white px-8 text-sm font-black text-primary shadow-xl transition-all hover:scale-[1.02] active:scale-95 sm:h-16 sm:w-auto sm:px-12"
               >
                 ابدأ كمستخدم الآن
               </button>
-              <button 
+              <button
                 onClick={() => navigate("/auth")}
-                className="w-full sm:w-auto h-16 rounded-[1.25rem] bg-white/10 border border-white/20 px-12 text-[11px] font-black text-white backdrop-blur-xl transition-all hover:bg-white/20 active:scale-95 flex items-center justify-center gap-3 uppercase tracking-widest"
+                className="flex h-14 w-full items-center justify-center gap-3 rounded-[1.25rem] border border-white/20 bg-white/10 px-8 text-sm font-black text-white backdrop-blur-xl transition-all hover:bg-white/20 active:scale-95 sm:h-16 sm:w-auto sm:px-12"
               >
                 سجل كفني مختص
                 <ArrowLeft size={18} />

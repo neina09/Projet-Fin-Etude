@@ -10,6 +10,7 @@ import com.backend.Projet.model.User;
 import com.backend.Projet.model.Worker;
 import com.backend.Projet.model.WorkerAvailability;
 import com.backend.Projet.model.WorkerVerificationStatus;
+import com.backend.Projet.repository.RatingRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.util.MauritaniaPhoneUtils;
@@ -30,6 +31,7 @@ import java.util.List;
 public class WorkerService {
 
     private final WorkerRepository workerRepository;
+    private final RatingRepository ratingRepository;
     private final UserRepository userRepository;
     private final com.backend.Projet.mapper.WorkerMapper workerMapper;
     private final FileStorageService fileStorageService;
@@ -106,14 +108,14 @@ public class WorkerService {
     public List<WorkerResponseDto> getAllWorkers() {
         return workerRepository.findByVerificationStatus(WorkerVerificationStatus.VERIFIED)
                 .stream()
-                .map(worker -> workerMapper.toDto(worker, false))
+                .map(worker -> toDtoWithLiveAverage(worker, false))
                 .toList();
     }
 
     public Page<WorkerResponseDto> getAllWorkersPaged(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         return workerRepository.findByVerificationStatus(WorkerVerificationStatus.VERIFIED, pageable)
-                .map(worker -> workerMapper.toDto(worker, false));
+                .map(worker -> toDtoWithLiveAverage(worker, false));
     }
 
     public WorkerResponseDto getWorkerById(Long id) {
@@ -122,7 +124,7 @@ public class WorkerService {
         if (worker.getVerificationStatus() != WorkerVerificationStatus.VERIFIED) {
             throw new ResourceNotFoundException("Worker not found");
         }
-        return workerMapper.toDto(worker, false);
+        return toDtoWithLiveAverage(worker, false);
     }
 
     public WorkerResponseDto getWorkerForOwnerOrAdmin(Long id, User currentUser) {
@@ -133,13 +135,13 @@ public class WorkerService {
         if (!isAdmin && !isOwner) {
             throw new UnauthorizedException("Not authorized");
         }
-        return workerMapper.toDto(worker, true);
+        return toDtoWithLiveAverage(worker, true);
     }
 
     public WorkerResponseDto getMyWorkerProfile(User currentUser) {
         Worker worker = workerRepository.findByUserId(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Worker profile not found for this user"));
-        return workerMapper.toDto(worker, true);
+        return toDtoWithLiveAverage(worker, true);
     }
 
     @Transactional
@@ -236,6 +238,17 @@ public class WorkerService {
     public List<WorkerResponseDto> getWorkersPendingVerification() {
         return workerRepository.findByVerificationStatus(WorkerVerificationStatus.PENDING)
                 .stream().map(worker -> workerMapper.toDto(worker, true)).toList();
+    }
+
+    public List<WorkerResponseDto> getAllWorkersForAdmin(User currentUser) {
+        if (currentUser.getRole() != Role.ADMIN) {
+            throw new UnauthorizedException("Only admins can view all workers");
+        }
+
+        return workerRepository.findAll(Sort.by(Sort.Direction.DESC, "id"))
+                .stream()
+                .map(worker -> toDtoWithLiveAverage(worker, true))
+                .toList();
     }
 
     public Resource getIdentityDocumentResource(Long id, User currentUser) {
@@ -387,5 +400,11 @@ public class WorkerService {
             throw new UnauthorizedException("Not authorized");
         }
         return worker;
+    }
+
+    private WorkerResponseDto toDtoWithLiveAverage(Worker worker, boolean includeSensitiveDetails) {
+        Double avg = ratingRepository.calculateAverageRating(worker.getId());
+        worker.setAverageRating(avg != null ? avg : 0.0);
+        return workerMapper.toDto(worker, includeSensitiveDetails);
     }
 }

@@ -1,0 +1,32 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      APP_SECURITY_ALLOWED_ORIGINS: ${APP_SECURITY_ALLOWED_ORIGINS}
+      APP_UPLOAD_DIR: /data/uploads
+      APP_SMS_ENABLED: ${APP_SMS_ENABLED:-false}
+      CHINGUISOFT_VALIDATION_KEY: ${CHINGUISOFT_VALIDATION_KEY:-}
+      CHINGUISOFT_VALIDATION_TOKEN: ${CHINGUISOFT_VALIDATION_TOKEN:-}
+    volumes:
+      - backend_uploads:/data/uploads
+    ports:
+      - "8081:8081"
+
+  frontend:
+    build:
+      context: ./Frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  backend_uploads:

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { ArrowRight, ShieldCheck, MapPin } from "lucide-react"
+import { ArrowRight, MapPin, ShieldCheck } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
 import heroImg from "../assets/hero-worker.png"
@@ -12,18 +12,51 @@ function Hero() {
     openTasks: 0
   })
 
+  const highlights = [
+    {
+      icon: ShieldCheck,
+      title: "عمال موثقون",
+      subtitle: "تحقق وهوية موثقة قبل التنفيذ",
+      accent: "border-emerald-100",
+      iconWrap: "bg-emerald-50 text-emerald-600",
+      desktopPosition: "sm:absolute sm:-right-4 sm:top-[18%]"
+    },
+    {
+      icon: MapPin,
+      title: "دقة في الموقع",
+      subtitle: "وصول أوضح ومتابعة أفضل للمكان",
+      accent: "border-blue-100",
+      iconWrap: "bg-blue-50 text-blue-600",
+      desktopPosition: "sm:absolute sm:-left-4 sm:bottom-[18%]"
+    }
+  ]
+
   useEffect(() => {
     let active = true
 
-    Promise.allSettled([
-      getWorkers(0, 1),
-      getOpenTasks(0, 1)
-    ]).then(([workersResult, tasksResult]) => {
+    Promise.allSettled([getWorkers(0, 1), getOpenTasks(0, 1)]).then(([workersResult, tasksResult]) => {
       if (!active) return
 
+      const workersPayload = workersResult.status === "fulfilled" ? workersResult.value : null
+      const tasksPayload = tasksResult.status === "fulfilled" ? tasksResult.value : null
+
+      const workersCount = Number(
+        workersPayload?.totalElements ??
+        workersPayload?.totalItems ??
+        workersPayload?.content?.length ??
+        0
+      )
+
+      const openTasksCount = Number(
+        tasksPayload?.totalElements ??
+        tasksPayload?.totalItems ??
+        tasksPayload?.content?.length ??
+        0
+      )
+
       setStats({
-        workers: workersResult.status === "fulfilled" ? Number(workersResult.value?.totalElements || 0) : 0,
-        openTasks: tasksResult.status === "fulfilled" ? Number(tasksResult.value?.totalElements || 0) : 0
+        workers: Number.isFinite(workersCount) ? workersCount : 0,
+        openTasks: Number.isFinite(openTasksCount) ? openTasksCount : 0
       })
     })
 
@@ -33,60 +66,116 @@ function Hero() {
   }, [])
 
   return (
-    <section dir="rtl" className="relative container mx-auto bg-white px-6 pt-32 pb-20 lg:pt-48 lg:pb-32">
-      <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+    <section
+      dir="rtl"
+      className="relative container mx-auto overflow-hidden bg-white px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32 lg:pb-32 lg:pt-48"
+    >
+      <div className="absolute left-0 top-24 h-64 w-64 rounded-full bg-blue-100/60 blur-3xl" />
+      <div className="absolute bottom-10 right-0 h-72 w-72 rounded-full bg-sky-100/50 blur-3xl" />
+
+      <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14">
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7 }}
+          className="relative z-10 space-y-8"
+        >
           <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
             <span className="h-2 w-2 rounded-full bg-blue-600" />
-            أفضل المنصات المهنية في موريتانيا
+            منصة مهنية موثوقة في موريتانيا
           </div>
 
-          <h1 className="text-5xl font-black leading-tight tracking-tight text-slate-900 md:text-6xl">
+          <h1 className="text-4xl font-black leading-tight tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
             ابحث عن <span className="text-blue-600">المحترف</span> المناسب لكل مهمة.
           </h1>
 
-          <p className="max-w-lg text-lg font-medium leading-relaxed text-slate-500">
-            نحن نسهل عليك الوصول إلى أفضل العمال والمهنيين في محيطك، مع ضمان الجودة والسرعة في التنفيذ.
+          <p className="max-w-lg text-base font-medium leading-relaxed text-slate-500 sm:text-lg">
+            نسهّل عليك الوصول إلى أفضل العمال والمهنيين في محيطك، مع تجربة أسرع وأكثر وضوحًا
+            في الحجز والمتابعة والتنفيذ.
           </p>
 
           <div className="flex flex-col gap-4 sm:flex-row">
-            <button onClick={() => navigate("/auth")} className="group flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700">
+            <button
+              onClick={() => navigate("/auth")}
+              className="group flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700"
+            >
               ابدأ رحلتك الآن
-              <ArrowRight size={18} className="transition-transform group-hover:translate-x-[-4px]" />
+              <ArrowRight size={18} className="transition-transform group-hover:-translate-x-1" />
             </button>
-            <button onClick={() => document.getElementById("workers")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="rounded-xl border border-slate-200 bg-white px-8 py-4 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50">
-              استعرض خدماتنا
+            <button
+              onClick={() => document.getElementById("workers")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="rounded-xl border border-slate-200 bg-white px-8 py-4 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50"
+            >
+              استعرض الخبراء
             </button>
           </div>
 
-          <div className="flex items-center gap-8 pt-4">
+          <div className="flex flex-wrap items-center gap-5 pt-4 sm:gap-8">
             <div className="flex flex-col">
               <span className="text-2xl font-black text-slate-900">{stats.openTasks}+</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">مهمة مفتوحة</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">مهام مفتوحة</span>
             </div>
-            <div className="h-8 w-px bg-slate-100" />
+            <div className="hidden h-8 w-px bg-slate-100 sm:block" />
             <div className="flex flex-col">
               <span className="text-2xl font-black text-slate-900">{stats.workers}+</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">عامل مسجل</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">عمال موثقون</span>
             </div>
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative">
-          <div className="relative z-10 overflow-hidden rounded-[3rem] border-8 border-slate-50 shadow-2xl">
-            <img src={heroImg} alt="Worker" className="h-auto w-full object-cover" />
+        <div className="relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="relative z-10 overflow-hidden rounded-[2rem] border-4 border-slate-50 shadow-2xl sm:rounded-[3rem] sm:border-8"
+          >
+            <img
+              src={heroImg}
+              alt="محترف يقدم خدمة ميدانية"
+              className="h-auto w-full object-cover"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              sizes="(min-width: 1024px) 50vw, 100vw"
+            />
+          </motion.div>
+
+          <div className="mt-4 grid gap-3 sm:hidden">
+            {highlights.map((item) => (
+              <div
+                key={item.title}
+                className={`flex items-center gap-3 rounded-2xl border bg-white/95 p-4 shadow-lg backdrop-blur-sm ${item.accent}`}
+              >
+                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${item.iconWrap}`}>
+                  <item.icon size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-slate-900">{item.title}</p>
+                  <p className="text-[11px] font-bold text-slate-500">{item.subtitle}</p>
+                </div>
+              </div>
+            ))}
           </div>
 
-          <div className="absolute -right-6 top-1/4 z-20 flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-xl">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><ShieldCheck size={20} /></div>
-            <span className="text-sm font-bold text-slate-900">عمال موثقون</span>
-          </div>
-
-          <div className="absolute -left-6 bottom-1/4 z-20 flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-xl">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><MapPin size={20} /></div>
-            <span className="text-sm font-bold text-slate-900">دقة في الموقع</span>
-          </div>
-        </motion.div>
+          {highlights.map((item, index) => (
+            <motion.div
+              key={item.title}
+              initial={{ opacity: 0, x: index === 0 ? 24 : -24, y: index === 0 ? 10 : 12 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              transition={{ duration: 0.55, delay: index === 0 ? 0.55 : 0.75 }}
+              className={`hidden z-20 items-center gap-3 rounded-2xl border bg-white/95 p-4 shadow-xl backdrop-blur-sm sm:flex ${item.accent} ${item.desktopPosition}`}
+            >
+              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${item.iconWrap}`}>
+                <item.icon size={20} />
+              </div>
+              <div>
+                <p className="text-sm font-black text-slate-900">{item.title}</p>
+                <p className="text-[11px] font-bold text-slate-500">{item.subtitle}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   )

@@ -60,6 +60,13 @@ public class WorkerController {
         return ResponseEntity.ok(workerService.getWorkersPendingVerification());
     }
 
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<WorkerResponseDto>> getAllWorkersForAdmin(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(workerService.getAllWorkersForAdmin(currentUser));
+    }
+
     @PatchMapping("/admin/{id}/verify")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<WorkerResponseDto> verifyWorker(

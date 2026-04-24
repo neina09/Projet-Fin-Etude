@@ -1,5 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { Zap, Map as MapIcon, ChevronRight, ChevronLeft } from "lucide-react"
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react"
+import { AnimatePresence, motion } from "framer-motion"
+import { ChevronLeft, ChevronRight, Map as MapIcon, Zap } from "lucide-react"
+import { useLocation } from "react-router-dom"
 import {
   acceptOffer,
   cancelTaskRequest,
@@ -16,13 +18,48 @@ import {
   selectOffer,
   updateTask
 } from "../api"
-import ProblemCard from "./ProblemCard"
-import ProblemForm from "./ProblemForm"
-import LeafletMapPicker from "./LeafletMapPicker"
-import ConfirmDialog from "./ConfirmDialog"
 import BoardFilters from "./problem-board/BoardFilters"
-import { motion, AnimatePresence } from "framer-motion"
-import { useLocation } from "react-router-dom"
+import ConfirmDialog from "./ConfirmDialog"
+
+const LeafletMapPicker = lazy(() => import("./LeafletMapPicker"))
+const ProblemCard = lazy(() => import("./ProblemCard"))
+const ProblemForm = lazy(() => import("./ProblemForm"))
+
+const ITEMS_PER_PAGE = 8
+
+const TASK_STATUS_PRIORITY = {
+  COMPLETED: 4,
+  CANCELLED: 4,
+  CLOSED: 4,
+  IN_PROGRESS: 3,
+  OPEN: 2,
+  PENDING_REVIEW: 1
+}
+
+const mergeTaskCollections = (...collections) => {
+  const merged = new Map()
+
+  collections.flat().forEach((task) => {
+    if (!task?.id) return
+
+    const existing = merged.get(task.id)
+    if (!existing) {
+      merged.set(task.id, task)
+      return
+    }
+
+    const currentPriority = TASK_STATUS_PRIORITY[String(task.status || "").toUpperCase()] || 0
+    const existingPriority = TASK_STATUS_PRIORITY[String(existing.status || "").toUpperCase()] || 0
+
+    merged.set(task.id, currentPriority >= existingPriority ? { ...existing, ...task } : { ...task, ...existing })
+  })
+
+  return Array.from(merged.values())
+}
+
+const LoadingState = ({ message }) => (
+  <div className="empty-state animate-pulse">{message}</div>
+)
 
 export default function ProblemBoard({ currentUser, initialTab = "open" }) {
   const location = useLocation()
@@ -38,11 +75,12 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
   const [editingTask, setEditingTask] = useState(null)
   const [showForm, setShowForm] = useState(location.state?.openForm || false)
   const [pendingDelete, setPendingDelete] = useState(null)
+  const [deletingTask, setDeletingTask] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchType, setSearchType] = useState("keyword")
+  const [historyFilter, setHistoryFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
-  const itemsPerPage = 8
 
   const isWorker = currentUser?.role === "WORKER"
 
@@ -62,9 +100,9 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
           address: searchType === "address" ? normalizedQuery : "",
           profession: searchType === "profession" ? normalizedQuery : "",
           page: pageNum - 1,
-          size: itemsPerPage
+          size: ITEMS_PER_PAGE
         })
-      : getOpenTasks(pageNum - 1, itemsPerPage)
+      : getOpenTasks(pageNum - 1, ITEMS_PER_PAGE)
 
     const [openRes, mineRes, assignedRes, offersRes] = await Promise.allSettled([
       openTasksPromise,
@@ -77,7 +115,6 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
       setProblems(openRes.value?.content || [])
       setTotalPages(openRes.value?.totalPages || 0)
     }
-
     if (mineRes.status === "fulfilled") setMyTasks(mineRes.value?.content || mineRes.value || [])
     if (assignedRes.status === "fulfilled") setAssignedTasks(Array.isArray(assignedRes.value) ? assignedRes.value : [])
     if (offersRes.status === "fulfilled") setMyOffers(Array.isArray(offersRes.value) ? offersRes.value : [])
@@ -90,18 +127,34 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
   }, [fetchTasks, currentPage, tab])
 
   const myOffersByTaskId = useMemo(
-    () => myOffers.reduce((acc, offer) => ({ ...acc, [offer.taskId]: offer }), {}),
+    () => Object.fromEntries(myOffers.map((offer) => [offer.taskId, offer])),
     [myOffers]
+  )
+
+  const historyTasks = useMemo(() => mergeTaskCollections(myTasks, assignedTasks), [myTasks, assignedTasks])
+  const filteredHistoryTasks = useMemo(() => {
+    if (historyFilter === "all") return historyTasks
+    return historyTasks.filter((task) => String(task.status || "").toUpperCase() === historyFilter)
+  }, [historyFilter, historyTasks])
+
+  const mapMarkers = useMemo(
+    () => problems
+      .concat(myTasks)
+      .filter((task) => task.latitude && task.longitude)
+      .map((task) => ({
+        position: { lat: task.latitude, lng: task.longitude },
+        title: task.title
+      })),
+    [myTasks, problems]
   )
 
   const handleWorkerDecision = async (offerId, decision) => {
     try {
       if (decision === "accept") await acceptOffer(offerId)
       else await refuseOffer(offerId)
-
       await fetchTasks()
     } catch {
-      setError("فشل تسجيل القرار.")
+      setError("فشل تسجيل القرار على العرض.")
     }
   }
 
@@ -116,12 +169,38 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
 
   const handleStatusChange = async (task, action) => {
     try {
-      if (action === "done") await markTaskDone(task.id)
-      else await cancelTaskRequest(task.id)
+      let updatedStatus = null
+
+      if (action === "done") {
+        await markTaskDone(task.id)
+        updatedStatus = "COMPLETED"
+      } else if (action === "cancel") {
+        await cancelTaskRequest(task.id)
+        updatedStatus = "CANCELLED"
+      } else if (action === "rated") {
+        updatedStatus = String(task.status || "COMPLETED").toUpperCase()
+      }
+
+      if (updatedStatus) {
+        const applyTaskPatch = (items) => items.map((item) => (
+          item.id === task.id
+            ? {
+                ...item,
+                status: updatedStatus,
+                isRated: action === "rated" ? true : item.isRated,
+                rated: action === "rated" ? true : item.rated
+              }
+            : item
+        ))
+
+        setProblems((items) => applyTaskPatch(items))
+        setMyTasks((items) => applyTaskPatch(items))
+        setAssignedTasks((items) => applyTaskPatch(items))
+      }
 
       await fetchTasks()
     } catch {
-      setError("فشل تحديث الحالة.")
+      setError("فشل تحديث حالة الطلب.")
     }
   }
 
@@ -132,10 +211,10 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
     try {
       if (editingTask?.id) {
         await updateTask(editingTask.id, payload)
+        setSuccessMessage("تم تحديث الطلب بنجاح.")
       } else {
         await createTask(payload)
-        setSuccessMessage("تم إرسال مهمتك بنجاح! سوف يتم عرضها للجميع فور التحقق منها من قبل الإدارة.")
-        setTimeout(() => setSuccessMessage(""), 6000)
+        setSuccessMessage("تم إرسال طلبك بنجاح، وسيظهر بعد مراجعته من الإدارة.")
       }
 
       setShowForm(false)
@@ -146,75 +225,184 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
       } else {
         await fetchTasks(editingTask ? currentPage : 1)
       }
+
+      setTimeout(() => setSuccessMessage(""), 5000)
     } catch (err) {
-      setError(err.message || "فشل حفظ المهمة.")
+      setError(err.message || "فشل حفظ الطلب.")
     } finally {
       setSubmitting(false)
     }
   }
 
-  const handleEditTask = (task) => {
-    setEditingTask(task)
-    setShowForm(true)
+  const handleDeleteTask = async () => {
+    if (!pendingDelete?.id || deletingTask) return
+
+    setDeletingTask(true)
+    setError("")
+
+    try {
+      await deleteTask(pendingDelete.id)
+      setPendingDelete(null)
+      await fetchTasks()
+    } catch (err) {
+      setError(err.message || "تعذر حذف الطلب. قد يكون قيد التنفيذ أو لا تملك صلاحية حذفه.")
+    } finally {
+      setDeletingTask(false)
+    }
   }
 
-  const handleFormCancel = () => {
-    setEditingTask(null)
-    setShowForm(false)
-  }
-
-  const renderPagination = () => {
-    if (totalPages <= 1) return null
+  const renderPagination = (pages = totalPages) => {
+    if (pages <= 1) return null
 
     return (
       <div className="pagination">
-        <button onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className="pagination-btn"><ChevronRight size={18} /></button>
-        {[...Array(totalPages)].map((_, index) => (
-          <button key={index} onClick={() => setCurrentPage(index + 1)} className={`pagination-btn ${currentPage === index + 1 ? "active" : ""}`}>{index + 1}</button>
+        <button
+          onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+          disabled={currentPage === 1}
+          className="pagination-btn"
+        >
+          <ChevronRight size={18} />
+        </button>
+        {[...Array(pages)].map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentPage(index + 1)}
+            className={`pagination-btn ${currentPage === index + 1 ? "active" : ""}`}
+          >
+            {index + 1}
+          </button>
         ))}
-        <button onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className="pagination-btn"><ChevronLeft size={18} /></button>
+        <button
+          onClick={() => setCurrentPage((page) => Math.min(pages, page + 1))}
+          disabled={currentPage === pages}
+          className="pagination-btn"
+        >
+          <ChevronLeft size={18} />
+        </button>
       </div>
     )
   }
 
+  const totalHistoryPages = Math.ceil(filteredHistoryTasks.length / ITEMS_PER_PAGE)
+  const pagedHistoryTasks = filteredHistoryTasks.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
+
   return (
     <div className="page-shell" dir="rtl">
-      <div className="card-lg mb-8 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-        <div className="space-y-1">
-          <h2 className="text-xl font-black text-slate-900">سوق المهمات</h2>
-          <p className="t-label italic">إدارة وتتبع الطلبات النشطة</p>
-        </div>
-        <div className="flex max-w-2xl flex-1 flex-col items-center gap-3 sm:flex-row">
-          <div className="w-full flex-1">
-            <BoardFilters searchType={searchType} setSearchType={setSearchType} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      <section className="app-page-header">
+        <div className="app-page-header-row">
+          <div>
+            <span className="app-page-eyebrow">{isWorker ? "العروض والمهام" : "إدارة الطلبات"}</span>
+            <h1 className="app-page-title mt-4">
+              {isWorker ? "لوحة" : "سجل"} <span className="text-[#1d4ed8]">{isWorker ? "العروض" : "الطلبات"}</span> والمتابعة
+            </h1>
+            <p className="app-page-subtitle">
+              راقب الطلبات المفتوحة، تحكم في السجل، وتابع التنفيذ من نفس الواجهة بشكل أوضح وأكثر تناسقًا.
+            </p>
           </div>
-          <button
-            onClick={() => {
-              setEditingTask(null)
-              setShowForm(true)
-            }}
-            className="btn btn-primary btn-md flex items-center gap-2"
-          >
-            <Zap size={14} /> نشر مهمة
-          </button>
+
+          {!isWorker && (
+            <div className="flex justify-start lg:justify-end">
+              <button
+                onClick={() => {
+                  setEditingTask(null)
+                  setShowForm(true)
+                }}
+                className="btn btn-primary btn-md flex items-center gap-2"
+              >
+                <Zap size={14} />
+                نشر طلب جديد
+              </button>
+            </div>
+          )}
         </div>
+      </section>
+
+      <section className="mb-8">
+        <BoardFilters
+          searchType={searchType}
+          setSearchType={setSearchType}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
+      </section>
+
+      <div className="mx-auto mb-8 flex w-fit gap-2 rounded-xl bg-surface-50 p-1 lg:mx-0">
+        {[
+          { id: "open", label: isWorker ? "الفرص المتاحة" : "الطلبات المفتوحة" },
+          { id: "previous", label: "السجل والمتابعة" }
+        ].map((item) => (
+          <button
+            key={item.id}
+            onClick={() => {
+              setTab(item.id)
+              setCurrentPage(1)
+            }}
+            className={`rounded-lg px-6 py-2 t-label transition-all ${tab === item.id ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
+
+      {tab === "previous" && (
+        <div className="mb-8 flex flex-wrap gap-2">
+          {[
+            { id: "all", label: "الكل" },
+            { id: "PENDING_REVIEW", label: "قيد المراجعة" },
+            { id: "IN_PROGRESS", label: "قيد التنفيذ" },
+            { id: "COMPLETED", label: "مكتمل" },
+            { id: "CANCELLED", label: "ملغي" }
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setHistoryFilter(item.id)
+                setCurrentPage(1)
+              }}
+              className={`rounded-xl px-4 py-2 text-xs font-black transition-all ${
+                historyFilter === item.id
+                  ? "bg-white text-primary shadow-sm ring-1 ring-slate-200"
+                  : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <AnimatePresence>
         {showForm && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="card-lg mb-10 overflow-hidden">
-            <ProblemForm
-              key={editingTask?.id || "new-task"}
-              initialData={editingTask}
-              onAdd={handleTaskSubmit}
-              onCancel={handleFormCancel}
-              submitting={submitting}
-            />
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="card-lg mb-10 overflow-hidden"
+          >
+            <Suspense fallback={<LoadingState message="جارٍ تحميل النموذج..." />}>
+              <ProblemForm
+                key={editingTask?.id || "new-task"}
+                initialData={editingTask}
+                onAdd={handleTaskSubmit}
+                onCancel={() => {
+                  setEditingTask(null)
+                  setShowForm(false)
+                }}
+                submitting={submitting}
+              />
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {error && <div className="mb-6 rounded-xl border border-red-100 bg-red-50 p-4 text-center text-xs font-bold text-red-600">{error}</div>}
+      {error && (
+        <div className="mb-6 rounded-xl border border-red-100 bg-red-50 p-4 text-center text-xs font-bold text-red-600">
+          {error}
+        </div>
+      )}
 
       <AnimatePresence>
         {successMessage && (
@@ -224,117 +412,89 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
             exit={{ opacity: 0, y: -20 }}
             className="mb-8 rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-center shadow-sm"
           >
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            </div>
             <p className="text-sm font-black text-emerald-900">{successMessage}</p>
-            <p className="mt-1 text-[10px] font-bold text-emerald-600/70">شكرًا لثقتك في منصة عاملك</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="mx-auto mb-8 flex w-fit gap-2 rounded-xl bg-surface-50 p-1 lg:mx-0">
-        {[{ id: "open", lbl: "المهام المتاحة" }, { id: "previous", lbl: "سجل عمليّاتي" }].map((item) => (
-          <button key={item.id} onClick={() => { setTab(item.id); setCurrentPage(1); }} className={`rounded-lg px-6 py-2 t-label transition-all ${tab === item.id ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"}`}>
-            {item.lbl}
-          </button>
-        ))}
-      </div>
-
       {tab === "open" ? (
-        <div className="space-y-4">
-          {loading ? (
-            <div className="empty-state animate-pulse">جارٍ تحميل المهام...</div>
-          ) : problems.length === 0 ? (
-            <div className="empty-state">لا توجد مهام تطابق بحثك.</div>
-          ) : (
-            problems.map((problem) => (
+        <Suspense fallback={<LoadingState message="جارٍ تحميل الطلبات..." />}>
+          <div className="space-y-4">
+            {loading ? (
+              <LoadingState message="جارٍ تحميل الطلبات..." />
+            ) : problems.length === 0 ? (
+              <div className="empty-state">لا توجد طلبات تطابق بحثك.</div>
+            ) : (
+              problems.map((problem) => (
+                <ProblemCard
+                  key={problem.id}
+                  problem={problem}
+                  currentUser={currentUser}
+                  onEdit={(task) => {
+                    setEditingTask(task)
+                    setShowForm(true)
+                  }}
+                  onDelete={setPendingDelete}
+                  onStatusChange={handleStatusChange}
+                  workerOffer={myOffersByTaskId[problem.id]}
+                  onSubmitOffer={createOffer}
+                  onSelectOffer={handleSelectOffer}
+                  onWorkerDecision={handleWorkerDecision}
+                />
+              ))
+            )}
+            {renderPagination(totalPages)}
+          </div>
+        </Suspense>
+      ) : (
+        <Suspense fallback={<LoadingState message="جارٍ تحميل السجل..." />}>
+          <div className="space-y-4">
+            {pagedHistoryTasks.map((problem) => (
               <ProblemCard
                 key={problem.id}
                 problem={problem}
                 currentUser={currentUser}
-                onEdit={handleEditTask}
+                onEdit={(task) => {
+                  setEditingTask(task)
+                  setShowForm(true)
+                }}
                 onDelete={setPendingDelete}
                 onStatusChange={handleStatusChange}
                 workerOffer={myOffersByTaskId[problem.id]}
-                onSubmitOffer={createOffer}
-                onSelectOffer={handleSelectOffer}
                 onWorkerDecision={handleWorkerDecision}
+                onSelectOffer={handleSelectOffer}
               />
-            ))
-          )}
-          {renderPagination()}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {(() => {
-            const allMine = myTasks.concat(assignedTasks)
-            const totalItems = allMine.length
-            const localTotalPages = Math.ceil(totalItems / itemsPerPage)
-            const start = (currentPage - 1) * itemsPerPage
-            const pagedItems = allMine.slice(start, start + itemsPerPage)
-
-            return (
-              <>
-                {pagedItems.map((problem) => (
-                  <ProblemCard
-                    key={problem.id}
-                    problem={problem}
-                    currentUser={currentUser}
-                    onEdit={handleEditTask}
-                    onDelete={setPendingDelete}
-                    onStatusChange={handleStatusChange}
-                    workerOffer={myOffersByTaskId[problem.id]}
-                    onWorkerDecision={handleWorkerDecision}
-                    onSelectOffer={handleSelectOffer}
-                  />
-                ))}
-                {totalItems === 0 && <div className="empty-state">سجل عملياتك فارغ حاليًا.</div>}
-                {localTotalPages > 1 && (
-                  <div className="pagination">
-                    <button onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className="pagination-btn">
-                      <ChevronRight size={18} />
-                    </button>
-                    {[...Array(localTotalPages)].map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentPage(index + 1)}
-                        className={`pagination-btn ${currentPage === index + 1 ? "active" : ""}`}
-                      >
-                        {index + 1}
-                      </button>
-                    ))}
-                    <button onClick={() => setCurrentPage((page) => Math.min(localTotalPages, page + 1))} disabled={currentPage === localTotalPages} className="pagination-btn">
-                      <ChevronLeft size={18} />
-                    </button>
-                  </div>
-                )}
-              </>
-            )
-          })()}
-        </div>
+            ))}
+            {historyTasks.length === 0 && <div className="empty-state">السجل فارغ حاليًا.</div>}
+            {pagedHistoryTasks.length === 0 && filteredHistoryTasks.length === 0 && (
+              <div className="empty-state">لا توجد طلبات في هذه الحالة حاليًا.</div>
+            )}
+            {renderPagination(totalHistoryPages)}
+          </div>
+        </Suspense>
       )}
 
       <div className="card-lg mt-12">
-        <h4 className="t-label mb-6 flex items-center gap-2 italic">مراقبة السوق جغرافيًا <MapIcon size={12} className="text-blue-600" /></h4>
+        <h4 className="t-label mb-6 flex items-center gap-2 italic">
+          خريطة الطلبات <MapIcon size={12} className="text-blue-600" />
+        </h4>
         <div className="relative isolate z-0 h-64 overflow-hidden rounded-2xl border border-slate-50">
-          <LeafletMapPicker
-            isListView
-            markers={problems.concat(myTasks).filter((task) => task.latitude && task.longitude).map((task) => ({
-              position: { lat: task.latitude, lng: task.longitude },
-              title: task.title
-            }))}
-            height="256px"
-          />
+          <Suspense fallback={<LoadingState message="جارٍ تحميل الخريطة..." />}>
+            <LeafletMapPicker isListView markers={mapMarkers} height="256px" />
+          </Suspense>
         </div>
       </div>
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        onConfirm={() => deleteTask(pendingDelete.id).then(() => { setPendingDelete(null); fetchTasks() })}
-        onCancel={() => setPendingDelete(null)}
+        loading={deletingTask}
+        onConfirm={handleDeleteTask}
+        onCancel={() => {
+          if (deletingTask) return
+          setPendingDelete(null)
+        }}
         title="تأكيد الحذف"
-        description="هل أنت متأكد من حذف هذه المهمة نهائيًا؟"
+        description="هل أنت متأكد من حذف هذا الطلب نهائيًا؟"
       />
     </div>
   )

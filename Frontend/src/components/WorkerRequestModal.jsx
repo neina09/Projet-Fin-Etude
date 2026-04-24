@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import { X, Calendar, Clock, MapPin, FileText, CheckCircle2, Star, User, ShieldCheck, Briefcase, Zap, Info, Search } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import AvatarBadge from "./AvatarBadge"
 
 export default function WorkerRequestModal({ worker, onClose, onSubmit }) {
   const [step, setStep] = useState(1)
@@ -44,8 +45,14 @@ export default function WorkerRequestModal({ worker, onClose, onSubmit }) {
            <div className="mb-10">
               <h3 className="text-xl font-black text-slate-900 mb-8">ملخص الحجز</h3>
               <div className="p-6 rounded-[2rem] bg-white border border-slate-100 shadow-sm flex items-center gap-5 group transition-all hover:border-blue-500/20">
-                 <div className="h-16 w-16 rounded-2xl bg-blue-50 overflow-hidden shrink-0">
-                    <img src={worker.imageUrl || `https://ui-avatars.com/api/?name=${worker.name}&background=1d4ed8&color=fff&bold=true`} className="h-full w-full object-cover" alt="Worker" />
+                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-blue-50">
+                    <AvatarBadge
+                      src={worker.imageUrl}
+                      name={worker.name}
+                      alt="العامل"
+                      className="h-full w-full object-cover"
+                      fallbackClassName="flex h-full w-full items-center justify-center bg-blue-600 text-sm font-black text-white"
+                    />
                  </div>
                  <div>
                     <h4 className="text-[15px] font-black text-slate-900 mb-1">{worker.name}</h4>
@@ -205,8 +212,9 @@ export default function WorkerRequestModal({ worker, onClose, onSubmit }) {
                              required
                           />
                        </div>
-                       <div className="h-64 bg-slate-100 rounded-[2.5rem] border border-slate-200 overflow-hidden relative shadow-inner">
-                          <img src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&q=80&w=2066" className="w-full h-full object-cover opacity-50 contrast-125" alt="Map Placeholder" />
+                       <div className="relative h-64 overflow-hidden rounded-[2.5rem] border border-slate-200 bg-slate-100 shadow-inner">
+                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(29,78,216,0.18),transparent_30%),linear-gradient(135deg,#e2e8f0_0%,#f8fafc_45%,#dbeafe_100%)]" />
+                          <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(148,163,184,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.18)_1px,transparent_1px)] [background-size:28px_28px]" />
                           <div className="absolute inset-0 flex items-center justify-center">
                              <div className="relative">
                                 <MapPin size={48} className="text-[#1d4ed8] animate-bounce" />

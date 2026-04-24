@@ -14,12 +14,12 @@ export default function WorkerCard({ worker, onViewDetails }) {
   const [failedImageUrl, setFailedImageUrl] = useState("")
   const imageUrl = failedImageUrl === resolvedImageUrl ? "" : resolvedImageUrl
   const available = worker.availability === "AVAILABLE" || worker.available === true
-  const rating = Number(worker.averageRating || worker.rating || 5)
+  const rating = Number(worker.averageRating ?? worker.rating ?? 0)
   const specialty = worker.job || worker.specialty || "خدمات مهنية"
 
   return (
-    <article className="card group overflow-hidden" dir="rtl">
-      <div className="relative mb-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-50">
+    <article className="card group overflow-hidden !rounded-[1.75rem] !p-4 sm:!p-5" dir="rtl">
+      <div className="relative mb-4 aspect-[4/3] w-full overflow-hidden rounded-2xl bg-slate-50">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -38,7 +38,7 @@ export default function WorkerCard({ worker, onViewDetails }) {
           <Star size={14} className="fill-amber-400 text-amber-400" />
         </div>
 
-        <div className={`absolute right-3 top-3 rounded-lg px-2 py-1 text-[8px] font-black uppercase tracking-widest shadow-sm ${getAvailabilityBadgeClass(worker, available)}`}>
+        <div className={`absolute right-3 top-3 rounded-lg px-2 py-1 text-[9px] font-black shadow-sm ${getAvailabilityBadgeClass(worker, available)}`}>
           {getAvailabilityLabel(worker, available)}
         </div>
       </div>
@@ -46,23 +46,23 @@ export default function WorkerCard({ worker, onViewDetails }) {
       <div className="space-y-4">
         <div className="text-right">
           <h3 className="text-lg font-black text-slate-900 transition-colors group-hover:text-primary">{name}</h3>
-          <p className="t-label mt-1 !text-blue-400/80 lowercase">{specialty}</p>
+          <p className="mt-1 text-sm font-bold text-blue-500/80">{specialty}</p>
         </div>
 
-        <div className="flex gap-3">
-          <div className="flex-1 rounded-2xl border border-slate-100/50 bg-slate-50/80 p-3 text-center">
-            <p className="t-label !mb-1 !text-[8px]">المهنة</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-slate-100/50 bg-slate-50/80 p-3 text-center">
+            <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">المهنة</p>
             <p className="truncate text-[11px] font-black text-slate-800">{specialty}</p>
           </div>
-          <div className="flex-1 rounded-2xl border border-slate-100/50 bg-slate-50/80 p-3 text-center">
-            <p className="t-label !mb-1 !text-[8px]">السعر</p>
+          <div className="rounded-2xl border border-slate-100/50 bg-slate-50/80 p-3 text-center">
+            <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">السعر</p>
             <p className="text-[11px] font-black text-slate-800">{worker.salary || 0} M</p>
           </div>
         </div>
 
         <button onClick={() => onViewDetails?.(worker)} className="btn btn-primary btn-md w-full gap-2 text-xs">
           <ArrowRight size={16} className="rotate-180" />
-          أطلب الخدمة
+          عرض التفاصيل وطلب الخدمة
         </button>
       </div>
     </article>

@@ -150,9 +150,23 @@ public class AuthenticationController {
             long windowMinutes,
             String message
     ) {
-        String remoteAddress = request.getRemoteAddr() == null ? "unknown" : request.getRemoteAddr();
+        String remoteAddress = extractClientIp(request);
         String normalizedIdentifier = identifier == null ? "unknown" : identifier.trim();
         String key = action + ":" + remoteAddress + ":" + normalizedIdentifier;
         authRateLimitService.checkRateLimit(key, maxAttempts, Duration.ofMinutes(windowMinutes), message);
+    }
+
+    private String extractClientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+
+        return request.getRemoteAddr() == null ? "unknown" : request.getRemoteAddr();
     }
 }

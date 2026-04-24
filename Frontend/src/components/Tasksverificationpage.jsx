@@ -218,9 +218,14 @@ function WorkerModal({ worker, onClose, onAction }) {
                   <div key={rating.id} className="rounded-xl border border-gray-100 bg-white p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-black text-gray-800">{rating.userName || "عميل"}</span>
-                      <div className="flex items-center gap-1 text-amber-500">
-                        <Star size={12} className="fill-amber-400 text-amber-400" />
-                        <span className="text-xs font-black">{rating.stars}</span>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((value) => (
+                          <Star
+                            key={value}
+                            size={12}
+                            className={value <= rating.stars ? "fill-amber-400 text-amber-400" : "text-gray-200"}
+                          />
+                        ))}
                       </div>
                     </div>
                     <p className="text-xs font-bold text-gray-500">{rating.comment || "لا يوجد تعليق."}</p>
@@ -511,18 +516,6 @@ export default function TasksVerificationPage({ initialTab = "tasks" }) {
                         >
                           <Eye size={14} /> عرض الملف
                         </button>
-                        <button
-                          onClick={() => handleWorkerAction("verify", worker.id)}
-                          className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2.5 text-xs font-black text-emerald-700 transition-colors hover:bg-emerald-100"
-                        >
-                          <CheckCircle size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleWorkerAction("reject", worker.id)}
-                          className="flex items-center justify-center gap-1.5 rounded-xl bg-red-50 px-3 py-2.5 text-xs font-black text-red-700 transition-colors hover:bg-red-100"
-                        >
-                          <XCircle size={14} />
-                        </button>
                       </div>
                     </motion.div>
                   ))}
@@ -556,3 +549,4 @@ export default function TasksVerificationPage({ initialTab = "tasks" }) {
     </div>
   )
 }
+

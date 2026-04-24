@@ -62,6 +62,7 @@ class TaskServiceTest {
         taskService = new TaskService(
                 taskRepository,
                 offerRepository,
+                ratingRepository,
                 workerRepository,
                 userRepository,
                 notificationService,

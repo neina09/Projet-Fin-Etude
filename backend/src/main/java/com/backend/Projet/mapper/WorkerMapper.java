@@ -30,15 +30,17 @@ public class WorkerMapper {
                 .address(worker.getAddress())
                 .salary(worker.getSalary())
                 .imageUrl(resolvedImageUrl)
-                // حقول حساسة: تظهر فقط للمالك أو المدير
+                // تبقى الوثائق والهوية مخصصة للمالك أو المدير، بينما الهاتف ظاهر للجميع.
                 .identityDocumentUrl(includeSensitiveDetails ? worker.getIdentityDocumentUrl() : null)
                 .nationalIdNumber(includeSensitiveDetails ? worker.getNationalIdNumber() : null)
-                .phoneNumber(includeSensitiveDetails ? worker.getPhoneNumber() : null)
+                .phoneNumber(worker.getPhoneNumber())
                 .availability(worker.getAvailability())
                 .averageRating(worker.getAverageRating())
                 .verificationStatus(worker.getVerificationStatus())
                 .verificationNotes(includeSensitiveDetails ? worker.getVerificationNotes() : null)
                 .userId(worker.getUser() != null ? worker.getUser().getId() : null)
+                .username(worker.getUser() != null ? worker.getUser().getUsername() : null)
+                .userPhone(worker.getUser() != null ? worker.getUser().getPhone() : null)
                 .verified(worker.getVerificationStatus() == WorkerVerificationStatus.VERIFIED)
                 .build();
     }

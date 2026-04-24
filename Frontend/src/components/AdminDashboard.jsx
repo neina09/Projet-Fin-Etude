@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
 import {
   Briefcase,
   CheckCircle,
@@ -30,10 +30,14 @@ import {
   rejectTask,
   rejectWorker,
   resolveAssetUrl,
+  uploadIdentityDocument,
+  uploadWorkerImage,
   verifyWorker
 } from "../api"
-import TaskStatsCharts from "./TaskStatsCharts"
 import SimpleFooter from "./SimpleFooter"
+import { combineIdentityFiles } from "../utils/imageFiles"
+
+const TaskStatsCharts = lazy(() => import("./TaskStatsCharts"))
 
 const cardItems = (stats) => [
   {
@@ -106,6 +110,9 @@ function AddWorkerModal({ onClose, onSuccess }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState("")
+  const [workerImageFile, setWorkerImageFile] = useState(null)
+  const [identityFrontFile, setIdentityFrontFile] = useState(null)
+  const [identityBackFile, setIdentityBackFile] = useState(null)
 
   useEffect(() => {
     getAllUsers()
@@ -156,7 +163,7 @@ function AddWorkerModal({ onClose, onSuccess }) {
 
     setSubmitting(true)
     try {
-      await adminCreateWorker(Number(selectedUserId), {
+      const createdWorker = await adminCreateWorker(Number(selectedUserId), {
         name: form.name.trim(),
         phoneNumber: form.phoneNumber.trim(),
         job: form.job.trim(),
@@ -164,6 +171,21 @@ function AddWorkerModal({ onClose, onSuccess }) {
         salary,
         nationalIdNumber: form.nationalIdNumber.trim()
       })
+
+      const workerId = createdWorker?.id || createdWorker?.workerId
+      if (!workerId) {
+        throw new Error("تم إنشاء العامل لكن تعذر تحديد معرفه لرفع الملفات.")
+      }
+
+      if (workerImageFile) {
+        await uploadWorkerImage(workerId, workerImageFile)
+      }
+
+      const identityFile = await combineIdentityFiles(identityFrontFile, identityBackFile)
+      if (identityFile) {
+        await uploadIdentityDocument(workerId, identityFile)
+      }
+
       onSuccess()
       onClose()
     } catch (err) {
@@ -245,6 +267,66 @@ function AddWorkerModal({ onClose, onSuccess }) {
                 />
               </div>
             ))}
+
+            <div className="rounded-3xl border border-gray-200 bg-gray-50 p-5">
+              <h3 className="mb-4 text-sm font-black text-gray-900">الصورة الشخصية</h3>
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-gray-300 bg-white p-6 text-center transition-all hover:border-indigo-400">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setWorkerImageFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+                <div className="mb-3 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-50">
+                  {workerImageFile ? (
+                    <img src={URL.createObjectURL(workerImageFile)} alt="Worker preview" className="h-full w-full object-cover" />
+                  ) : (
+                    <Users size={28} className="text-gray-300" />
+                  )}
+                </div>
+                <span className="text-sm font-black text-gray-900">اختر صورة العامل</span>
+                <span className="mt-1 text-xs font-bold text-gray-400">اختياري</span>
+              </label>
+            </div>
+
+            <div className="rounded-3xl border border-gray-200 bg-gray-50 p-5">
+              <h3 className="mb-4 text-sm font-black text-gray-900">صورة البطاقة</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <label className="relative flex h-32 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-gray-300 bg-white text-center transition-all hover:border-indigo-400">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setIdentityFrontFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  {identityFrontFile ? (
+                    <img src={URL.createObjectURL(identityFrontFile)} alt="Front ID preview" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="px-4">
+                      <p className="text-sm font-black text-gray-900">الوجه الأمامي</p>
+                      <p className="mt-1 text-xs font-bold text-gray-400">ارفع صورة أمامية</p>
+                    </div>
+                  )}
+                </label>
+
+                <label className="relative flex h-32 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-gray-300 bg-white text-center transition-all hover:border-indigo-400">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setIdentityBackFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  {identityBackFile ? (
+                    <img src={URL.createObjectURL(identityBackFile)} alt="Back ID preview" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="px-4">
+                      <p className="text-sm font-black text-gray-900">الوجه الخلفي</p>
+                      <p className="mt-1 text-xs font-bold text-gray-400">ارفع صورة خلفية</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </div>
 
             {formError && (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
@@ -484,7 +566,9 @@ export default function AdminDashboard({ onNavigate }) {
                 توزيع المهام حسب حالتها الحالية.
               </p>
             </div>
-            <TaskStatsCharts tasks={pseudoTasks} />
+            <Suspense fallback={<div className="h-72 animate-pulse rounded-3xl bg-slate-50" />}>
+              <TaskStatsCharts tasks={pseudoTasks} />
+            </Suspense>
           </div>
 
           <div className="card-lg">
@@ -536,18 +620,6 @@ export default function AdminDashboard({ onNavigate }) {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleWorkerAction("verify", worker.id)}
-                        className="btn btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700"
-                      >
-                        قبول
-                      </button>
-                      <button
-                        onClick={() => handleWorkerAction("reject", worker.id)}
-                        className="btn btn-secondary btn-sm text-red-600 hover:bg-red-50"
-                      >
-                        رفض
-                      </button>
                       <button
                         onClick={() => openWorkerProfile(worker)}
                         className="btn btn-secondary btn-sm"
@@ -687,14 +759,18 @@ export default function AdminDashboard({ onNavigate }) {
               </div>
 
               <div className="flex-1 space-y-6 overflow-y-auto p-8">
-                <div className="flex items-center gap-5 rounded-[2rem] border border-gray-100 bg-gray-50 p-5">
+                <div className="flex items-center gap-5 rounded-4xl border border-gray-100 bg-gray-50 p-5">
                   <div className="h-20 w-20 overflow-hidden rounded-2xl border border-gray-200 bg-white">
-                    {selectedWorker.imageUrl && (
+                    {selectedWorker.imageUrl ? (
                       <img
                         src={resolveAssetUrl(selectedWorker.imageUrl)}
                         alt={selectedWorker.name}
                         className="h-full w-full object-cover"
                       />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-gray-300">
+                        <Users size={26} />
+                      </div>
                     )}
                   </div>
                   <div className="flex-1">
@@ -753,13 +829,13 @@ export default function AdminDashboard({ onNavigate }) {
                           <iframe
                             title="وثيقة الهوية"
                             src={identityPreview.objectUrl}
-                            className="h-[28rem] w-full bg-white"
+                            className="h-112 w-full bg-white"
                           />
                         ) : (
                           <img
                             src={identityPreview.objectUrl}
                             alt="وثيقة الهوية"
-                            className="max-h-[28rem] w-full object-contain p-2"
+                            className="max-h-112 w-full object-contain p-2"
                           />
                         ))}
                     </div>
@@ -818,3 +894,4 @@ export default function AdminDashboard({ onNavigate }) {
     </div>
   )
 }
+

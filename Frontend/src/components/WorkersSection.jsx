@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react"
-import { Filter, MapPin, Search, UserRound, X, ChevronRight, ChevronLeft } from "lucide-react"
-import { createBooking, getWorkerRatings, getWorkers, resolveAssetUrl } from "../api"
+import { Briefcase, ChevronLeft, ChevronRight, Filter, MapPin, Phone, Search, Star, UserRound, X } from "lucide-react"
+import { createBooking, getWorkers, resolveAssetUrl } from "../api"
 import WorkerCard from "./WorkerCard"
 
 const defaultBookingForm = {
@@ -9,16 +9,28 @@ const defaultBookingForm = {
   description: ""
 }
 
-export default function WorkersSection() {
+const toLocalDateTimeString = (value) => {
+  if (!value) return ""
+  if (value.includes("T")) return value
+
+  const slashMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/)
+  if (slashMatch) {
+    const [, day, month, year, hour, minute] = slashMatch
+    return `${year}-${month}-${day}T${hour}:${minute}`
+  }
+
+  return value
+}
+
+export default function WorkersSection({ currentUser }) {
   const [workers, setWorkers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [modalError, setModalError] = useState("")
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState("الكل")
   const [selectedWorker, setSelectedWorker] = useState(null)
-  const [ratings, setRatings] = useState([])
-  const [ratingsLoading, setRatingsLoading] = useState(false)
   const [bookingForm, setBookingForm] = useState(defaultBookingForm)
   const [bookingLoading, setBookingLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -32,8 +44,8 @@ export default function WorkersSection() {
         const payload = await getWorkers(currentPage - 1, itemsPerPage)
         setWorkers(payload.content || [])
         setTotalPages(payload.totalPages || 0)
-      } catch {
-        setError("تعذر تحميل قائمة العمال.")
+      } catch (err) {
+        setError(err.message || "تعذر تحميل قائمة الخبراء.")
       } finally {
         setLoading(false)
       }
@@ -41,27 +53,6 @@ export default function WorkersSection() {
 
     loadWorkers()
   }, [currentPage])
-
-  useEffect(() => {
-    if (!selectedWorker?.id) {
-      setRatings([])
-      return
-    }
-
-    const loadRatings = async () => {
-      setRatingsLoading(true)
-      try {
-        const payload = await getWorkerRatings(selectedWorker.id)
-        setRatings(Array.isArray(payload) ? payload : [])
-      } catch {
-        setRatings([])
-      } finally {
-        setRatingsLoading(false)
-      }
-    }
-
-    loadRatings()
-  }, [selectedWorker?.id])
 
   const filteredWorkers = useMemo(() => {
     return workers.filter((worker) => {
@@ -74,6 +65,7 @@ export default function WorkersSection() {
         name.toLowerCase().includes(normalizedSearch) ||
         job.toLowerCase().includes(normalizedSearch) ||
         address.toLowerCase().includes(normalizedSearch)
+
       const matchesFilter = filter === "الكل" || job === filter
       return matchesSearch && matchesFilter
     })
@@ -84,23 +76,37 @@ export default function WorkersSection() {
     return ["الكل", ...new Set(items)]
   }, [workers])
 
-  const handleBookingSubmit = async (e) => {
-    e.preventDefault()
+  const handleBookingSubmit = async (event) => {
+    event.preventDefault()
     if (!selectedWorker) return
 
     setBookingLoading(true)
+    setError("")
+    setSuccess("")
+    setModalError("")
+
     try {
+      if (currentUser?.id && selectedWorker?.userId && String(currentUser.id) === String(selectedWorker.userId)) {
+        throw new Error("لا يمكنك حجز نفسك كعامل.")
+      }
+
+      const normalizedBookingDate = toLocalDateTimeString(bookingForm.bookingDate)
+
       await createBooking({
         ...bookingForm,
+        bookingDate: normalizedBookingDate,
         workerId: selectedWorker.id,
         price: Number(selectedWorker.salary || 1)
       })
+
       setSuccess("تم إرسال الطلب بنجاح.")
       setSelectedWorker(null)
       setBookingForm(defaultBookingForm)
       setTimeout(() => setSuccess(""), 5000)
-    } catch {
-      setError("فشل إرسال الطلب.")
+    } catch (err) {
+      const message = err.message || "فشل إرسال الطلب."
+      setError(message)
+      setModalError(message)
     } finally {
       setBookingLoading(false)
     }
@@ -108,21 +114,22 @@ export default function WorkersSection() {
 
   const renderPagination = () => {
     if (totalPages <= 1) return null
+
     return (
       <div className="pagination">
-        <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="pagination-btn">
+        <button onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className="pagination-btn">
           <ChevronRight size={18} />
         </button>
-        {Array.from({ length: totalPages }).map((_, i) => (
+        {Array.from({ length: totalPages }).map((_, index) => (
           <button
-            key={i}
-            onClick={() => setCurrentPage(i + 1)}
-            className={`pagination-btn ${currentPage === i + 1 ? "active" : ""}`}
+            key={index}
+            onClick={() => setCurrentPage(index + 1)}
+            className={`pagination-btn ${currentPage === index + 1 ? "active" : ""}`}
           >
-            {i + 1}
+            {index + 1}
           </button>
         ))}
-        <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="pagination-btn">
+        <button onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className="pagination-btn">
           <ChevronLeft size={18} />
         </button>
       </div>
@@ -131,34 +138,62 @@ export default function WorkersSection() {
 
   return (
     <div className="page-shell" dir="rtl">
-      <div className="card-lg mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-        <div className="space-y-1">
-          <h2 className="text-xl font-black text-slate-900">سوق العمال</h2>
-          <p className="t-label">تصفح المحترفين المعتمدين</p>
-        </div>
-        <div className="flex max-w-2xl flex-1 flex-col gap-3 sm:flex-row">
-          <div className="relative flex-1">
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ابحث عن عامل..." className="input !h-11 pr-10" />
-          </div>
-          <div className="relative min-w-[160px]">
-            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
-            <select value={filter} onChange={(e) => setFilter(e.target.value)} className="input !h-11 appearance-none pr-9">
-              {specialties.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
+      <section className="app-page-header">
+        <div className="app-page-header-row">
+          <div>
+            <span className="app-page-eyebrow">الخبراء</span>
+            <h1 className="app-page-title mt-4">
+              اكتشف <span className="text-[#1d4ed8]">الخبراء</span> المعتمدين
+            </h1>
+            <p className="app-page-subtitle">
+              تصفح ملفات الخبراء، واعتمد على التقييم الإجمالي، ثم أرسل الطلب مباشرة من نفس النافذة.
+            </p>
           </div>
         </div>
-      </div>
+      </section>
+
+      <section className="mb-8 overflow-hidden rounded-[20px] border border-slate-200/80 bg-slate-50/80 p-4 shadow-sm">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+          <label className="block">
+            <span className="mb-2 flex items-center gap-2 text-[11px] font-black text-slate-500">
+              <Search size={14} />
+              ابحث عن خبير
+            </span>
+            <div className="relative">
+              <Search className="field-icon field-icon-end" size={16} />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="الاسم، المهنة، أو العنوان"
+                className="input input-with-icon-end !h-12 border-white bg-white shadow-sm"
+              />
+            </div>
+          </label>
+
+          <label className="block">
+            <span className="mb-2 flex items-center gap-2 text-[11px] font-black text-slate-500">
+              <Filter size={14} />
+              التخصص
+            </span>
+            <div className="relative">
+              <Filter className="field-icon field-icon-end" size={14} />
+              <select value={filter} onChange={(event) => setFilter(event.target.value)} className="input input-with-icon-end !h-12 appearance-none border-white bg-white shadow-sm">
+                {specialties.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </label>
+        </div>
+      </section>
 
       {success && <div className="mb-6 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-center text-xs font-bold text-emerald-600">{success}</div>}
       {error && <div className="mb-6 rounded-xl border border-red-100 bg-red-50 p-4 text-center text-xs font-bold text-red-600">{error}</div>}
 
       {loading ? (
-        <div className="py-20 text-center text-xs font-bold italic text-slate-400 animate-pulse">جاري تحميل القائمة...</div>
+        <div className="animate-pulse py-20 text-center text-xs font-bold italic text-slate-400">جارٍ تحميل القائمة...</div>
       ) : filteredWorkers.length ? (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -169,7 +204,7 @@ export default function WorkersSection() {
           {renderPagination()}
         </>
       ) : (
-        <div className="empty-state">لا يوجد عمال يطابقون بحثك حاليًا.</div>
+        <div className="empty-state">لا يوجد خبراء يطابقون بحثك حاليًا.</div>
       )}
 
       {selectedWorker && (
@@ -177,7 +212,7 @@ export default function WorkersSection() {
           <div className="modal-box">
             <div className="flex items-center justify-between border-b border-slate-50 p-6">
               <div>
-                <p className="t-label">ملف العامل</p>
+                <p className="t-label">ملف الخبير</p>
                 <h3 className="text-lg font-black text-slate-900">{selectedWorker.name}</h3>
               </div>
               <button onClick={() => setSelectedWorker(null)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-all hover:text-slate-900">
@@ -196,37 +231,47 @@ export default function WorkersSection() {
                     </div>
                   )}
                 </div>
-                <div>
-                  <p className="text-sm font-black text-slate-900">{selectedWorker.job || "عامل مكلّف"}</p>
-                  <p className="t-label mt-1 flex items-center gap-1">
+                <div className="flex-1">
+                  <p className="text-sm font-black text-slate-900">{selectedWorker.job || "خبير معتمد"}</p>
+                  <p className="mt-1 flex items-center gap-1 text-xs font-bold text-slate-500">
                     <MapPin size={10} />
                     {selectedWorker.address || "موريتانيا"}
                   </p>
                 </div>
               </div>
 
-              {ratingsLoading ? (
-                <div className="text-center text-xs font-bold text-slate-400">جاري تحميل التقييمات...</div>
-              ) : ratings.length > 0 ? (
-                <div className="space-y-2">
-                  {ratings.slice(0, 3).map((rating) => (
-                    <div key={rating.id} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                      <div className="mb-1 flex items-center justify-between">
-                        <span className="text-xs font-black text-slate-900">{rating.userName || "عميل"}</span>
-                        <span className="text-xs font-black text-amber-500">{rating.stars} ★</span>
-                      </div>
-                      <p className="text-xs font-bold text-slate-500">{rating.comment || "لا يوجد تعليق."}</p>
-                    </div>
-                  ))}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-slate-500">
+                    <Briefcase size={14} />
+                    <span className="text-xs font-black">التخصص</span>
+                  </div>
+                  <p className="text-sm font-black text-slate-900">{selectedWorker.job || "غير محدد"}</p>
                 </div>
-              ) : null}
+
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-slate-500">
+                    <Phone size={14} />
+                    <span className="text-xs font-black">الهاتف</span>
+                  </div>
+                  <p className="text-sm font-black text-slate-900" dir="ltr">{selectedWorker.phoneNumber || "غير متوفر"}</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-slate-500">
+                    <Star size={14} />
+                    <span className="text-xs font-black">التقييم الإجمالي</span>
+                  </div>
+                  <p className="text-sm font-black text-slate-900">{Number(selectedWorker.averageRating || 0).toFixed(1)}</p>
+                </div>
+              </div>
 
               <form onSubmit={handleBookingSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <label className="t-label">العنوان</label>
                   <input
                     value={bookingForm.address}
-                    onChange={(e) => setBookingForm((p) => ({ ...p, address: e.target.value }))}
+                    onChange={(event) => setBookingForm((current) => ({ ...current, address: event.target.value }))}
                     className="input"
                     required
                     placeholder="مثال: تفرغ زينة، نواكشوط"
@@ -237,24 +282,30 @@ export default function WorkersSection() {
                   <input
                     type="datetime-local"
                     value={bookingForm.bookingDate}
-                    onChange={(e) => setBookingForm((p) => ({ ...p, bookingDate: e.target.value }))}
+                    onChange={(event) => setBookingForm((current) => ({ ...current, bookingDate: event.target.value }))}
                     className="input"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="t-label">التفاصيل المطلوبة</label>
+                  <label className="t-label">تفاصيل الطلب</label>
                   <textarea
                     value={bookingForm.description}
-                    onChange={(e) => setBookingForm((p) => ({ ...p, description: e.target.value }))}
+                    onChange={(event) => setBookingForm((current) => ({ ...current, description: event.target.value }))}
                     className="input h-24 resize-none"
                     required
                     placeholder="اشرح المهمة المطلوبة..."
                   />
                 </div>
                 <button type="submit" disabled={bookingLoading} className="btn btn-primary btn-md w-full">
-                  {bookingLoading ? "جاري الإرسال..." : "أرسل الطلب فورًا"}
+                  {bookingLoading ? "جارٍ الإرسال..." : "أرسل الطلب فورًا"}
                 </button>
+
+                {modalError && (
+                  <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-center text-xs font-bold text-red-600">
+                    {modalError}
+                  </div>
+                )}
               </form>
             </div>
           </div>

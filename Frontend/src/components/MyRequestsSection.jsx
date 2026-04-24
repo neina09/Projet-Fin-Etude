@@ -1,22 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react"
-import { CheckCircle2, ShieldCheck, ClipboardList } from "lucide-react"
-import {
-  getMyBookingRequests,
-  getMyBookings,
-  updateBookingStatus,
-  createRating
-} from "../api"
-
+import { CheckCircle2, ClipboardList } from "lucide-react"
+import { createRating, getMyBookingRequests, getMyBookings, updateBookingStatus } from "../api"
 import BookingHistory from "./profile/BookingHistory"
 import WorkerRequestsList from "./profile/WorkerRequestsList"
 
 export default function MyRequestsSection({ currentUser, onRefresh, onBecomeWorker }) {
   const [bookings, setBookings] = useState([])
   const [requests, setRequests] = useState([])
-  const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState({ type: "", text: "" })
   const [bookingsPage, setBookingsPage] = useState(1)
   const [requestsPage, setRequestsPage] = useState(1)
+  const [bookingsFilter, setBookingsFilter] = useState("all")
+  const [requestsFilter, setRequestsFilter] = useState("all")
   const [ratingForm, setRatingForm] = useState({})
 
   const itemsPerPage = 5
@@ -28,24 +23,17 @@ export default function MyRequestsSection({ currentUser, onRefresh, onBecomeWork
   }
 
   const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [bookingsResult, requestsResult] = await Promise.allSettled([
-        getMyBookings(),
-        isWorker ? getMyBookingRequests() : Promise.resolve([])
-      ])
+    const [bookingsResult, requestsResult] = await Promise.allSettled([
+      getMyBookings(),
+      isWorker ? getMyBookingRequests() : Promise.resolve([])
+    ])
 
-      if (bookingsResult.status === "fulfilled") {
-        setBookings(Array.isArray(bookingsResult.value) ? bookingsResult.value : [])
-      }
+    if (bookingsResult.status === "fulfilled") {
+      setBookings(Array.isArray(bookingsResult.value) ? bookingsResult.value : [])
+    }
 
-      if (requestsResult.status === "fulfilled") {
-        setRequests(Array.isArray(requestsResult.value) ? requestsResult.value : [])
-      }
-    } catch (err) {
-      console.error("Failed to load requests", err)
-    } finally {
-      setLoading(false)
+    if (requestsResult.status === "fulfilled") {
+      setRequests(Array.isArray(requestsResult.value) ? requestsResult.value : [])
     }
   }, [isWorker])
 
@@ -89,22 +77,40 @@ export default function MyRequestsSection({ currentUser, onRefresh, onBecomeWork
     }
   }
 
+  const statusFilters = [
+    { id: "all", label: "الكل" },
+    { id: "PENDING", label: "قيد الانتظار" },
+    { id: "ACCEPTED", label: "قيد التنفيذ" },
+    { id: "COMPLETED", label: "مكتمل" },
+    { id: "REJECTED", label: "مرفوض" }
+  ]
+
+  const filteredBookings = bookings.filter((booking) => (
+    bookingsFilter === "all" || String(booking.status || "").toUpperCase() === bookingsFilter
+  ))
+
+  const filteredRequests = requests.filter((request) => (
+    requestsFilter === "all" || String(request.status || "").toUpperCase() === requestsFilter
+  ))
+
   return (
     <div className="page-shell mx-auto max-w-7xl" dir="rtl">
-      <div className="mb-12 flex flex-col items-center text-center">
-        <div className="mb-6 badge badge-blue gap-2 px-4 py-1.5">
-          <ClipboardList size={16} />
-          إدارة الطلبات
+      <section className="app-page-header">
+        <div className="app-page-header-row">
+          <div>
+            <span className="app-page-eyebrow">
+              <ClipboardList size={14} />
+              إدارة الطلبات
+            </span>
+            <h1 className="app-page-title mt-4">
+              سجل <span className="text-[#1d4ed8]">الطلبات</span> والحجوزات
+            </h1>
+            <p className="app-page-subtitle">
+              تابع حالة حجوزاتك وطلبات العملاء من مكان واحد، وبنفس أسلوب العرض الموحد في باقي الصفحات.
+            </p>
+          </div>
         </div>
-
-        <h1 className="mb-4 text-3xl font-black tracking-tight text-slate-900 md:text-4xl lg:text-5xl">
-          سجل <span className="text-[#1d4ed8]">الطلبات</span> والحجوزات
-        </h1>
-
-        <p className="max-w-2xl text-sm font-bold leading-relaxed text-slate-500 md:text-base">
-          تابع حالة حجوزاتك وطلبات العملاء وإدارتها بكل سهولة من مكان واحد.
-        </p>
-      </div>
+      </section>
 
       {msg.text && (
         <div className={`mb-8 flex items-center justify-center gap-3 rounded-2xl border px-5 py-4 text-center text-sm font-bold ${
@@ -122,9 +128,27 @@ export default function MyRequestsSection({ currentUser, onRefresh, onBecomeWork
               <div className="h-2 w-2 rounded-full bg-blue-600" />
               <h2 className="text-xl font-black text-slate-900">طلبات العملاء الواردة</h2>
             </div>
+            <div className="mb-5 flex flex-wrap gap-2">
+              {statusFilters.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setRequestsFilter(item.id)
+                    setRequestsPage(1)
+                  }}
+                  className={`rounded-xl px-4 py-2 text-xs font-black transition-all ${
+                    requestsFilter === item.id
+                      ? "bg-white text-primary shadow-sm ring-1 ring-slate-200"
+                      : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
             <WorkerRequestsList
-              requests={requests.slice((requestsPage - 1) * itemsPerPage, requestsPage * itemsPerPage)}
-              totalItems={requests.length}
+              requests={filteredRequests.slice((requestsPage - 1) * itemsPerPage, requestsPage * itemsPerPage)}
+              totalItems={filteredRequests.length}
               currentPage={requestsPage}
               onPageChange={setRequestsPage}
               itemsPerPage={itemsPerPage}
@@ -136,11 +160,29 @@ export default function MyRequestsSection({ currentUser, onRefresh, onBecomeWork
         <section>
           <div className="mb-6 flex items-center gap-3">
             <div className="h-2 w-2 rounded-full bg-emerald-600" />
-            <h2 className="text-xl font-black text-slate-900">حجوزاتي الشخصية</h2>
+            <h2 className="text-xl font-black text-slate-900">الحجوزات الشخصية</h2>
+          </div>
+          <div className="mb-5 flex flex-wrap gap-2">
+            {statusFilters.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setBookingsFilter(item.id)
+                  setBookingsPage(1)
+                }}
+                className={`rounded-xl px-4 py-2 text-xs font-black transition-all ${
+                  bookingsFilter === item.id
+                    ? "bg-white text-primary shadow-sm ring-1 ring-slate-200"
+                    : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
           <BookingHistory
-            bookings={bookings.slice((bookingsPage - 1) * itemsPerPage, bookingsPage * itemsPerPage)}
-            totalItems={bookings.length}
+            bookings={filteredBookings.slice((bookingsPage - 1) * itemsPerPage, bookingsPage * itemsPerPage)}
+            totalItems={filteredBookings.length}
             currentPage={bookingsPage}
             onPageChange={setBookingsPage}
             itemsPerPage={itemsPerPage}

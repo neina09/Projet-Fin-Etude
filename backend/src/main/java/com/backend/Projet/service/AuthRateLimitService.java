@@ -1,6 +1,7 @@
 package com.backend.Projet.service;
 
 import com.backend.Projet.exception.TooManyRequestsException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -31,5 +32,19 @@ public class AuthRateLimitService {
 
             bucket.addLast(now);
         }
+    }
+
+    @Scheduled(fixedDelayString = "${app.security.rate-limit.cleanup-interval-ms:300000}")
+    public void cleanupExpiredBuckets() {
+        Instant cutoff = Instant.now().minus(Duration.ofHours(24));
+        requestBuckets.entrySet().removeIf((entry) -> {
+            Deque<Instant> bucket = entry.getValue();
+            synchronized (bucket) {
+                while (!bucket.isEmpty() && bucket.peekFirst().isBefore(cutoff)) {
+                    bucket.pollFirst();
+                }
+                return bucket.isEmpty();
+            }
+        });
     }
 }

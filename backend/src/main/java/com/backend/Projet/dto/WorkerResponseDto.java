@@ -21,5 +21,7 @@ public class WorkerResponseDto {
     private WorkerVerificationStatus verificationStatus;
     private String verificationNotes;
     private Long userId;
+    private String username;
+    private String userPhone;
     private boolean verified;
 }

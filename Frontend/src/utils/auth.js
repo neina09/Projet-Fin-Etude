@@ -1,6 +1,7 @@
 export const AUTH_STORAGE_KEYS = {
   token: "token",
-  userInfo: "userInfo"
+  userInfo: "userInfo",
+  uploadsAssetVersion: "uploadsAssetVersion"
 }
 
 export function getStoredToken() {

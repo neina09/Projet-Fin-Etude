@@ -4,12 +4,14 @@ import com.backend.Projet.config.LocalResourcePropertyInitializer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.web.config.EnableSpringDataWebSupport;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.UUID;
 
 @SpringBootApplication
+@EnableScheduling
 @EnableSpringDataWebSupport(
 		pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO
 )
@@ -36,8 +38,9 @@ public class ProjetApplication {
 			activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
 		}
 
-		if (activeProfile != null && !activeProfile.isBlank() && !activeProfile.contains("dev")) {
-			return;
+		boolean developmentProfile = activeProfile == null || activeProfile.isBlank() || activeProfile.contains("dev");
+		if (!developmentProfile) {
+			throw new IllegalStateException("JWT_SECRET_KEY must be configured for non-development profiles");
 		}
 
 		String generatedSecret = Base64.getEncoder().encodeToString(

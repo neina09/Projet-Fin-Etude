@@ -47,5 +47,8 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     void deleteByTaskUserId(Long userId);
 
     @Modifying
+    void deleteByTaskId(Long taskId);
+
+    @Modifying
     void deleteByTaskAssignedWorkerId(Long workerId);
 }

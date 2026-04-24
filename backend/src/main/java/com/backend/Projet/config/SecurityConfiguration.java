@@ -32,6 +32,9 @@ public class SecurityConfiguration {
     @Value("${app.security.public-docs-enabled:false}")
     private boolean publicDocsEnabled;
 
+    @Value("${app.security.public-health-enabled:true}")
+    private boolean publicHealthEnabled;
+
     private final AuthenticationProvider authenticationProvider;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -76,6 +79,10 @@ public class SecurityConfiguration {
                         authorize.requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll();
                     }
 
+                    if (publicHealthEnabled) {
+                        authorize.requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll();
+                    }
+
                     authorize
                             .requestMatchers("/auth/**").permitAll()
                             .requestMatchers("/ws", "/ws/**").authenticated()
@@ -86,6 +93,7 @@ public class SecurityConfiguration {
                             .requestMatchers(HttpMethod.GET, "/api/workers/available").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/workers/job/**").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/workers/address/**").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/workers/admin/all").hasRole("ADMIN")
                             .requestMatchers(new RegexRequestMatcher("^/api/workers/\\d+$", HttpMethod.GET.name())).permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/workers/register").authenticated()
                             .requestMatchers(HttpMethod.GET, "/api/ratings/worker/**").permitAll()
@@ -107,11 +115,12 @@ public class SecurityConfiguration {
 
     private CorsConfigurationSource corsConfigurationSource(List<String> allowedOrigins) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedOriginPatterns(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(false);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

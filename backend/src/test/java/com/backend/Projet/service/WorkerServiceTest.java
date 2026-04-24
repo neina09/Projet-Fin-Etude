@@ -7,6 +7,7 @@ import com.backend.Projet.model.User;
 import com.backend.Projet.model.Worker;
 import com.backend.Projet.model.WorkerVerificationStatus;
 import com.backend.Projet.exception.UnauthorizedException;
+import com.backend.Projet.repository.RatingRepository;
 import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import org.springframework.mock.web.MockMultipartFile;
@@ -35,6 +36,9 @@ class WorkerServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private RatingRepository ratingRepository;
+
+    @Mock
     private FileStorageService fileStorageService;
 
     @Mock
@@ -46,6 +50,7 @@ class WorkerServiceTest {
     void setUp() {
         workerService = new WorkerService(
                 workerRepository,
+                ratingRepository,
                 userRepository,
                 new WorkerMapper(),
                 fileStorageService,

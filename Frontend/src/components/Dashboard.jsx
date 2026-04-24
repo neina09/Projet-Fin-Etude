@@ -31,6 +31,7 @@ const WorkersSection = lazy(() => import("./WorkersSection"))
 const ProblemBoard = lazy(() => import("./ProblemBoard"))
 const BecomeWorker = lazy(() => import("./BecomeWorker"))
 const AdminDashboard = lazy(() => import("./AdminDashboard"))
+const ManageWorkersPage = lazy(() => import("./ManageWorkersPage"))
 const ProfileSettings = lazy(() => import("./ProfileSettings"))
 const RatingsSection = lazy(() => import("./RatingsSection"))
 const TasksVerificationPage = lazy(() => import("./TasksVerificationPage"))
@@ -54,15 +55,54 @@ const DASHBOARD_ROUTES = {
   becomeWorker: "/dashboard/become-worker",
   profile: "/dashboard/profile",
   admin: "/dashboard/admin",
+  manageWorkers: "/dashboard/manage-workers",
   tasksVerification: "/dashboard/tasks-verification",
   userGuide: "/dashboard/guide",
   technicalSupport: "/dashboard/support"
 }
 
-import SimpleFooter from "./SimpleFooter"
+import Footer from "./Footer"
 
 const UserGuide = lazy(() => import("./UserGuide"))
 const TechnicalSupport = lazy(() => import("./TechnicalSupport"))
+
+class DashboardContentErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, errorMessage: "" }
+  }
+
+  static getDerivedStateFromError(error) {
+    return {
+      hasError: true,
+      errorMessage: error?.message || "تعذر عرض هذه الصفحة حالياً."
+    }
+  }
+
+  componentDidCatch(error) {
+    console.error("Dashboard content crashed", error)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="card-lg text-center" dir="rtl">
+          <h2 className="text-lg font-black text-slate-900">تعذر فتح هذه الصفحة</h2>
+          <p className="mt-3 text-sm font-bold text-slate-500">{this.state.errorMessage}</p>
+          <button
+            type="button"
+            onClick={() => this.setState({ hasError: false, errorMessage: "" })}
+            className="btn btn-primary btn-md mt-6"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 export default function Dashboard({ onLogout }) {
   const [user, setUser] = useState(null)
@@ -88,7 +128,7 @@ export default function Dashboard({ onLogout }) {
   const setPage = (nextPage, options = {}) => {
     const { initialTab = "open", openForm = false } =
       typeof options === "string" ? { initialTab: options } : options
-    if (nextPage === "tasksVerification" && !isAdmin) return
+    if ((nextPage === "tasksVerification" || nextPage === "manageWorkers") && !isAdmin) return
     const path = DASHBOARD_ROUTES[nextPage] || DASHBOARD_ROUTES.dashboard
     setTasksTab(initialTab)
     navigate(path, { state: { openForm } })
@@ -161,7 +201,7 @@ export default function Dashboard({ onLogout }) {
   return (
     <div className="page-shell" dir="rtl">
       <DashboardHeader user={user} activePage={page} onNavigate={setPage} onLogout={onLogout} />
-      <main className="mx-auto max-w-7xl px-4 pt-12 pb-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 pb-6 pt-28 sm:pt-32 lg:px-8">
         <AnimatePresence mode="wait">
           {page === "dashboard" && !isAdmin ? (
             <motion.div
@@ -176,23 +216,22 @@ export default function Dashboard({ onLogout }) {
                     <span className="app-page-eyebrow">لوحة المتابعة</span>
                     <h1 className="app-page-title mt-4">أهلاً، {user?.username}</h1>
                     <p className="app-page-subtitle">
-                      إليك نظرة أوضح على نشاطك اليومي مع نفس الطابع البصري الموجود في الصفحة
-                      الرئيسية.
-                    </p>
+                      راقب أداء منصتك لحظة بلحظة، وتتبع النشاطات والإحصائيات بسهولة في لوحة احترافية واضحة.
+                    </p>  
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
                     {isWorker ? (
                       <>
                         <button
                           onClick={() => setPage("tasks", "open")}
-                          className="btn btn-primary btn-md"
+                          className="btn btn-primary btn-md w-full sm:w-auto"
                         >
                           تصفح المهام المتاحة
                         </button>
                         <button
                           onClick={() => setPage("myRequests")}
-                          className="btn btn-secondary btn-md"
+                          className="btn btn-secondary btn-md w-full sm:w-auto"
                         >
                           عروضي وطلباتي
                         </button>
@@ -201,13 +240,13 @@ export default function Dashboard({ onLogout }) {
                       <>
                         <button
                           onClick={() => setPage("tasks", { openForm: true })}
-                          className="btn btn-primary btn-md"
+                          className="btn btn-primary btn-md w-full sm:w-auto"
                         >
                           نشر طلب جديد
                         </button>
                         <button
                           onClick={() => setPage("workers")}
-                          className="btn btn-secondary btn-md"
+                          className="btn btn-secondary btn-md w-full sm:w-auto"
                         >
                           استعرض العمال
                         </button>
@@ -217,7 +256,7 @@ export default function Dashboard({ onLogout }) {
                 </div>
               </section>
 
-              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
                 {stats.map((item, index) => (
                   <div
                     key={index}
@@ -274,7 +313,7 @@ export default function Dashboard({ onLogout }) {
                                   <div
                                     key={index}
                                     onClick={() => setPage("tasks")}
-                                    className="group flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-slate-50"
+                                    className="group flex cursor-pointer flex-col items-start gap-3 p-5 transition-colors hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between"
                                   >
                                     <div className="flex items-center gap-4">
                                       <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-slate-50 bg-slate-100 transition-all group-hover:border-blue-100">
@@ -307,7 +346,7 @@ export default function Dashboard({ onLogout }) {
                                     <span
                                       className={`badge ${
                                         task.status === "COMPLETED" ? "badge-green" : "badge-primary"
-                                      }`}
+                                      } self-start sm:self-auto`}
                                     >
                                       {task.status || "نشط"}
                                     </span>
@@ -393,47 +432,52 @@ export default function Dashboard({ onLogout }) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <Suspense fallback={<SectionLoader />}>
-                {page === "workers" && <WorkersSection currentUser={user} />}
-                {page === "tasks" && <ProblemBoard currentUser={user} initialTab={tasksTab} />}
-                {page === "ratings" && (
-                  <RatingsSection
-                    currentUser={user}
-                    myTasks={myTasks}
-                    myOffers={myOffers}
-                    onRefresh={loadDashboardData}
-                  />
-                )}
-                {page === "becomeWorker" && <BecomeWorker onSuccess={loadDashboardData} />}
-                {page === "myRequests" && (
-                  <MyRequestsSection
-                    currentUser={user}
-                    onRefresh={loadDashboardData}
-                    onBecomeWorker={() => setPage("becomeWorker")}
-                  />
-                )}
-                {page === "profile" && (
-                  <ProfileSettings 
-                    user={user} 
-                    onUpdate={setUser} 
-                    onRefresh={loadDashboardData}
-                    onLogout={onLogout}
-                    onBecomeWorker={() => setPage("becomeWorker")}
-                  />
-                )}
-                {(page === "admin" || (page === "dashboard" && isAdmin)) && isAdmin && (
-                  <AdminDashboard onNavigate={setPage} />
-                )}
-                {page === "tasksVerification" && isAdmin && (
-                  <TasksVerificationPage initialTab={tasksTab} />
-                )}
-                {page === "userGuide" && <UserGuide />}
-                {page === "technicalSupport" && <TechnicalSupport />}
-              </Suspense>
+              <DashboardContentErrorBoundary>
+                <Suspense fallback={<SectionLoader />}>
+                  {page === "workers" && <WorkersSection currentUser={user} />}
+                  {page === "tasks" && <ProblemBoard currentUser={user} initialTab={tasksTab} />}
+                  {page === "ratings" && (
+                    <RatingsSection
+                      currentUser={user}
+                      myTasks={myTasks}
+                      myOffers={myOffers}
+                      onRefresh={loadDashboardData}
+                    />
+                  )}
+                  {page === "becomeWorker" && <BecomeWorker onSuccess={loadDashboardData} />}
+                  {page === "myRequests" && (
+                    <MyRequestsSection
+                      currentUser={user}
+                      onRefresh={loadDashboardData}
+                      onBecomeWorker={() => setPage("becomeWorker")}
+                    />
+                  )}
+                  {page === "profile" && (
+                    <ProfileSettings 
+                      user={user} 
+                      onUpdate={setUser} 
+                      onRefresh={loadDashboardData}
+                      onLogout={onLogout}
+                      onBecomeWorker={() => setPage("becomeWorker")}
+                    />
+                  )}
+                  {(page === "admin" || (page === "dashboard" && isAdmin)) && isAdmin && (
+                    <AdminDashboard onNavigate={setPage} />
+                  )}
+                  {page === "manageWorkers" && isAdmin && (
+                    <ManageWorkersPage />
+                  )}
+                  {page === "tasksVerification" && isAdmin && (
+                    <TasksVerificationPage initialTab={tasksTab} />
+                  )}
+                  {page === "userGuide" && <UserGuide />}
+                  {page === "technicalSupport" && <TechnicalSupport />}
+                </Suspense>
+              </DashboardContentErrorBoundary>
             </motion.div>
           )}
         </AnimatePresence>
-        <SimpleFooter />
+        <Footer />
       </main>
     </div>
   )

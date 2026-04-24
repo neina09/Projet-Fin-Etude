@@ -18,6 +18,7 @@ public class TaskService {
 
     private final TaskRepository      taskRepository;
     private final OfferRepository     offerRepository;
+    private final RatingRepository    ratingRepository;
     private final WorkerRepository    workerRepository;
     private final UserRepository      userRepository;
     private final NotificationService notificationService;
@@ -159,11 +160,8 @@ public class TaskService {
         if (task.getStatus() == TaskStatus.IN_PROGRESS)
             throw new BusinessException("Cannot delete a task in progress");
 
-        offerRepository.findByTaskId(id)
-                .forEach(o -> {
-                    o.setStatus(OfferStatus.CLOSED);
-                    offerRepository.save(o);
-                });
+        ratingRepository.deleteByTaskId(id);
+        offerRepository.deleteByTaskId(id);
         taskRepository.delete(task);
     }
 

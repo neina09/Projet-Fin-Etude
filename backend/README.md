@@ -177,3 +177,31 @@ When `APP_SMS_ENABLED=true`, the application now sends verification and password
 - Public uploads are limited to worker profile images only. Identity documents are no longer exposed under `/uploads/**`.
 - Swagger is disabled by default unless `APP_SECURITY_PUBLIC_DOCS_ENABLED=true`.
 - Authentication endpoints now have basic request throttling for login, verification, and password reset flows.
+
+## Production Deployment
+
+The repository now includes:
+
+- `backend/Dockerfile`
+- `Frontend/Dockerfile`
+- `Frontend/nginx.conf`
+- `docker-compose.prod.yml`
+- `.env.production.example`
+
+For a production-style start:
+
+1. Copy `.env.production.example` to `.env`.
+2. Fill in database credentials, JWT secret, and allowed frontend origins.
+3. Build and run:
+
+```powershell
+docker compose -f docker-compose.prod.yml --env-file .env up --build -d
+```
+
+Recommended for real deployment in Mauritania:
+
+- Put Nginx or Cloudflare in front of the stack.
+- Serve both frontend and backend over HTTPS only.
+- Use a managed MySQL instance with backups enabled.
+- Store uploads on persistent disk or object storage.
+- Keep `APP_SECURITY_ALLOWED_ORIGINS` limited to your real domain names.

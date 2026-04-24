@@ -89,11 +89,11 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteTask(
+    public ResponseEntity<Void> deleteTask(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser) {
         taskService.deleteTask(id, currentUser);
-        return ResponseEntity.ok("Task deleted successfully");
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/offers")
