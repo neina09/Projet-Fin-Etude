@@ -36,6 +36,7 @@ import {
 } from "../api"
 import SimpleFooter from "./SimpleFooter"
 import { combineIdentityFiles } from "../utils/imageFiles"
+import { useLanguage } from "../i18n/LanguageContext"
 
 const TaskStatsCharts = lazy(() => import("./TaskStatsCharts"))
 
@@ -45,28 +46,28 @@ const cardItems = (stats) => [
     title: "إجمالي المستخدمين",
     value: stats?.totalUsers || 0,
     icon: Users,
-    iconWrap: "bg-blue-50 text-blue-600 border-blue-100"
+    color: "blue"
   },
   {
     key: "workers",
     title: "إجمالي العمال",
     value: stats?.totalWorkers || 0,
     icon: Briefcase,
-    iconWrap: "bg-amber-50 text-amber-600 border-amber-100"
+    color: "amber"
   },
   {
     key: "pending-workers",
     title: "بانتظار التوثيق",
     value: stats?.pendingWorkers || 0,
     icon: Shield,
-    iconWrap: "bg-rose-50 text-rose-600 border-rose-100"
+    color: "rose"
   },
   {
     key: "open-tasks",
     title: "مهام مفتوحة",
     value: stats?.openTasks || 0,
     icon: ClipboardList,
-    iconWrap: "bg-emerald-50 text-emerald-600 border-emerald-100"
+    color: "emerald"
   }
 ]
 
@@ -90,6 +91,59 @@ function ViewMoreButton({ count, onClick }) {
         <ChevronLeft size={15} />
       </span>
     </motion.button>
+  )
+}
+
+// ─── Task Card Item ───────────────────────────────────────────────────────────
+function TaskCardItem({ task, onApprove, onReject }) {
+  const [expanded, setExpanded] = useState(false)
+  const description = task.description || ""
+  const LIMIT = 80
+  const isLong = description.length > LIMIT
+
+  return (
+    <div className="card group flex flex-col gap-3">
+      {/* العنوان كاملاً دائماً */}
+      <h4 className="text-xs font-black text-slate-900 transition-colors group-hover:text-primary">
+        {task.title}
+      </h4>
+
+      {/* المهنة والعنوان */}
+      <p className="t-label">
+        {task.profession || "مهمة عامة"} • {task.address || "العنوان غير محدد"}
+      </p>
+
+      {/* الوصف مع عرض المزيد */}
+      {description && (
+        <p className="text-[11px] leading-relaxed text-slate-500">
+          {expanded ? description : isLong ? `${description.slice(0, LIMIT)}...` : description}
+          {isLong && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="mr-1 font-bold text-blue-500 hover:underline"
+            >
+              {expanded ? "عرض أقل" : "عرض المزيد"}
+            </button>
+          )}
+        </p>
+      )}
+
+      {/* أزرار القبول والرفض */}
+      <div className="flex items-center gap-2 pt-1">
+        <button
+          onClick={onApprove}
+          className="btn btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700"
+        >
+          قبول
+        </button>
+        <button
+          onClick={onReject}
+          className="btn btn-secondary btn-sm text-red-600 hover:bg-red-50"
+        >
+          إلغاء
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -354,6 +408,7 @@ function AddWorkerModal({ onClose, onSuccess }) {
 }
 
 export default function AdminDashboard({ onNavigate }) {
+  const { dir } = useLanguage()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -495,27 +550,28 @@ export default function AdminDashboard({ onNavigate }) {
   }
 
   return (
-    <div className="page-shell mx-auto max-w-[1400px]" dir="rtl">
-      <div className="mb-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="text-right">
-          <h1 className="text-4xl font-black tracking-tight text-slate-950">
-            لوحة تحكم الإدارة
-          </h1>
-          <p className="mt-2 text-lg font-bold italic text-slate-400">
-            إدارة المنصة والتحقق من البيانات الحقيقية
-          </p>
-        </div>
+    <div className="space-y-10">
+      <section className="app-page-header mt-2">
+        <div className="app-page-header-row">
+          <div className="text-right">
+            <span className="app-page-eyebrow">إدارة النظام</span>
+            <h1 className="app-page-title mt-4">لوحة تحكم الإدارة</h1>
+            <p className="app-page-subtitle">
+              مرحباً بك في منطقة الإدارة. تابع مؤشرات الأداء، تحقق من طلبات التوثيق، وقم بمراجعة المهام المعلقة بكل سهولة.
+            </p>
+          </div>
 
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setShowAddWorker(true)}
-          className="inline-flex items-center justify-center gap-3 rounded-[22px] bg-blue-600 px-8 py-5 text-lg font-black text-white shadow-[0_12px_30px_rgba(37,99,235,0.28)] transition-colors hover:bg-blue-700"
-        >
-          <Plus size={22} />
-          إضافة عامل جديد
-        </motion.button>
-      </div>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
+            <button
+              onClick={() => setShowAddWorker(true)}
+              className="btn btn-primary btn-md w-full sm:w-auto"
+            >
+              <Plus size={18} />
+              إضافة عامل جديد
+            </button>
+          </div>
+        </div>
+      </section>
 
       {error && (
         <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-600">
@@ -523,7 +579,7 @@ export default function AdminDashboard({ onNavigate }) {
         </div>
       )}
 
-      <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
         {cardItems(stats).map((item) => {
           const Icon = item.icon
 
@@ -531,23 +587,27 @@ export default function AdminDashboard({ onNavigate }) {
             <motion.div
               key={item.key}
               whileHover={{ y: -4 }}
-              transition={{ duration: 0.18 }}
-              className="group relative overflow-hidden rounded-[28px] border border-slate-200/70 bg-white px-7 py-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)]"
+              className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md"
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="text-right">
-                  <p className="text-[42px] leading-none font-black tracking-tight text-slate-950">
+                  <p className="text-sm font-bold text-slate-500">{item.title}</p>
+                  <p className="mt-3 text-3xl font-black leading-none text-slate-900">
                     {item.value}
-                  </p>
-                  <p className="mt-3 text-base font-black italic text-slate-400">
-                    {item.title}
                   </p>
                 </div>
 
                 <div
-                  className={`flex h-[72px] w-[72px] items-center justify-center rounded-[24px] border shadow-sm transition-transform duration-200 group-hover:scale-105 ${item.iconWrap}`}
+                  className={[
+                    "flex h-12 w-12 items-center justify-center rounded-2xl border bg-slate-50 shadow-sm transition-transform duration-200 group-hover:scale-105",
+                    item.color === "rose" ? "border-rose-100 text-rose-600" : "",
+                    item.color === "blue" ? "border-blue-100 text-blue-600" : "",
+                    item.color === "amber" ? "border-amber-100 text-amber-600" : "",
+                    item.color === "emerald" ? "border-emerald-100 text-emerald-600" : "",
+                    item.color === "slate" ? "border-slate-200 text-slate-600" : ""
+                  ].join(" ")}
                 >
-                  <Icon size={30} strokeWidth={2.2} />
+                  <Icon size={20} />
                 </div>
               </div>
             </motion.div>
@@ -659,33 +719,12 @@ export default function AdminDashboard({ onNavigate }) {
             ) : stats?.latestPendingTasks?.length ? (
               <div className="space-y-4">
                 {stats.latestPendingTasks.map((task) => (
-                  <div
+                  <TaskCardItem
                     key={task.id}
-                    className="card group flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
-                  >
-                    <div>
-                      <h4 className="mb-1 text-xs font-black text-slate-900 transition-colors group-hover:text-primary">
-                        {task.title}
-                      </h4>
-                      <p className="t-label">
-                        {task.profession || "مهمة عامة"} • {task.address || "العنوان غير محدد"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleTaskAction("approve", task.id)}
-                        className="btn btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700"
-                      >
-                        قبول
-                      </button>
-                      <button
-                        onClick={() => handleTaskAction("reject", task.id)}
-                        className="btn btn-secondary btn-sm text-red-600 hover:bg-red-50"
-                      >
-                        إلغاء
-                      </button>
-                    </div>
-                  </div>
+                    task={task}
+                    onApprove={() => handleTaskAction("approve", task.id)}
+                    onReject={() => handleTaskAction("reject", task.id)}
+                  />
                 ))}
 
                 <ViewMoreButton
@@ -890,8 +929,6 @@ export default function AdminDashboard({ onNavigate }) {
           </div>
         )}
       </AnimatePresence>
-      <SimpleFooter />
     </div>
   )
 }
-

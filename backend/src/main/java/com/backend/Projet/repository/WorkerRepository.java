@@ -43,6 +43,10 @@ public interface WorkerRepository extends JpaRepository<Worker, Long> {
     @EntityGraph(attributePaths = {"user"})
     Page<Worker>     findByVerificationStatus(WorkerVerificationStatus verificationStatus, Pageable pageable);
 
+    @Override
+    @EntityGraph(attributePaths = {"user"})
+    List<Worker> findAll(Sort sort);
+
     long             countByVerificationStatus(WorkerVerificationStatus verificationStatus);
 
     @EntityGraph(attributePaths = {"user"})

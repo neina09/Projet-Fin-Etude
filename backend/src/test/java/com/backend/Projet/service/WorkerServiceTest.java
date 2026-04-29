@@ -7,7 +7,10 @@ import com.backend.Projet.model.User;
 import com.backend.Projet.model.Worker;
 import com.backend.Projet.model.WorkerVerificationStatus;
 import com.backend.Projet.exception.UnauthorizedException;
+import com.backend.Projet.repository.BookingRepository;
+import com.backend.Projet.repository.OfferRepository;
 import com.backend.Projet.repository.RatingRepository;
+import com.backend.Projet.repository.TaskRepository;
 import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import org.springframework.mock.web.MockMultipartFile;
@@ -39,6 +42,15 @@ class WorkerServiceTest {
     private RatingRepository ratingRepository;
 
     @Mock
+    private TaskRepository taskRepository;
+
+    @Mock
+    private BookingRepository bookingRepository;
+
+    @Mock
+    private OfferRepository offerRepository;
+
+    @Mock
     private FileStorageService fileStorageService;
 
     @Mock
@@ -51,6 +63,9 @@ class WorkerServiceTest {
         workerService = new WorkerService(
                 workerRepository,
                 ratingRepository,
+                taskRepository,
+                bookingRepository,
+                offerRepository,
                 userRepository,
                 new WorkerMapper(),
                 fileStorageService,
@@ -117,5 +132,36 @@ class WorkerServiceTest {
         assertEquals(WorkerVerificationStatus.PENDING, response.getVerificationStatus());
         assertEquals("/uploads/workers/documents/demo.pdf", response.getIdentityDocumentUrl());
         verify(notificationService).sendNotificationToRole(eq(Role.ADMIN), any(), any());
+    }
+
+    @Test
+    void deleteWorkerShouldClearReferencesBeforeDeletingWorker() {
+        User admin = new User();
+        admin.setRole(Role.ADMIN);
+
+        User workerUser = new User();
+        workerUser.setId(9L);
+        workerUser.setRole(Role.WORKER);
+
+        Worker worker = Worker.builder()
+                .id(10L)
+                .user(workerUser)
+                .imageUrl("/uploads/workers/profile.jpg")
+                .identityDocumentUrl("/uploads/workers/id.pdf")
+                .build();
+
+        when(workerRepository.findById(10L)).thenReturn(Optional.of(worker));
+
+        workerService.deleteWorker(10L, admin);
+
+        assertEquals(Role.USER, workerUser.getRole());
+        verify(userRepository).save(workerUser);
+        verify(ratingRepository).deleteByWorkerId(10L);
+        verify(offerRepository).deleteByWorkerId(10L);
+        verify(bookingRepository).deleteByWorkerId(10L);
+        verify(taskRepository).clearAssignedWorkerByWorkerId(10L);
+        verify(fileStorageService).deleteStoredFile("/uploads/workers/profile.jpg");
+        verify(fileStorageService).deleteStoredFile("/uploads/workers/id.pdf");
+        verify(workerRepository).delete(worker);
     }
 }

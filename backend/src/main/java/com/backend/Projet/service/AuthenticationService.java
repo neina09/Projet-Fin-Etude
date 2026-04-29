@@ -20,6 +20,7 @@ import com.backend.Projet.repository.TaskRepository;
 import com.backend.Projet.repository.UserRepository;
 import com.backend.Projet.repository.WorkerRepository;
 import com.backend.Projet.util.MauritaniaPhoneUtils;
+import com.backend.Projet.util.PasswordPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -40,7 +41,7 @@ public class AuthenticationService {
     private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int VERIFICATION_CODE_LENGTH = 6;
-    private static final int RESET_TOKEN_LENGTH = 8;
+    private static final int RESET_TOKEN_LENGTH = 6;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -86,6 +87,7 @@ public class AuthenticationService {
     @Transactional
     public UserResponseDto signup(RegisterUserDto input) {
         String normalizedPhone = MauritaniaPhoneUtils.normalize(input.getPhone());
+        PasswordPolicy.validateOrThrow(input.getPassword());
         log.info("Signup attempt for phone {}", maskPhone(normalizedPhone));
         if (userRepository.findByPhone(normalizedPhone).isPresent()) {
             log.warn("Phone already in use for {}", maskPhone(normalizedPhone));
@@ -175,6 +177,7 @@ public class AuthenticationService {
 
     @Transactional
     public void resetPassword(ResetPasswordDto input) {
+        PasswordPolicy.validateOrThrow(input.getNewPassword());
         LocalDateTime now = LocalDateTime.now();
         User user = userRepository.findByResetPasswordExpiresAtAfter(now).stream()
                 .filter(candidate -> candidate.getResetPasswordToken() != null)
@@ -192,6 +195,7 @@ public class AuthenticationService {
         if (!passwordEncoder.matches(input.getCurrentPassword(), currentUser.getPassword())) {
             throw new BusinessException("Current password is incorrect");
         }
+        PasswordPolicy.validateOrThrow(input.getNewPassword());
         currentUser.setPassword(passwordEncoder.encode(input.getNewPassword()));
         userRepository.save(currentUser);
     }

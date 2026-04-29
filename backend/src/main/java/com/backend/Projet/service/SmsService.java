@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
@@ -57,9 +58,8 @@ public class SmsService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Validation-token", validationToken);
-
         Map<String, String> body = Map.of(
-                "phone", phone,
+                "phone", phone.replaceAll("\\D", ""),
                 "lang", lang,
                 "code", code
         );
@@ -72,12 +72,21 @@ public class SmsService {
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 log.info("SMS sent to {}. Balance: {}", maskPhone(phone), response.getBody().get("balance"));
             } else {
-                log.error("Chinguisoft SMS error: status={}", response.getStatusCode());
+                log.error("Chinguisoft SMS error: status={}, body={}", response.getStatusCode(), response.getBody());
                 throw new BusinessException("Failed to send SMS");
             }
 
         } catch (BusinessException ex) {
             throw ex;
+        } catch (HttpStatusCodeException ex) {
+            log.error(
+                    "Chinguisoft HTTP error for {}: status={}, body={}",
+                    maskPhone(phone),
+                    ex.getStatusCode(),
+                    ex.getResponseBodyAsString(),
+                    ex
+            );
+            throw new BusinessException("Failed to send SMS");
         } catch (Exception ex) {
             log.error("Unexpected SMS error for {}: {}", maskPhone(phone), ex.getMessage(), ex);
             throw new BusinessException("Failed to send SMS");

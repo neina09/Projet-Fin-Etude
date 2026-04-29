@@ -14,11 +14,13 @@ import {
   Phone,
   Star,
   X,
-  ShieldCheck
+  ShieldCheck,
+  User
 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   approveTask,
+  cancelTaskRequest,
   rejectTask,
   verifyWorker,
   rejectWorker,
@@ -51,23 +53,25 @@ function Pagination({ page, totalPages, onPageChange }) {
       >
         <ChevronRight size={18} />
       </button>
-      {pages.map((p, index) => (
-        p === "..."
-          ? <span key={`dots-${index}`} className="flex h-10 w-10 items-center justify-center font-bold text-slate-400">...</span>
-          : (
-            <button
-              key={p}
-              onClick={() => onPageChange(p)}
-              className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black shadow-sm transition-all ${
-                page === p
-                  ? "bg-[#1d4ed8] text-white shadow-blue-500/30"
-                  : "border border-slate-100 bg-white text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {p}
-            </button>
-          )
-      ))}
+      {pages.map((p, index) =>
+        p === "..." ? (
+          <span key={`dots-${index}`} className="flex h-10 w-10 items-center justify-center font-bold text-slate-400">
+            ...
+          </span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onPageChange(p)}
+            className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black shadow-sm transition-all ${
+              page === p
+                ? "bg-[#1d4ed8] text-white shadow-blue-500/30"
+                : "border border-slate-100 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {p}
+          </button>
+        )
+      )}
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page === totalPages}
@@ -153,8 +157,17 @@ function WorkerModal({ worker, onClose, onAction }) {
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-200">ملف العامل</p>
             <h2 className="mt-2 text-2xl font-black">{worker.name}</h2>
           </div>
-          <button onClick={onClose} className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 transition-colors hover:bg-white/20">
+          <button
+            onClick={onClose}
+            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 transition-colors hover:bg-white/20"
+          >
             <X size={20} />
+          </button>
+          <button
+            onClick={() => { onAction("cancel", task.id); onClose() }}
+            className="flex flex-1 items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-black text-slate-600 transition-colors hover:bg-slate-50"
+          >
+            <X size={18} /> Ø¥Ù„ØºØ§Ø¡ Ø§Ù„Ù…Ù‡Ù…Ø©
           </button>
         </div>
 
@@ -162,7 +175,11 @@ function WorkerModal({ worker, onClose, onAction }) {
           <div className="flex items-center gap-5 rounded-[2rem] border border-gray-100 bg-gray-50 p-5">
             <div className="h-20 w-20 overflow-hidden rounded-2xl border border-gray-200 bg-white">
               {worker.imageUrl && (
-                <img src={resolveAssetUrl(worker.imageUrl)} alt={worker.name} className="h-full w-full object-cover" />
+                <img
+                  src={resolveAssetUrl(worker.imageUrl)}
+                  alt={worker.name}
+                  className="h-full w-full object-cover"
+                />
               )}
             </div>
             <div className="flex-1">
@@ -182,8 +199,12 @@ function WorkerModal({ worker, onClose, onAction }) {
               { icon: Star, label: "التقييم", value: Number(worker.averageRating || 0).toFixed(1) }
             ].map(({ icon: Icon, label, value, ltr }) => (
               <div key={label} className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                <div className="mb-2 flex items-center gap-2 text-gray-500"><Icon size={15} /> {label}</div>
-                <p className="text-sm font-black text-gray-900" dir={ltr ? "ltr" : undefined}>{value}</p>
+                <div className="mb-2 flex items-center gap-2 text-gray-500">
+                  <Icon size={15} /> {label}
+                </div>
+                <p className="text-sm font-black text-gray-900" dir={ltr ? "ltr" : undefined}>
+                  {value}
+                </p>
               </div>
             ))}
           </div>
@@ -193,16 +214,27 @@ function WorkerModal({ worker, onClose, onAction }) {
               <h4 className="mb-4 text-sm font-black text-gray-900">وثيقة الهوية</h4>
               <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
                 {identityLoading && (
-                  <div className="flex min-h-[200px] items-center justify-center text-sm font-bold text-gray-400">جارٍ التحميل...</div>
+                  <div className="flex min-h-[200px] items-center justify-center text-sm font-bold text-gray-400">
+                    جارٍ التحميل...
+                  </div>
                 )}
                 {!identityLoading && identityError && (
                   <div className="p-6 text-center text-sm font-bold text-red-600">{identityError}</div>
                 )}
-                {!identityLoading && !identityError && identityPreview?.objectUrl && (
-                  String(identityPreview.mediaType || "").includes("pdf")
-                    ? <iframe title="وثيقة الهوية" src={identityPreview.objectUrl} className="h-[28rem] w-full bg-white" />
-                    : <img src={identityPreview.objectUrl} alt="وثيقة الهوية" className="max-h-[28rem] w-full object-contain p-2" />
-                )}
+                {!identityLoading && !identityError && identityPreview?.objectUrl &&
+                  (String(identityPreview.mediaType || "").includes("pdf") ? (
+                    <iframe
+                      title="وثيقة الهوية"
+                      src={identityPreview.objectUrl}
+                      className="h-[28rem] w-full bg-white"
+                    />
+                  ) : (
+                    <img
+                      src={identityPreview.objectUrl}
+                      alt="وثيقة الهوية"
+                      className="max-h-[28rem] w-full object-contain p-2"
+                    />
+                  ))}
               </div>
             </div>
           )}
@@ -255,6 +287,195 @@ function WorkerModal({ worker, onClose, onAction }) {
   )
 }
 
+// ─── Task Item ────────────────────────────────────────────────────────────────
+function TaskItem({ task, onAction }) {
+  const [descExpanded, setDescExpanded] = useState(false)
+  const [addrExpanded, setAddrExpanded] = useState(false)
+
+  const description = task.description || ""
+  const address = task.address || ""
+
+  const DESC_LIMIT = 100
+  const ADDR_LIMIT = 40
+
+  const isDescLong = description.length > DESC_LIMIT
+  const isAddrLong = address.length > ADDR_LIMIT
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:shadow-md"
+    >
+      <div className="absolute right-0 top-0 bottom-0 w-1 bg-amber-400 opacity-50" />
+
+      {/* Header: user info */}
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+            {task.userImageUrl ? (
+              <img src={resolveAssetUrl(task.userImageUrl)} className="h-full w-full object-cover" alt="" />
+            ) : (
+              <User size={18} className="text-slate-300" />
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-800">{task.userName || "عميل"}</p>
+            <p className="text-[10px] font-bold text-slate-400">بانتظار المراجعة</p>
+          </div>
+        </div>
+        <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black text-amber-700">
+          مهمة جديدة
+        </span>
+      </div>
+
+      {/* Title - always full */}
+      <h3 className="mb-2 text-base font-black text-slate-900">{task.title}</h3>
+
+      {/* Description with show more */}
+      {description && (
+        <p className="mb-4 text-[13px] leading-relaxed text-slate-500">
+          {descExpanded ? description : isDescLong ? `${description.slice(0, DESC_LIMIT)}...` : description}
+          {isDescLong && (
+            <button
+              onClick={() => setDescExpanded((v) => !v)}
+              className="mr-1 font-bold text-blue-500 hover:underline"
+            >
+              {descExpanded ? "عرض أقل" : "عرض المزيد"}
+            </button>
+          )}
+        </p>
+      )}
+
+      {/* Tags: profession + address */}
+      <div className="mb-5 flex flex-wrap gap-2">
+        {task.profession && (
+          <span className="inline-flex items-center gap-1 rounded-lg border border-blue-100 bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-600">
+            <Briefcase size={10} /> {task.profession}
+          </span>
+        )}
+        {address && (
+  <span className="inline-flex items-center gap-1 rounded-lg border border-slate-100 bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-500">
+    <MapPin size={10} className="text-blue-400" />
+    {address.split(",")[0]}
+  </span>
+)}
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex gap-2 border-t border-slate-50 pt-4">
+        <button
+          onClick={() => onAction("approve", task.id)}
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-xs font-black text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-emerald-200"
+        >
+          <CheckCircle size={16} /> قبول
+        </button>
+        <button
+          onClick={() => onAction("reject", task.id)}
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 py-3 text-xs font-black text-red-600 transition-all hover:bg-red-100"
+        >
+          <XCircle size={16} /> رفض
+        </button>
+        <button
+          onClick={() => onAction("cancel", task.id)}
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3 text-xs font-black text-slate-600 transition-all hover:bg-slate-50"
+        >
+          <X size={16} className="shrink-0" />
+          <span>{"\u0625\u0644\u063A\u0627\u0621"}</span>
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
+function TaskModal({ task, onClose, onAction }) {
+  if (!task) return null
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-md">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 20 }}
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[2.5rem] border border-gray-100 bg-white shadow-2xl"
+        dir="rtl"
+      >
+        <div className="flex items-center justify-between bg-gradient-to-l from-amber-500 to-orange-600 px-8 py-6 text-white">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-100">تفاصيل المهمة</p>
+            <h2 className="mt-2 text-2xl font-black">{task.title}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 transition-colors hover:bg-white/20"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-6 overflow-y-auto p-8">
+          <div className="flex items-center gap-5 rounded-[2rem] border border-gray-100 bg-gray-50 p-5">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm">
+              <ClipboardList className="text-amber-500" size={32} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-black text-gray-900">{task.title}</h3>
+              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
+                <ShieldCheck size={12} /> بانتظار المراجعة
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { icon: Briefcase, label: "المهنة المطلوبة", value: task.profession || "غير محددة" },
+              { icon: MapPin, label: "الموقع", value: task.address || "غير محدد" },
+              { icon: User, label: "صاحب الطلب", value: task.userName || "عميل" },
+              { icon: Star, label: "حالة الطلب", value: "جديد" }
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                <div className="mb-2 flex items-center gap-2 text-gray-500">
+                  <Icon size={15} /> {label}
+                </div>
+                <p className="text-sm font-black text-gray-900">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
+            <h4 className="mb-3 text-sm font-black text-gray-900">وصف المشكلة / المهمة</h4>
+            <p className="text-sm font-bold leading-relaxed text-gray-500">
+              {task.description || "لا يوجد وصف متوفر."}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-4 border-t border-gray-100 bg-gray-50 px-8 py-6">
+          <button
+            onClick={() => { onAction("approve", task.id); onClose() }}
+            className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-black text-white transition-colors hover:bg-emerald-700"
+          >
+            <CheckCircle size={18} /> قبول المهمة
+          </button>
+          <button
+            onClick={() => { onAction("reject", task.id); onClose() }}
+            className="flex flex-1 items-center justify-center gap-3 rounded-2xl border border-red-200 bg-white px-6 py-4 text-sm font-black text-red-600 transition-colors hover:bg-red-50"
+          >
+            <XCircle size={18} /> رفض المهمة
+          </button>
+          <button
+            onClick={() => { onAction("cancel", task.id); onClose() }}
+            className="flex flex-1 items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-black text-slate-600 transition-colors hover:bg-slate-50"
+          >
+            <X size={18} />
+            {"\u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u0645\u0647\u0645\u0629"}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 const TABS = [
   { id: "tasks", label: "مراجعة المهام", icon: ClipboardList },
   { id: "verification", label: "توثيق العمال", icon: Shield }
@@ -266,6 +487,7 @@ export default function TasksVerificationPage({ initialTab = "tasks" }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [selectedWorker, setSelectedWorker] = useState(null)
+  const [selectedTask, setSelectedTask] = useState(null)
 
   const [tasks, setTasks] = useState([])
   const [workers, setWorkers] = useState([])
@@ -341,6 +563,7 @@ export default function TasksVerificationPage({ initialTab = "tasks" }) {
   const handleTaskAction = async (action, taskId) => {
     try {
       if (action === "approve") await approveTask(taskId)
+      else if (action === "cancel") await cancelTaskRequest(taskId)
       else await rejectTask(taskId)
       handleRefresh()
     } catch (err) {
@@ -360,24 +583,26 @@ export default function TasksVerificationPage({ initialTab = "tasks" }) {
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-[1400px] bg-[#F8FAFC] px-4 py-8 text-right lg:px-8" dir="rtl">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">المهام والتوثيق</h1>
-          <p className="mt-1 text-sm font-medium text-gray-400">
-            المهام التي تحتاج موافقة • طلبات توثيق العمال
-          </p>
+    <div className="space-y-8" dir="rtl">
+      <section className="app-page-header mt-2">
+        <div className="app-page-header-row">
+          <div>
+            <span className="app-page-eyebrow">المراجعة والتدقيق</span>
+            <h1 className="app-page-title mt-4">المهام والتوثيق</h1>
+            <p className="app-page-subtitle">
+              المهام التي تحتاج موافقة • طلبات توثيق العمال
+            </p>
+          </div>
+          <button onClick={handleRefresh} className="btn btn-secondary btn-md gap-2">
+            <RefreshCw size={15} /> تحديث البيانات
+          </button>
         </div>
-        <button
-          onClick={handleRefresh}
-          className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-black text-gray-600 shadow-sm transition-all hover:border-blue-300 hover:text-blue-600"
-        >
-          <RefreshCw size={15} /> تحديث
-        </button>
-      </div>
+      </section>
 
       {error && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-600">{error}</div>
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-600">
+          {error}
+        </div>
       )}
 
       <div className="mb-8 flex w-fit gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm">
@@ -393,9 +618,11 @@ export default function TasksVerificationPage({ initialTab = "tasks" }) {
           >
             <Icon size={16} />
             {label}
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
-              activeTab === id ? "bg-white/20 text-white" : "bg-red-50 text-red-500"
-            }`}>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
+                activeTab === id ? "bg-white/20 text-white" : "bg-red-50 text-red-500"
+              }`}
+            >
               {id === "tasks" ? totalPendingTasks : totalPendingWorkers}
             </span>
           </button>
@@ -415,48 +642,9 @@ export default function TasksVerificationPage({ initialTab = "tasks" }) {
               <div className="py-20 text-center text-sm font-bold text-gray-400">جارٍ تحميل المهام...</div>
             ) : tasks.length ? (
               <>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                   {tasks.map((task) => (
-                    <motion.div
-                      key={task.id}
-                      initial={{ opacity: 0, scale: 0.97 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex flex-col justify-between gap-4 rounded-2xl border border-yellow-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
-                    >
-                      <div>
-                        <div className="mb-3 flex items-start justify-between gap-2">
-                          <h4 className="leading-snug font-black text-gray-900">{task.title}</h4>
-                          <span className="shrink-0 rounded-full bg-yellow-50 px-3 py-1 text-[10px] font-black text-yellow-700">
-                            بانتظار الموافقة
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-xs font-bold text-gray-400">
-                          {task.profession && (
-                            <span className="flex items-center gap-1"><Briefcase size={11} /> {task.profession}</span>
-                          )}
-                          {task.address && (
-                            <span className="flex items-center gap-1"><MapPin size={11} /> {task.address}</span>
-                          )}
-                        </div>
-                        {task.description && (
-                          <p className="mt-3 line-clamp-2 text-xs font-medium text-gray-400">{task.description}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2 border-t border-gray-50 pt-4">
-                        <button
-                          onClick={() => handleTaskAction("approve", task.id)}
-                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-50 py-2.5 text-xs font-black text-emerald-700 transition-colors hover:bg-emerald-100"
-                        >
-                          <CheckCircle size={14} /> قبول
-                        </button>
-                        <button
-                          onClick={() => handleTaskAction("reject", task.id)}
-                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-red-50 py-2.5 text-xs font-black text-red-700 transition-colors hover:bg-red-100"
-                        >
-                          <XCircle size={14} /> رفض
-                        </button>
-                      </div>
-                    </motion.div>
+                    <TaskItem key={task.id} task={task} onAction={handleTaskAction} />
                   ))}
                 </div>
                 <Pagination page={taskPage} totalPages={taskTotalPages} onPageChange={setTaskPage} />
@@ -496,7 +684,11 @@ export default function TasksVerificationPage({ initialTab = "tasks" }) {
                       <div className="flex items-center gap-4">
                         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
                           {worker.imageUrl && (
-                            <img src={resolveAssetUrl(worker.imageUrl)} alt={worker.name} className="h-full w-full object-cover" />
+                            <img
+                              src={resolveAssetUrl(worker.imageUrl)}
+                              alt={worker.name}
+                              className="h-full w-full object-cover"
+                            />
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -545,8 +737,14 @@ export default function TasksVerificationPage({ initialTab = "tasks" }) {
             onAction={handleWorkerAction}
           />
         )}
+        {selectedTask && (
+          <TaskModal
+            task={selectedTask}
+            onClose={() => setSelectedTask(null)}
+            onAction={handleTaskAction}
+          />
+        )}
       </AnimatePresence>
     </div>
   )
 }
-

@@ -1,5 +1,6 @@
 import React from "react"
 import { ArrowRight, Phone, KeyRound, ChevronRight } from "lucide-react"
+import { useLanguage } from "../../i18n/LanguageContext"
 
 function StatusMessage({ error, success }) {
   if (error) {
@@ -32,42 +33,42 @@ export default function ForgotPassword({
   error,
   success
 }) {
+  const { dir, isArabic, t } = useLanguage()
+
   return (
-    <div className="w-full max-w-xl animate-in fade-in zoom-in-95 duration-500" dir="rtl">
-      <div className="auth-card p-10 text-center relative overflow-hidden">
-        {/* Background Accent */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-bl-[5rem] -z-10" />
+    <div className="w-full max-w-xl animate-in fade-in zoom-in-95 duration-500" dir={dir}>
+      <div className="auth-card relative overflow-hidden p-10 text-center">
+        <div className="absolute right-0 top-0 -z-10 h-32 w-32 rounded-bl-[5rem] bg-blue-50/50" />
 
         <button
           onClick={onBack}
           className="group mb-8 flex items-center gap-2 text-sm font-bold text-slate-400 transition-colors hover:text-blue-600"
         >
-          <ChevronRight size={18} className="transition-transform group-hover:translate-x-1" />
-          العودة لتسجيل الدخول
+          <ChevronRight size={18} className={`transition-transform ${isArabic ? "group-hover:translate-x-1" : "rotate-180 group-hover:-translate-x-1"}`} />
+          {t("auth.backToLogin")}
         </button>
 
-        {/* Brand Icon */}
         <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-[2.5rem] bg-blue-50 text-blue-600">
           <KeyRound size={40} />
         </div>
 
-        <h2 className="mb-4 text-3xl font-black text-slate-800 tracking-tight">استعادة كلمة المرور</h2>
-        <p className="mb-10 text-slate-400 font-medium leading-relaxed max-w-xs mx-auto">
-          أدخل رقم هاتفك وسنرسل لك رمزاً لإعادة تعيين كلمة المرور عبر رسالة نصية قصيرة.
+        <h2 className="mb-4 text-3xl font-black tracking-tight text-slate-800">{t("auth.forgotTitle")}</h2>
+        <p className="mx-auto mb-10 max-w-xs font-medium leading-relaxed text-slate-400">
+          {t("auth.forgotSubtitle")}
         </p>
 
         <StatusMessage error={error} success={success} />
 
         <div className="space-y-8">
-          <div className="space-y-2 text-right">
-            <label className="auth-label">رقم الهاتف</label>
+          <div className={`space-y-2 ${isArabic ? "text-right" : "text-left"}`}>
+            <label className="auth-label">{t("auth.phone")}</label>
             <div className="auth-input-group">
               <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="tel"
-                placeholder="05XXXXXXXX"
+                placeholder={t("auth.forgotPlaceholder")}
                 value={forgotPhone}
-                onChange={(e) => setForgotPhone(e.target.value)}
+                onChange={(event) => setForgotPhone(event.target.value)}
                 className="auth-input pr-12 text-left"
                 dir="ltr"
                 required
@@ -78,10 +79,10 @@ export default function ForgotPassword({
           <button
             onClick={handleForgotPassword}
             disabled={loading || !forgotPhone}
-            className="btn-auth-primary w-full h-14 text-lg flex items-center justify-center gap-3 disabled:opacity-70"
+            className="btn-auth-primary flex h-14 w-full items-center justify-center gap-3 text-lg disabled:opacity-70"
           >
-            {loading ? "جاري الإرسال..." : "إرسال رمز الاستعادة"}
-            <ArrowRight size={20} className="rotate-180" />
+            {loading ? t("auth.sending") : t("auth.sendResetCode")}
+            <ArrowRight size={20} className={isArabic ? "rotate-180" : ""} />
           </button>
         </div>
       </div>

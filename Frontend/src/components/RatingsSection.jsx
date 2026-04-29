@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { CheckCircle2, ChevronLeft, ChevronRight, Star } from "lucide-react"
-import { createTaskRating, getMyWorkerProfile, getWorkerRatings } from "../api"
+import { createRating, createTaskRating, getMyWorkerProfile, getWorkerRatings } from "../api"
 
-const ITEMS_PER_PAGE = 4
+const ITEMS_PER_PAGE = 15
 
 const Pagination = ({ page, totalPages, onChange }) => {
   if (totalPages <= 1) return null
@@ -29,12 +29,20 @@ const ReviewerAvatar = ({ name, imageUrl }) => (
   </div>
 )
 
-export default function RatingsSection({ currentUser, myTasks = [], myOffers = [], onRefresh }) {
+const StarsRow = ({ value, size = 14 }) => (
+  <div className="flex gap-0.5 text-amber-500">
+    {[1, 2, 3, 4, 5].map((index) => (
+      <Star key={index} size={size} fill={index <= value ? "currentColor" : "none"} />
+    ))}
+  </div>
+)
+
+export default function RatingsSection({ currentUser, myTasks = [], myBookings = [], myOffers = [], onRefresh }) {
   const [ratings, setRatings] = useState([])
   const [loading, setLoading] = useState(true)
   const [ratingError, setRatingError] = useState("")
   const [ratingModalOpen, setRatingModalOpen] = useState(false)
-  const [taskToRate, setTaskToRate] = useState(null)
+  const [itemToRate, setItemToRate] = useState(null)
   const [ratingScore, setRatingScore] = useState(5)
   const [ratingComment, setRatingComment] = useState("")
   const [submittingRating, setSubmittingRating] = useState(false)
@@ -71,11 +79,39 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
   }, [isWorker])
 
   const completedTasks = myTasks.filter((task) => String(task.status).toUpperCase() === "COMPLETED")
-  const unratedTasks = completedTasks.filter((task) => !task.rated && !task.isRated && task.assignedWorkerId)
-  const ratedTasks = completedTasks.filter((task) => task.rated || task.isRated || !task.assignedWorkerId)
+  const unratedTasks = completedTasks
+    .filter((task) => !task.rated && !task.isRated && task.assignedWorkerId)
+    .map((task) => ({ ...task, rateType: "task", itemTitle: task.title, itemSubtitle: `المنفذ: ${task.workerName || "عامل"}` }))
+  const ratedTasks = completedTasks
+    .filter((task) => task.rated || task.isRated || !task.assignedWorkerId)
+    .map((task) => ({ ...task, rateType: "task", itemTitle: task.title, itemSubtitle: "خدمة مكتملة ومؤرشفة" }))
 
-  const mainList = isWorker ? ratings : unratedTasks
-  const secondaryList = isWorker ? myOffers : ratedTasks
+  const completedBookings = myBookings.filter((booking) => String(booking.status).toUpperCase() === "COMPLETED")
+  const unratedBookings = completedBookings
+    .filter((booking) => !(booking.isRated ?? booking.rated))
+    .map((booking) => ({
+      ...booking,
+      rateType: "booking",
+      itemTitle: booking.workerName || "حجز مكتمل",
+      itemSubtitle: booking.workerJob || "حجز مكتمل بانتظار تقييمك"
+    }))
+  const ratedBookings = completedBookings
+    .filter((booking) => Boolean(booking.isRated ?? booking.rated))
+    .map((booking) => ({
+      ...booking,
+      rateType: "booking",
+      itemTitle: booking.workerName || "حجز مكتمل",
+      itemSubtitle: "حجز مكتمل ومؤرشف"
+    }))
+
+  const mainList = useMemo(
+    () => (isWorker ? ratings : [...unratedTasks, ...unratedBookings]),
+    [isWorker, ratings, unratedBookings, unratedTasks]
+  )
+  const secondaryList = useMemo(
+    () => (isWorker ? myOffers : [...ratedTasks, ...ratedBookings]),
+    [isWorker, myOffers, ratedBookings, ratedTasks]
+  )
   const mainTotalPages = Math.max(1, Math.ceil(mainList.length / ITEMS_PER_PAGE))
   const secondaryTotalPages = Math.max(1, Math.ceil(secondaryList.length / ITEMS_PER_PAGE))
 
@@ -98,13 +134,18 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
   }, [secondaryList, secondaryPage])
 
   const handleRateSubmit = async () => {
-    if (!taskToRate) return
+    if (!itemToRate) return
 
     setSubmittingRating(true)
     try {
-      await createTaskRating(taskToRate.id, { stars: ratingScore, comment: ratingComment })
+      if (itemToRate.rateType === "booking") {
+        await createRating(itemToRate.id, { stars: ratingScore, comment: ratingComment })
+      } else {
+        await createTaskRating(itemToRate.id, { stars: ratingScore, comment: ratingComment })
+      }
+
       setRatingModalOpen(false)
-      setTaskToRate(null)
+      setItemToRate(null)
       setRatingComment("")
       setRatingScore(5)
       await onRefresh?.()
@@ -131,7 +172,7 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
             <p className="app-page-subtitle">
               {isWorker
                 ? "تابع آراء العملاء ومتوسط تقييمك والعروض النشطة من نفس الصفحة."
-                : "راجع الخدمات المكتملة، أرسل تقييمك، واحتفظ بسجل واضح للخدمات المنجزة."}
+                : "قيّم الأعمال المكتملة من المهام والحجوزات واحتفظ بسجل واضح لكل خدمة تم إنجازها."}
             </p>
           </div>
 
@@ -139,17 +180,19 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
             <div className="mt-4 flex items-center gap-4 rounded-2xl border border-slate-100 bg-white px-6 py-3 shadow-sm md:mt-0">
               <div className="text-3xl font-black text-amber-500">{avgRating}</div>
               <div className="flex flex-col">
-                <div className="flex gap-0.5 text-amber-500">
-                  {[1, 2, 3, 4, 5].map((index) => (
-                    <Star key={index} size={10} fill={index <= Math.round(Number(avgRating)) ? "currentColor" : "none"} />
-                  ))}
-                </div>
+                <StarsRow value={Math.round(Number(avgRating))} size={12} />
                 <p className="t-label">المعدل العام</p>
               </div>
             </div>
           )}
         </div>
       </section>
+
+      {!isWorker && mainList.length === 0 && (
+        <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm font-bold text-blue-800">
+          لا توجد أعمال بانتظار تقييمك حاليًا.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <div className="space-y-6">
@@ -172,9 +215,7 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
                     <div key={rating.id} className="card">
                       <div className="mb-4 flex items-center justify-between">
                         <ReviewerAvatar name={rating.userName} imageUrl={rating.userImageUrl} />
-                        <span className="badge badge-amber">
-                          <Star size={10} fill="currentColor" /> {rating.stars}
-                        </span>
+                        <StarsRow value={Number(rating.stars) || 0} size={13} />
                       </div>
                       <p className="border-r-2 border-slate-100 pr-4 text-xs font-bold italic leading-relaxed text-slate-400">
                         "{rating.comment || "تقييم إيجابي بدون تعليق مكتوب."}"
@@ -184,20 +225,20 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
                   <Pagination page={ratingsPage} totalPages={mainTotalPages} onChange={setRatingsPage} />
                 </>
               )
-            ) : unratedTasks.length === 0 ? (
+            ) : mainList.length === 0 ? (
               <div className="empty-state">تم تقييم جميع الخدمات المكتملة.</div>
             ) : (
               <>
-                {pagedMainList.map((task) => (
-                  <div key={task.id} className="card group flex items-center justify-between">
+                {pagedMainList.map((item) => (
+                  <div key={`${item.rateType}-${item.id}`} className="card group flex items-center justify-between">
                     <div>
-                      <p className="mb-0.5 text-xs font-black text-slate-900">{task.title}</p>
-                      <p className="text-[10px] font-bold text-slate-400">المنفذ: {task.workerName}</p>
+                      <p className="mb-0.5 text-xs font-black text-slate-900">{item.itemTitle}</p>
+                      <p className="text-[10px] font-bold text-slate-400">{item.itemSubtitle}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => {
-                        setTaskToRate(task)
+                        setItemToRate(item)
                         setRatingModalOpen(true)
                       }}
                       className="btn btn-primary btn-sm"
@@ -262,13 +303,13 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
               <div className="empty-state">الأرشيف فارغ حالياً.</div>
             ) : (
               <>
-                {pagedSecondaryList.map((task) => (
-                  <div key={task.id} className="card flex items-center justify-between border-slate-200 bg-slate-50/50">
+                {pagedSecondaryList.map((item) => (
+                  <div key={`${item.rateType}-${item.id}`} className="card flex items-center justify-between border-slate-200 bg-slate-50/50">
                     <div className="flex items-center gap-3">
                       <CheckCircle2 size={16} className="text-emerald-500" />
                       <div>
-                        <p className="text-xs font-black text-slate-800">{task.title}</p>
-                        <p className="text-[10px] font-bold text-slate-400">خدمة مكتملة ومؤرشفة</p>
+                        <p className="text-xs font-black text-slate-800">{item.itemTitle}</p>
+                        <p className="text-[10px] font-bold text-slate-400">{item.itemSubtitle}</p>
                       </div>
                     </div>
                   </div>
@@ -280,13 +321,13 @@ export default function RatingsSection({ currentUser, myTasks = [], myOffers = [
         </div>
       </div>
 
-      {ratingModalOpen && taskToRate && (
+      {ratingModalOpen && itemToRate && (
         <div className="modal-overlay" dir="rtl">
           <div className="modal-box max-w-md">
             <div className="flex items-center justify-between p-8 pb-4">
               <div>
                 <h3 className="text-lg font-black text-slate-900">تقييم الخدمة</h3>
-                <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">{taskToRate.title}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">{itemToRate.itemTitle}</p>
               </div>
               <button type="button" onClick={() => setRatingModalOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-all hover:text-slate-900">
                 ×

@@ -1,6 +1,5 @@
 import React, { useMemo } from "react"
 import {
-  Briefcase,
   ClipboardList,
   LayoutDashboard,
   LogOut,
@@ -11,8 +10,11 @@ import {
   Sparkles
 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
+import Logo from "./Logo"
+import { useLanguage } from "../i18n/LanguageContext"
 
 export default function Sidebar({ page, onNavigate, user, onLogout, isOpen, onClose }) {
+  const { dir, isArabic } = useLanguage()
   const isAdmin = user?.role === "ADMIN"
   const isWorker = user?.role === "WORKER"
 
@@ -45,16 +47,9 @@ export default function Sidebar({ page, onNavigate, user, onLogout, isOpen, onCl
         )}
       </AnimatePresence>
 
-      <aside className={`fixed right-0 top-0 z-50 flex h-screen w-72 flex-col border-l border-slate-100 bg-white transition-all duration-500 ease-in-out lg:translate-x-0 ${isOpen ? "translate-x-0 shadow-2xl" : "translate-x-full"}`}>
+      <aside dir={dir} className={`fixed right-0 top-0 z-50 flex h-screen w-72 flex-col border-l border-slate-100 bg-white transition-all duration-500 ease-in-out lg:translate-x-0 ${isOpen ? "translate-x-0 shadow-2xl" : "translate-x-full"}`}>
         <div className="flex h-24 items-center gap-4 border-b border-slate-50 px-8">
-          <div className="group relative flex h-12 w-12 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-[#1d4ed8] shadow-lg shadow-blue-500/20">
-            <div className="absolute inset-0 translate-y-full bg-white/20 transition-transform duration-500 group-hover:translate-y-0" />
-            <Briefcase size={24} className="relative z-10 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-950">عاملك</h1>
-            <p className="t-label tracking-[0.3em] opacity-70">Aamilak Platform</p>
-          </div>
+          <Logo onClick={() => onNavigate(isAdmin ? "admin" : "dashboard")} className="cursor-pointer" />
         </div>
 
         <nav className="custom-scrollbar flex-1 space-y-2 overflow-y-auto px-4 py-8">
@@ -99,7 +94,7 @@ export default function Sidebar({ page, onNavigate, user, onLogout, isOpen, onCl
                 <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
                 <p className="t-label">حالة الاتصال</p>
               </div>
-              <p className="mb-1 text-sm font-black text-slate-900">{user?.username || "Guest"}</p>
+              <p className="mb-1 text-sm font-black text-slate-900">{user?.username || "ضيف"}</p>
               <p className="t-label opacity-60">ID: {user?.id ? String(user.id).slice(-8).toUpperCase() : "USR"}</p>
             </div>
           </div>

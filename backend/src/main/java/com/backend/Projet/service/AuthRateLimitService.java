@@ -17,20 +17,41 @@ public class AuthRateLimitService {
     private final Map<String, Deque<Instant>> requestBuckets = new ConcurrentHashMap<>();
 
     public void checkRateLimit(String key, int maxAttempts, Duration window, String message) {
+        assertWithinRateLimit(key, maxAttempts, window, message);
+        registerAttempt(key, window);
+    }
+
+    public void assertWithinRateLimit(String key, int maxAttempts, Duration window, String message) {
         Instant now = Instant.now();
         Deque<Instant> bucket = requestBuckets.computeIfAbsent(key, ignored -> new ArrayDeque<>());
 
         synchronized (bucket) {
-            Instant cutoff = now.minus(window);
-            while (!bucket.isEmpty() && bucket.peekFirst().isBefore(cutoff)) {
-                bucket.pollFirst();
-            }
+            pruneExpired(bucket, now, window);
 
             if (bucket.size() >= maxAttempts) {
                 throw new TooManyRequestsException(message);
             }
+        }
+    }
 
+    public void registerAttempt(String key, Duration window) {
+        Instant now = Instant.now();
+        Deque<Instant> bucket = requestBuckets.computeIfAbsent(key, ignored -> new ArrayDeque<>());
+
+        synchronized (bucket) {
+            pruneExpired(bucket, now, window);
             bucket.addLast(now);
+        }
+    }
+
+    public void reset(String key) {
+        requestBuckets.remove(key);
+    }
+
+    private void pruneExpired(Deque<Instant> bucket, Instant now, Duration window) {
+        Instant cutoff = now.minus(window);
+        while (!bucket.isEmpty() && bucket.peekFirst().isBefore(cutoff)) {
+            bucket.pollFirst();
         }
     }
 

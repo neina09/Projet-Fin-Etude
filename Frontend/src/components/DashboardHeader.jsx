@@ -3,6 +3,8 @@ import { Bell, LogOut, Menu, User, X } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import NotificationList from "./NotificationList"
 import {
+  deleteAllNotifications,
+  deleteNotification,
   getMyNotifications,
   getUnreadNotificationsCount,
   isAuthenticationError,
@@ -10,8 +12,8 @@ import {
   markNotificationRead,
   resolveAssetUrl
 } from "../api"
-
-const logo = "/logo.png"
+import Logo from "./Logo"
+import { useLanguage } from "../i18n/LanguageContext"
 
 const normalizeNotification = (notification) => ({
   ...notification,
@@ -19,6 +21,7 @@ const normalizeNotification = (notification) => ({
 })
 
 export default function DashboardHeader({ user, activePage, onNavigate, onLogout }) {
+  const { dir } = useLanguage()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -38,7 +41,7 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
       ])
 
       const list = (Array.isArray(notificationsData) ? notificationsData : []).map(normalizeNotification)
-      setNotifications(list.slice(0, 12))
+      setNotifications(list)
       setUnreadCount(Number(unreadPayload?.count ?? unreadPayload?.unreadCount ?? 0))
     } catch (error) {
       if (isAuthenticationError(error)) {
@@ -86,6 +89,49 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
     }
   }
 
+  const handleDeleteNotification = async (id) => {
+    const targetNotification = notifications.find((item) => item.id === id)
+    const wasUnread = targetNotification ? !targetNotification.isRead : false
+
+    setNotifications((current) => current.filter((item) => item.id !== id))
+    if (wasUnread) {
+      setUnreadCount((current) => Math.max(0, current - 1))
+    }
+
+    try {
+      await deleteNotification(id)
+    } catch (error) {
+      if (isAuthenticationError(error)) {
+        setNotificationsEnabled(false)
+        return
+      }
+
+      fetchNotifications()
+    }
+  }
+
+  const handleDeleteAllNotifications = async () => {
+    if (!window.confirm("هل أنت متأكد من حذف جميع الإشعارات؟")) return
+
+    const previousNotifications = notifications
+    const previousUnreadCount = unreadCount
+
+    setNotifications([])
+    setUnreadCount(0)
+
+    try {
+      await deleteAllNotifications()
+    } catch (error) {
+      if (isAuthenticationError(error)) {
+        setNotificationsEnabled(false)
+        return
+      }
+
+      setNotifications(previousNotifications)
+      setUnreadCount(previousUnreadCount)
+    }
+  }
+
   const navItems = [
     { id: isAdmin ? "admin" : "dashboard", label: "الرئيسية" },
     { id: "workers", label: "الخبراء" },
@@ -101,11 +147,11 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
   ]
 
   return (
-    <header dir="rtl" className="fixed left-0 right-0 top-0 z-50 border-b border-slate-100 bg-white">
+    <header dir={dir} className="fixed left-0 right-0 top-0 z-50 border-b border-slate-100 bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-[88px] items-center justify-between sm:h-[104px]">
           <button onClick={() => onNavigate(isAdmin ? "admin" : "dashboard")} className="flex shrink-0 items-center">
-            <img src={logo} alt="عاملك" className="h-14 w-auto object-contain sm:h-20 lg:h-24" />
+            <Logo />
           </button>
 
           <nav className="hidden items-center gap-8 lg:flex">
@@ -152,6 +198,8 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
                         notifications={notifications}
                         onMarkAsRead={handleMarkRead}
                         onMarkAllAsRead={handleMarkAllRead}
+                        onDelete={handleDeleteNotification}
+                        onDeleteAll={handleDeleteAllNotifications}
                         unreadCount={unreadCount}
                       />
                     </motion.div>
@@ -187,7 +235,6 @@ export default function DashboardHeader({ user, activePage, onNavigate, onLogout
                       className="absolute left-0 z-200 mt-2 w-52 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg shadow-slate-200/50"
                     >
                       <div className="border-b border-slate-50 px-4 py-3">
-                        <p className="mb-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">مسجل كـ</p>
                         <p className="truncate text-sm font-black text-slate-900">{user?.username}</p>
                       </div>
                       <div className="p-1.5">

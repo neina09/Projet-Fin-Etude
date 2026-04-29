@@ -26,6 +26,7 @@ const ProblemCard = lazy(() => import("./ProblemCard"))
 const ProblemForm = lazy(() => import("./ProblemForm"))
 
 const ITEMS_PER_PAGE = 8
+const SEARCH_FETCH_SIZE = 100
 
 const TASK_STATUS_PRIORITY = {
   COMPLETED: 4,
@@ -57,9 +58,37 @@ const mergeTaskCollections = (...collections) => {
   return Array.from(merged.values())
 }
 
+const paginateItems = (items, pageNum, pageSize) => {
+  const start = (pageNum - 1) * pageSize
+  return items.slice(start, start + pageSize)
+}
+
 const LoadingState = ({ message }) => (
   <div className="empty-state animate-pulse">{message}</div>
 )
+
+const matchesSearch = (task, query) => {
+  const normalizedQuery = String(query || "").trim().toLowerCase()
+  if (!normalizedQuery) return true
+
+  const haystack = [
+    task?.title,
+    task?.description,
+    task?.workerName,
+    task?.profession,
+    task?.category,
+    task?.workerJob,
+    task?.specialty,
+    task?.address,
+    task?.city,
+    task?.location
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+
+  return haystack.includes(normalizedQuery)
+}
 
 export default function ProblemBoard({ currentUser, initialTab = "open" }) {
   const location = useLocation()
@@ -89,19 +118,21 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
     if (location.state?.openForm) setShowForm(true)
   }, [initialTab, location.state])
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, searchType])
+
   const fetchTasks = useCallback(async (pageNum = currentPage) => {
     setLoading(true)
     setError("")
 
     const normalizedQuery = searchQuery.trim()
     const openTasksPromise = normalizedQuery
-      ? searchOpenTasks({
-          keyword: searchType === "keyword" ? normalizedQuery : "",
-          address: searchType === "address" ? normalizedQuery : "",
-          profession: searchType === "profession" ? normalizedQuery : "",
-          page: pageNum - 1,
-          size: ITEMS_PER_PAGE
-        })
+      ? Promise.allSettled([
+          searchOpenTasks({ keyword: normalizedQuery, page: 0, size: SEARCH_FETCH_SIZE }),
+          searchOpenTasks({ address: normalizedQuery, page: 0, size: SEARCH_FETCH_SIZE }),
+          searchOpenTasks({ profession: normalizedQuery, page: 0, size: SEARCH_FETCH_SIZE })
+        ])
       : getOpenTasks(pageNum - 1, ITEMS_PER_PAGE)
 
     const [openRes, mineRes, assignedRes, offersRes] = await Promise.allSettled([
@@ -112,15 +143,24 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
     ])
 
     if (openRes.status === "fulfilled") {
-      setProblems(openRes.value?.content || [])
-      setTotalPages(openRes.value?.totalPages || 0)
+      if (normalizedQuery) {
+        const mergedSearchResults = mergeTaskCollections(
+          ...(openRes.value || []).map((result) => result.status === "fulfilled" ? (result.value?.content || []) : [])
+        ).filter((task) => matchesSearch(task, normalizedQuery))
+
+        setTotalPages(Math.max(1, Math.ceil(mergedSearchResults.length / ITEMS_PER_PAGE)))
+        setProblems(paginateItems(mergedSearchResults, pageNum, ITEMS_PER_PAGE))
+      } else {
+        setProblems(openRes.value?.content || [])
+        setTotalPages(openRes.value?.totalPages || 0)
+      }
     }
     if (mineRes.status === "fulfilled") setMyTasks(mineRes.value?.content || mineRes.value || [])
     if (assignedRes.status === "fulfilled") setAssignedTasks(Array.isArray(assignedRes.value) ? assignedRes.value : [])
     if (offersRes.status === "fulfilled") setMyOffers(Array.isArray(offersRes.value) ? offersRes.value : [])
 
     setLoading(false)
-  }, [currentPage, isWorker, searchQuery, searchType])
+  }, [currentPage, isWorker, searchQuery])
 
   useEffect(() => {
     fetchTasks(currentPage)
@@ -129,6 +169,18 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
   const myOffersByTaskId = useMemo(
     () => Object.fromEntries(myOffers.map((offer) => [offer.taskId, offer])),
     [myOffers]
+  )
+
+  const openOwnerTasks = useMemo(
+    () => myTasks
+      .filter((task) => String(task.status || "").toUpperCase() === "OPEN")
+      .filter((task) => matchesSearch(task, searchQuery)),
+    [myTasks, searchQuery]
+  )
+
+  const visibleOpenTasks = useMemo(
+    () => mergeTaskCollections(problems, openOwnerTasks),
+    [openOwnerTasks, problems]
   )
 
   const historyTasks = useMemo(() => mergeTaskCollections(myTasks, assignedTasks), [myTasks, assignedTasks])
@@ -153,16 +205,25 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
       if (decision === "accept") await acceptOffer(offerId)
       else await refuseOffer(offerId)
       await fetchTasks()
-    } catch {
+    } catch (err) {
+      if (err?.message) {
+        setError(err.message)
+        return
+      }
       setError("فشل تسجيل القرار على العرض.")
     }
   }
 
   const handleSelectOffer = async (offerId) => {
     try {
-      await selectOffer(offerId)
+      const selected = await selectOffer(offerId)
       await fetchTasks()
-    } catch {
+      return selected
+    } catch (err) {
+      if (err?.message) {
+        setError(err.message)
+        return
+      }
       setError("فشل اختيار العرض.")
     }
   }
@@ -419,13 +480,15 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
 
       {tab === "open" ? (
         <Suspense fallback={<LoadingState message="جارٍ تحميل الطلبات..." />}>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {loading ? (
-              <LoadingState message="جارٍ تحميل الطلبات..." />
-            ) : problems.length === 0 ? (
-              <div className="empty-state">لا توجد طلبات تطابق بحثك.</div>
+              <div className="col-span-full">
+                <LoadingState message="جارٍ تحميل الطلبات..." />
+              </div>
+            ) : visibleOpenTasks.length === 0 ? (
+              <div className="empty-state col-span-full">لا توجد طلبات تطابق بحثك.</div>
             ) : (
-              problems.map((problem) => (
+              visibleOpenTasks.map((problem) => (
                 <ProblemCard
                   key={problem.id}
                   problem={problem}
@@ -443,12 +506,14 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
                 />
               ))
             )}
-            {renderPagination(totalPages)}
+            <div className="col-span-full">
+              {renderPagination(totalPages)}
+            </div>
           </div>
         </Suspense>
       ) : (
         <Suspense fallback={<LoadingState message="جارٍ تحميل السجل..." />}>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {pagedHistoryTasks.map((problem) => (
               <ProblemCard
                 key={problem.id}
@@ -465,11 +530,13 @@ export default function ProblemBoard({ currentUser, initialTab = "open" }) {
                 onSelectOffer={handleSelectOffer}
               />
             ))}
-            {historyTasks.length === 0 && <div className="empty-state">السجل فارغ حاليًا.</div>}
+            {historyTasks.length === 0 && <div className="empty-state col-span-full">السجل فارغ حاليًا.</div>}
             {pagedHistoryTasks.length === 0 && filteredHistoryTasks.length === 0 && (
-              <div className="empty-state">لا توجد طلبات في هذه الحالة حاليًا.</div>
+              <div className="empty-state col-span-full">لا توجد طلبات في هذه الحالة حاليًا.</div>
             )}
-            {renderPagination(totalHistoryPages)}
+            <div className="col-span-full">
+              {renderPagination(totalHistoryPages)}
+            </div>
           </div>
         </Suspense>
       )}

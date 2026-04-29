@@ -101,6 +101,7 @@ public class SecurityConfiguration {
                             .requestMatchers(HttpMethod.POST, "/api/bookings").authenticated()
                             .requestMatchers(HttpMethod.PATCH, "/api/bookings/**").authenticated()
                             .requestMatchers(HttpMethod.POST, "/api/workers/admin/create/**").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.DELETE, "/api/workers/admin/**").hasRole("ADMIN")
                             .requestMatchers(HttpMethod.GET, "/api/tasks/open", "/api/tasks/open/**").permitAll()
                             .requestMatchers(new RegexRequestMatcher("^/api/tasks/\\d+$", HttpMethod.GET.name())).permitAll()
                             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -127,3 +128,4 @@ public class SecurityConfiguration {
         return source;
     }
 }
+

@@ -180,7 +180,7 @@ class AuthenticationServiceTest {
     void resetPasswordShouldRejectExpiredToken() {
         ResetPasswordDto dto = new ResetPasswordDto();
         dto.setToken("expired-token");
-        dto.setNewPassword("new-secret");
+        dto.setNewPassword("newsecret1");
 
         User user = new User();
         user.setResetPasswordToken("hashed-expired-token");

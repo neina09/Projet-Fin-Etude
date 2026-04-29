@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import { forgotPassword, loginUser, registerUser, resendCode, resetPassword, verifyUser } from "../api"
 import ForgotPassword from "./auth/ForgotPassword"
 import LoginForm from "./auth/LoginForm"
 import ResetPassword from "./auth/ResetPassword"
 import SignupForm from "./auth/SignupForm"
 import VerifyScreen from "./auth/VerifyScreen"
-import { AUTH_STORAGE_KEYS, storeSessionToken } from "../utils/auth"
+import { storeSessionToken } from "../utils/auth"
+import { useLanguage } from "../i18n/LanguageContext"
+import { isStrongPassword, isValidMauritanianPhone, normalizePhoneNumber } from "../utils/security"
 
 export default function AuthForm({ onLoginSuccess, onViewChange }) {
+  const { t } = useLanguage()
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [showVerify, setShowVerify] = useState(false)
@@ -16,17 +19,15 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-
   const [formData, setFormData] = useState({ name: "", phone: "", password: "", confirmPassword: "", userType: "CLIENT" })
   const [verificationCode, setVerificationCode] = useState("")
   const [forgotPhone, setForgotPhone] = useState("")
   const [resetToken, setResetToken] = useState("")
   const [newPassword, setNewPassword] = useState("")
 
-  // Sync internal state with parent view state
   useEffect(() => {
-    if (!onViewChange) return;
-    
+    if (!onViewChange) return
+
     if (showVerify) onViewChange("verify")
     else if (showForgot) onViewChange("forgot")
     else if (showReset) onViewChange("reset")
@@ -41,28 +42,35 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
 
   const handleChange = (event) => {
     const { name, value } = event.target
-    setFormData((current) => ({ ...current, [name]: value }))
+    const nextValue = name === "phone" ? normalizePhoneNumber(value) : value
+    setFormData((current) => ({ ...current, [name]: nextValue }))
     clearMessages()
   }
 
   const handleSignup = async () => {
     if (!formData.name || !formData.phone || !formData.password) {
-      setError("يرجى ملء جميع الحقول.")
-      return
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError("كلمتا المرور غير متطابقتين.")
-      return
-    }
-    // الاسم يجب أن يكون يتكون من حروف و ليكون طويل جدا max 15 حرف
-    const nameRegex = /^[\u0600-\u06FFa-zA-Z ]{1,15}$/
-    if (!nameRegex.test(formData.name)) {
-      setError("الاسم يجب أن يحتوي على حروف فقط وبحد أقصى 15 حرفاً.")
+      setError(t("authValidation.fillAllFields"))
       return
     }
 
-    if (formData.password.length !== 8) {
-      setError("يجب أن تتكون كلمة المرور من 8 خانات بالضبط (أرقام وحروف ورموز).")
+    if (formData.password !== formData.confirmPassword) {
+      setError(t("authValidation.passwordsMismatch"))
+      return
+    }
+
+    if (!isValidMauritanianPhone(formData.phone)) {
+      setError(t("authValidation.invalidPhone"))
+      return
+    }
+
+    const nameRegex = /^[\u0600-\u06FFa-zA-Z ]{1,15}$/
+    if (!nameRegex.test(formData.name)) {
+      setError(t("authValidation.invalidName"))
+      return
+    }
+
+    if (!isStrongPassword(formData.password)) {
+      setError(t("authValidation.passwordLength"))
       return
     }
 
@@ -71,10 +79,10 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
 
     try {
       await registerUser(formData.name, formData.phone, formData.password, formData.userType)
-      setSuccess("تم إنشاء الحساب. أدخل رمز التحقق الذي وصلك عبر الهاتف.")
+      setSuccess(t("authValidation.accountCreated"))
       setShowVerify(true)
     } catch (err) {
-      setError(err.message.includes("Phone already in use") ? "رقم الهاتف مستخدم بالفعل." : (err.message || "فشل إنشاء الحساب."))
+      setError(err.message.includes("Phone already in use") ? t("authValidation.phoneUsed") : (err.message || t("authValidation.signupFailed")))
     } finally {
       setLoading(false)
     }
@@ -82,26 +90,32 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
 
   const handleLogin = async () => {
     if (!formData.phone || !formData.password) {
-      setError("يرجى إدخال رقم الهاتف وكلمة المرور.")
+      setError(t("authValidation.enterPhonePassword"))
+      return
+    }
+
+    if (!isValidMauritanianPhone(formData.phone)) {
+      setError(t("authValidation.invalidPhone"))
       return
     }
 
     setLoading(true)
     clearMessages()
+
     try {
       const data = await loginUser(formData.phone, formData.password)
       storeSessionToken(data.token)
       onLoginSuccess(data.token)
     } catch (err) {
       if (err.message.includes("User not found")) {
-        setError("لا يوجد حساب مرتبط بهذا الرقم.")
+        setError(t("authValidation.userNotFound"))
       } else if (err.message.includes("Account not verified")) {
-        setError("الحساب غير مفعّل بعد. أكمل التحقق أولاً.")
+        setError(t("authValidation.accountNotVerified"))
         setShowVerify(true)
       } else if (err.message.includes("Bad credentials")) {
-        setError("رقم الهاتف أو كلمة المرور غير صحيحين.")
+        setError(t("authValidation.badCredentials"))
       } else {
-        setError(err.message || "فشل تسجيل الدخول.")
+        setError(err.message || t("authValidation.loginFailed"))
       }
       setIsLogin(true)
     } finally {
@@ -111,7 +125,7 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
 
   const handleVerify = async () => {
     if (!verificationCode || verificationCode.length < 6) {
-      setError("أدخل رمز التحقق المكون من 6 خانات.")
+      setError(t("authValidation.enterVerificationCode"))
       return
     }
 
@@ -120,14 +134,14 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
 
     try {
       await verifyUser(formData.phone, verificationCode)
-      setSuccess("تم تفعيل الحساب بنجاح.")
+      setSuccess(t("authValidation.accountVerified"))
       setTimeout(() => {
         setShowVerify(false)
         setIsLogin(true)
         clearMessages()
       }, 1200)
     } catch (err) {
-      setError(err.message.includes("expired") ? "انتهت صلاحية الرمز. اطلب رمزاً جديداً." : "رمز التحقق غير صحيح.")
+      setError(err.message.includes("expired") ? t("authValidation.codeExpired") : t("authValidation.invalidVerificationCode"))
     } finally {
       setLoading(false)
     }
@@ -136,11 +150,12 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
   const handleResend = async () => {
     setLoading(true)
     clearMessages()
+
     try {
       await resendCode(formData.phone)
-      setSuccess("تم إرسال رمز جديد بنجاح.")
+      setSuccess(t("authValidation.newCodeSent"))
     } catch (err) {
-      setError(err.message || "تعذر إرسال رمز جديد.")
+      setError(err.message || t("authValidation.resendFailed"))
     } finally {
       setLoading(false)
     }
@@ -148,19 +163,25 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
 
   const handleForgotPassword = async () => {
     if (!forgotPhone) {
-      setError("أدخل رقم الهاتف أولاً.")
+      setError(t("authValidation.enterPhoneFirst"))
+      return
+    }
+
+    if (!isValidMauritanianPhone(forgotPhone)) {
+      setError(t("authValidation.invalidPhone"))
       return
     }
 
     setLoading(true)
     clearMessages()
+
     try {
       await forgotPassword(forgotPhone)
-      setSuccess("تم إرسال رمز الاستعادة إلى هاتفك.")
+      setSuccess(t("authValidation.resetCodeSent"))
       setShowReset(true)
       setShowForgot(false)
     } catch (err) {
-      setError(err.message || "تعذر إرسال رمز الاستعادة.")
+      setError(err.message || t("authValidation.resetSendFailed"))
     } finally {
       setLoading(false)
     }
@@ -168,26 +189,28 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
 
   const handleResetPassword = async () => {
     if (!resetToken || !newPassword) {
-      setError("يرجى ملء جميع الحقول.")
+      setError(t("authValidation.fillAllFields"))
       return
     }
-    if (newPassword.length !== 8) {
-      setError("يجب أن تتكون كلمة المرور الجديدة من 8 خانات بالضبط.")
+
+    if (!isStrongPassword(newPassword)) {
+      setError(t("authValidation.newPasswordLength"))
       return
     }
 
     setLoading(true)
     clearMessages()
+
     try {
       await resetPassword(resetToken, newPassword)
-      setSuccess("تم تحديث كلمة المرور بنجاح.")
+      setSuccess(t("authValidation.passwordUpdated"))
       setTimeout(() => {
         setShowReset(false)
         setIsLogin(true)
         clearMessages()
       }, 1200)
     } catch (err) {
-      setError(err.message.includes("expired") ? "انتهت صلاحية الرمز. اطلب رمزاً جديداً." : "رمز الاستعادة غير صحيح.")
+      setError(err.message.includes("expired") ? t("authValidation.codeExpired") : t("authValidation.invalidResetCode"))
     } finally {
       setLoading(false)
     }
@@ -222,7 +245,7 @@ export default function AuthForm({ onLoginSuccess, onViewChange }) {
       <ForgotPassword
         forgotPhone={forgotPhone}
         setForgotPhone={(value) => {
-          setForgotPhone(value)
+          setForgotPhone(normalizePhoneNumber(value))
           setError("")
         }}
         handleForgotPassword={handleForgotPassword}

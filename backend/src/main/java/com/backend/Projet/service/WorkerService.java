@@ -11,8 +11,11 @@ import com.backend.Projet.model.Worker;
 import com.backend.Projet.model.WorkerAvailability;
 import com.backend.Projet.model.WorkerVerificationStatus;
 import com.backend.Projet.repository.RatingRepository;
-import com.backend.Projet.repository.WorkerRepository;
+import com.backend.Projet.repository.BookingRepository;
+import com.backend.Projet.repository.OfferRepository;
+import com.backend.Projet.repository.TaskRepository;
 import com.backend.Projet.repository.UserRepository;
+import com.backend.Projet.repository.WorkerRepository;
 import com.backend.Projet.util.MauritaniaPhoneUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -32,6 +35,9 @@ public class WorkerService {
 
     private final WorkerRepository workerRepository;
     private final RatingRepository ratingRepository;
+    private final TaskRepository taskRepository;
+    private final BookingRepository bookingRepository;
+    private final OfferRepository offerRepository;
     private final UserRepository userRepository;
     private final com.backend.Projet.mapper.WorkerMapper workerMapper;
     private final FileStorageService fileStorageService;
@@ -206,6 +212,15 @@ public class WorkerService {
         User workerUser = worker.getUser();
         workerUser.setRole(Role.USER);
         userRepository.save(workerUser);
+
+        // Remove dependent records and detach task assignments before deleting the worker row.
+        ratingRepository.deleteByTaskAssignedWorkerId(worker.getId());
+        taskRepository.clearAssignedWorkerByWorkerId(worker.getId());
+        ratingRepository.deleteByBookingWorkerId(worker.getId());
+        ratingRepository.deleteByWorkerId(worker.getId());
+        offerRepository.deleteByWorkerId(worker.getId());
+        bookingRepository.deleteByWorkerId(worker.getId());
+
         fileStorageService.deleteStoredFile(worker.getImageUrl());
         fileStorageService.deleteStoredFile(worker.getIdentityDocumentUrl());
 
@@ -240,6 +255,7 @@ public class WorkerService {
                 .stream().map(worker -> workerMapper.toDto(worker, true)).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<WorkerResponseDto> getAllWorkersForAdmin(User currentUser) {
         if (currentUser.getRole() != Role.ADMIN) {
             throw new UnauthorizedException("Only admins can view all workers");
@@ -408,3 +424,4 @@ public class WorkerService {
         return workerMapper.toDto(worker, includeSensitiveDetails);
     }
 }
+

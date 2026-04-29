@@ -5,20 +5,23 @@ import ProtectedRoute from "./components/ProtectedRoute"
 import { getMe } from "./api"
 import "leaflet/dist/leaflet.css"
 import { clearStoredSession, hasStoredSession, storeSessionToken } from "./utils/auth"
+import { useLanguage } from "./i18n/LanguageContext"
 
 const LandingPage = lazy(() => import("./pages/LandingPage"))
 const Dashboard = lazy(() => import("./components/Dashboard"))
 const BecomeWorker = lazy(() => import("./components/BecomeWorker"))
 
-function PageLoader({ message = "جارٍ تحميل الصفحة..." }) {
+function PageLoader() {
+  const { dir, t } = useLanguage()
+
   return (
-    <div className="page-shell flex items-center justify-center" dir="rtl">
+    <div className="page-shell flex items-center justify-center" dir={dir}>
       <div className="card-lg">
         <div className="flex flex-col items-center gap-6">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-surface-100 border-t-primary shadow-sm" />
           <div className="text-center">
-            <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-slate-900">{message}</p>
-            <p className="t-label italic">يتم تجهيز المحتوى المطلوب بأفضل جودة ممكنة.</p>
+            <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-slate-900">{t("common.loadingPage")}</p>
+            <p className="t-label italic">{t("common.preparingContent")}</p>
           </div>
         </div>
       </div>
@@ -30,6 +33,7 @@ function App() {
   const [authStatus, setAuthStatus] = useState(hasStoredSession())
   const [checkingSession, setCheckingSession] = useState(hasStoredSession())
   const navigate = useNavigate()
+  const { dir, t } = useLanguage()
 
   useEffect(() => {
     let active = true
@@ -72,13 +76,13 @@ function App() {
 
   if (checkingSession) {
     return (
-      <div className="page-shell flex items-center justify-center" dir="rtl">
+      <div className="page-shell flex items-center justify-center" dir={dir}>
         <div className="card-lg">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-surface-100 border-t-primary" />
             <div>
-              <p className="text-sm font-black text-surface-900">جارٍ التحقق من الجلسة</p>
-              <p className="text-xs font-bold text-surface-400">يتم فحص صلاحية تسجيل الدخول قبل فتح اللوحة.</p>
+              <p className="text-sm font-black text-surface-900">{t("common.checkingSession")}</p>
+              <p className="text-xs font-bold text-surface-400">{t("common.checkingSessionHint")}</p>
             </div>
           </div>
         </div>

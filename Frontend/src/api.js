@@ -1,4 +1,5 @@
 import { AUTH_STORAGE_KEYS, clearStoredSession, getStoredToken } from "./utils/auth"
+import { validateImageFile } from "./utils/security"
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "")
 const OPENROUTESERVICE_API_KEY = import.meta.env.VITE_OPENROUTESERVICE_API_KEY || ""
@@ -91,6 +92,15 @@ const buildHeaders = (extraHeaders = {}, withAuth = false) => {
   return headers
 }
 
+const requiresSecureTransport = (method = "GET", path = "") => {
+  const normalizedMethod = String(method || "GET").toUpperCase()
+
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(normalizedMethod)) return true
+  if (String(path).startsWith("/auth/")) return true
+
+  return false
+}
+
 const toArray = (value) => Array.isArray(value) ? value : []
 
 const fetchWithTimeout = (input, init = {}, timeoutMs = REQUEST_TIMEOUT_MS) => {
@@ -109,16 +119,21 @@ const fetchWithTimeout = (input, init = {}, timeoutMs = REQUEST_TIMEOUT_MS) => {
 
 const parseResponseBody = async (response) => {
   const contentType = response.headers.get("content-type") || ""
+  const rawBody = await response.text()
+
+  if (!rawBody) {
+    return contentType.includes("application/json") ? {} : ""
+  }
 
   if (contentType.includes("application/json")) {
     try {
-      return await response.json()
+      return JSON.parse(rawBody)
     } catch {
-      return response.text()
+      return rawBody
     }
   }
 
-  return response.text()
+  return rawBody
 }
 
 const getErrorMessage = (payload) => {
@@ -146,7 +161,11 @@ const request = async (path, options = {}) => {
   let response
 
   try {
-    response = await fetch(`${BASE_URL}${path}`, options)
+    if (requiresSecureTransport(options.method, path)) {
+      assertSecureAuthTransport()
+    }
+
+    response = await fetchWithTimeout(resolveApiUrl(path), options)
   } catch {
     throw new Error("تعذر الاتصال بالخادم. تأكد من تشغيل الواجهة الخلفية وإعداد عنوان API بشكل صحيح.")
   }
@@ -278,23 +297,29 @@ const normalizeWorkflowStatus = (status, type = "task") => {
   }
 
   const taskAliases = {
-    ASSIGNED: "IN_PROGRESS",
+    // Selecting a worker should not remove the task from the open pool yet.
+    ASSIGNED: "OPEN",
+    // Once the worker accepts, execution is considered started in the UI.
     ACCEPTED: "IN_PROGRESS",
     STARTED: "IN_PROGRESS",
     ACTIVE: "IN_PROGRESS",
     APPROVED: "OPEN",
     PUBLISHED: "OPEN",
+    REJECTED: "OPEN",
+    REFUSED: "OPEN",
     PENDING: "PENDING_REVIEW"
   }
 
   const bookingAliases = {
-    CONFIRMED: "ACCEPTED",
-    APPROVED: "ACCEPTED",
+    CONFIRMED: "IN_PROGRESS",
+    APPROVED: "IN_PROGRESS",
+    ACCEPTED: "IN_PROGRESS",
     DECLINED: "REJECTED",
     REFUSED: "REJECTED"
   }
 
   const offerAliases = {
+    ACCEPTED: "IN_PROGRESS",
     DECLINED: "REFUSED",
     REJECTED: "REFUSED",
     ACTIVE: "IN_PROGRESS",
@@ -314,13 +339,21 @@ const normalizeWorkflowStatus = (status, type = "task") => {
 
 const normalizeTask = (task) => {
   if (!task || typeof task !== "object") return task
+  const normalizedStatus = normalizeWorkflowStatus(task.status, "task")
+  const assignedWorkerId = task.assignedWorkerId != null ? Number(task.assignedWorkerId) : task.assignedWorkerId
+  const assignedWorkerUserId = task.assignedWorkerUserId != null ? Number(task.assignedWorkerUserId) : task.assignedWorkerUserId
+  const hasAssignedWorker = assignedWorkerId != null || assignedWorkerUserId != null
+  const effectiveStatus = normalizedStatus === "IN_PROGRESS" && !hasAssignedWorker
+    ? "OPEN"
+    : normalizedStatus
+
   return {
     ...task,
-    status: normalizeWorkflowStatus(task.status, "task"),
+    status: effectiveStatus,
     id: task.id != null ? Number(task.id) : task.id,
     userId: task.userId != null ? Number(task.userId) : task.userId,
-    assignedWorkerId: task.assignedWorkerId != null ? Number(task.assignedWorkerId) : task.assignedWorkerId,
-    assignedWorkerUserId: task.assignedWorkerUserId != null ? Number(task.assignedWorkerUserId) : task.assignedWorkerUserId,
+    assignedWorkerId,
+    assignedWorkerUserId,
     userImageUrl: resolveAssetUrl(task.userImageUrl),
     assignedWorkerImageUrl: resolveAssetUrl(task.assignedWorkerImageUrl),
     workerName: task.assignedWorkerName || task.workerName || "",
@@ -444,6 +477,7 @@ export const updateProfile = async ({ username, phone }) =>
   })
 
 export const uploadUserImage = async (file) => {
+  validateImageFile(file, "الصورة الشخصية")
   const formData = new FormData()
   formData.append("file", file)
 
@@ -706,11 +740,21 @@ export const updateWorkerProfile = async (workerId, workerData) =>
     })
   )
 
-export const deleteWorkerProfile = async (workerId) =>
-  request(`/api/workers/${workerId}`, {
-    method: "DELETE",
-    headers: buildHeaders({}, true)
-  })
+export const deleteWorkerProfile = async (workerId) => {
+  try {
+    return await request(`/api/workers/admin/${workerId}`, {
+      method: "DELETE",
+      headers: buildHeaders({}, true)
+    })
+  } catch (error) {
+    if (error?.status !== 404) throw error
+
+    return request(`/api/workers/${workerId}`, {
+      method: "DELETE",
+      headers: buildHeaders({}, true)
+    })
+  }
+}
 
 export const updateWorkerAvailability = async (workerId, availability) =>
   normalizeWorker(
@@ -721,6 +765,7 @@ export const updateWorkerAvailability = async (workerId, availability) =>
   )
 
 export const uploadWorkerImage = async (workerId, file) => {
+  validateImageFile(file, "صورة العامل")
   const formData = new FormData()
   formData.append("file", file)
 
@@ -734,6 +779,7 @@ export const uploadWorkerImage = async (workerId, file) => {
 }
 
 export const uploadIdentityDocument = async (workerId, file) => {
+  validateImageFile(file, "وثيقة الهوية")
   const formData = new FormData()
   formData.append("file", file)
 
@@ -862,6 +908,18 @@ export const markNotificationRead = async (notificationId) =>
 export const markAllNotificationsRead = async () =>
   request("/api/notifications/read-all", {
     method: "PATCH",
+    headers: buildHeaders({}, true)
+  })
+
+export const deleteNotification = async (notificationId) =>
+  request(`/api/notifications/${notificationId}`, {
+    method: "DELETE",
+    headers: buildHeaders({}, true)
+  })
+
+export const deleteAllNotifications = async () =>
+  request("/api/notifications/all", {
+    method: "DELETE",
     headers: buildHeaders({}, true)
   })
 

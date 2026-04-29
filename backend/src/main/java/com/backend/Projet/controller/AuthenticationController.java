@@ -1,6 +1,7 @@
 package com.backend.Projet.controller;
 
 import com.backend.Projet.dto.*;
+import com.backend.Projet.exception.BusinessException;
 import com.backend.Projet.model.User;
 import com.backend.Projet.service.AuthRateLimitService;
 import com.backend.Projet.service.AuthenticationService;
@@ -9,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -60,15 +62,43 @@ public class AuthenticationController {
             @Valid @RequestBody LoginUserDto loginUserDto,
             HttpServletRequest request
     ) {
-        enforceRateLimit(
-                "login",
-                request,
-                loginUserDto.getPhone(),
+        String remoteAddress = extractClientIp(request);
+        String normalizedIdentifier = normalizeIdentifier(loginUserDto.getPhone());
+        Duration window = Duration.ofMinutes(loginWindowMinutes);
+        String message = "Too many login attempts. Please try again later.";
+
+        authRateLimitService.assertWithinRateLimit(
+                "login:ip:" + remoteAddress,
                 loginMaxAttempts,
-                loginWindowMinutes,
-                "Too many login attempts. Please try again later."
+                window,
+                message
         );
-        User authenticatedUser = authenticationService.authenticate(loginUserDto);
+
+        if (!normalizedIdentifier.isBlank() && !"unknown".equalsIgnoreCase(normalizedIdentifier)) {
+            authRateLimitService.assertWithinRateLimit(
+                    "login:identifier:" + normalizedIdentifier,
+                    loginMaxAttempts,
+                    window,
+                    message
+            );
+        }
+
+        User authenticatedUser;
+        try {
+            authenticatedUser = authenticationService.authenticate(loginUserDto);
+        } catch (BadCredentialsException | BusinessException ex) {
+            authRateLimitService.registerAttempt("login:ip:" + remoteAddress, window);
+            if (!normalizedIdentifier.isBlank() && !"unknown".equalsIgnoreCase(normalizedIdentifier)) {
+                authRateLimitService.registerAttempt("login:identifier:" + normalizedIdentifier, window);
+            }
+            throw ex;
+        }
+
+        authRateLimitService.reset("login:ip:" + remoteAddress);
+        if (!normalizedIdentifier.isBlank() && !"unknown".equalsIgnoreCase(normalizedIdentifier)) {
+            authRateLimitService.reset("login:identifier:" + normalizedIdentifier);
+        }
+
         String jwtToken = jwtService.generateToken(authenticatedUser);
         LoginResponseDto loginResponse = new LoginResponseDto(jwtToken, jwtService.getExpirationTime());
         return ResponseEntity.ok(loginResponse);
@@ -152,8 +182,17 @@ public class AuthenticationController {
     ) {
         String remoteAddress = extractClientIp(request);
         String normalizedIdentifier = identifier == null ? "unknown" : identifier.trim();
-        String key = action + ":" + remoteAddress + ":" + normalizedIdentifier;
-        authRateLimitService.checkRateLimit(key, maxAttempts, Duration.ofMinutes(windowMinutes), message);
+        Duration window = Duration.ofMinutes(windowMinutes);
+
+        authRateLimitService.checkRateLimit(action + ":ip:" + remoteAddress, maxAttempts, window, message);
+
+        if (!normalizedIdentifier.isBlank() && !"unknown".equalsIgnoreCase(normalizedIdentifier)) {
+            authRateLimitService.checkRateLimit(action + ":identifier:" + normalizedIdentifier, maxAttempts, window, message);
+        }
+    }
+
+    private String normalizeIdentifier(String identifier) {
+        return identifier == null ? "unknown" : identifier.trim();
     }
 
     private String extractClientIp(HttpServletRequest request) {

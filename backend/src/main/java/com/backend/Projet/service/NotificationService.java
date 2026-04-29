@@ -82,6 +82,25 @@ public class NotificationService {
         pushUnreadCount(currentUser.getId());
     }
 
+    @Transactional
+    public void deleteNotification(Long id, User currentUser) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
+
+        if (!notification.getUser().getId().equals(currentUser.getId())) {
+            throw new UnauthorizedException("Not authorized to delete this notification");
+        }
+
+        notificationRepository.delete(notification);
+        pushUnreadCount(currentUser.getId());
+    }
+
+    @Transactional
+    public void deleteAllNotifications(User currentUser) {
+        notificationRepository.deleteByUserId(currentUser.getId());
+        pushUnreadCount(currentUser.getId());
+    }
+
     private void pushUnreadCount(Long userId) {
         NotificationUnreadCountDto unreadCountDto = new NotificationUnreadCountDto(
                 notificationRepository.countByUserIdAndIsReadFalse(userId)

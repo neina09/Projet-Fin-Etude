@@ -11,6 +11,7 @@ import {
 } from "../api"
 import AccountSettings from "./profile/AccountSettings"
 import SecuritySettings from "./profile/SecuritySettings"
+import { isStrongPassword, isValidMauritanianPhone, validateImageFile } from "../utils/security"
 
 export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, onBecomeWorker }) {
   const [username, setUsername] = useState(user?.username || "")
@@ -66,6 +67,11 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
 
   const handleUpdateProfile = async (event) => {
     event.preventDefault()
+    if (!isValidMauritanianPhone(phone)) {
+      publishMessage("error", "يرجى إدخال رقم هاتف موريتاني صحيح.")
+      return
+    }
+
     setLoading(true)
     try {
       const updated = await updateProfile({ username, phone })
@@ -81,6 +87,11 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
 
   const handleChangePassword = async (event) => {
     event.preventDefault()
+    if (!isStrongPassword(newPassword)) {
+      publishMessage("error", "يجب أن تتكون كلمة المرور من 8 إلى 64 خانة وتحتوي على حرف واحد ورقم واحد على الأقل.")
+      return
+    }
+
     setLoading(true)
     try {
       await changePassword(currentPassword, newPassword)
@@ -102,6 +113,7 @@ export default function ProfileSettings({ user, onUpdate, onRefresh, onLogout, o
 
     setLoading(true)
     try {
+      validateImageFile(userImageFile, "الصورة الشخصية")
       const updated = await uploadUserImage(userImageFile)
       onUpdate?.(updated)
 

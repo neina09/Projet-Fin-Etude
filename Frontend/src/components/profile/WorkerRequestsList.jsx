@@ -3,7 +3,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, Clock3, MapPin, Wallet, Wrench
 
 const STATUS_LABELS = {
   PENDING: "قيد الانتظار",
-  ACCEPTED: "مقبول",
+  IN_PROGRESS: "قيد التنفيذ",
   COMPLETED: "مكتمل",
   REJECTED: "مرفوض",
   CANCELLED: "ملغي"
@@ -68,7 +68,7 @@ const formatPrice = (value) => {
 
 const getStatusBadgeClass = (status) => {
   if (status === "PENDING") return "badge-amber"
-  if (status === "ACCEPTED") return "badge-primary"
+  if (status === "IN_PROGRESS") return "badge-primary"
   if (status === "COMPLETED") return "badge-green"
   return "badge-secondary"
 }
@@ -110,91 +110,116 @@ export default function WorkerRequestsList({
                   <span className="badge badge-secondary">{sectionItems.length}</span>
                 </div>
 
-                {sectionItems.map((request) => {
-                  const bookingStatus = String(request.status || "").toUpperCase()
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {sectionItems.map((request) => {
+                    const bookingStatus = String(request.status || "").toUpperCase()
 
-                  return (
-                    <div key={request.id} className="card space-y-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-xs font-black text-blue-700">
-                              {request.userImageUrl ? (
-                                <img src={request.userImageUrl} alt={request.userName || "عميل"} className="h-full w-full rounded-2xl object-cover" />
-                              ) : (
-                                request.userName?.[0] || "ع"
+                    return (
+                      <article key={request.id} className="card w-full p-4">
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-slate-100 bg-slate-900 shadow-sm">
+                                {request.userImageUrl ? (
+                                  <img src={request.userImageUrl} alt={request.userName || "عميل"} className="h-full w-full object-cover" />
+                                ) : (
+                                  <span className="text-[11px] font-black text-white/40">{request.userName?.[0] || "ع"}</span>
+                                )}
+                              </div>
+                              <div className="flex flex-col">
+                                <h4 className="flex items-center gap-1.5 text-[11px] font-black text-slate-800">
+                                  {request.userName || "عميل"}
+                                </h4>
+                                <p className="t-label mt-0 text-[9px]">{formatDateTime(request.bookingDate)}</p>
+                              </div>
+                            </div>
+
+                            <span className={`badge py-0.5 px-2 text-[9px] ${getStatusBadgeClass(bookingStatus)}`}>
+                              {STATUS_LABELS[bookingStatus] || bookingStatus}
+                            </span>
+                          </div>
+
+                          <div className="space-y-0.5">
+                            <h3 className="text-xs font-black leading-snug text-slate-900">طلب خدمة رقم #{request.id}</h3>
+                            <div className="text-[11px] leading-relaxed text-slate-600">
+                              {request.description || "طلب خدمة"}
+                            </div>
+                          </div>
+
+                          <div className="mt-2 flex items-center justify-between border-t border-slate-50 pt-3">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <div className="badge badge-neutral py-0.5 px-1.5 text-[8px] italic">
+                                <MapPin size={8} className="text-blue-600" />
+                                {request.address || "العنوان غير متوفر"}
+                              </div>
+                              <div className="badge badge-primary py-0.5 px-1.5 text-[8px]">
+                                <Wallet size={8} className="ml-1" />
+                                {formatPrice(request.price)}
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                              {bookingStatus === "PENDING" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleBookingAction(request.id, "accept")}
+                                    className="h-6 rounded-lg bg-primary px-3 text-[9px] font-black text-white hover:bg-primary/90"
+                                  >
+                                    قبول
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleBookingAction(request.id, "reject")}
+                                    className="text-[8px] font-black text-rose-400 hover:text-rose-600 hover:underline"
+                                    style={{ padding: '2px 4px' }}
+                                  >
+                                    رفض
+                                  </button>
+                                </>
+                              )}
+
+                              {bookingStatus === "IN_PROGRESS" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleBookingAction(request.id, "complete")}
+                                  className="h-6 rounded-lg bg-emerald-600 px-3 text-[9px] font-black text-white hover:bg-emerald-700"
+                                >
+                                  إنهاء العمل
+                                </button>
                               )}
                             </div>
-                            <div>
-                              <h3 className="text-sm font-black text-slate-900">{request.userName || "عميل"}</h3>
-                              <p className="t-label">طلب رقم #{request.id}</p>
+                          </div>
+
+                          {request.offers?.length ? (
+                            <div className="mt-2 space-y-2 border-t border-slate-50 pt-2">
+                              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">العروض المتاحة</h4>
+                              {request.offers.map((offer) => (
+                                <div key={offer.id} className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                                  <span className="text-[10px] font-bold text-slate-600">{offer.providerName || "مزود"} - {formatPrice(offer.price)}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleBookingAction(request.id, `select_${offer.id}`)}
+                                    className="btn btn-primary btn-xs h-6 px-2 text-[9px]"
+                                  >
+                                    اختيار
+                                  </button>
+                                </div>
+                              ))}
                             </div>
-                          </div>
-                          <p className="text-xs font-bold leading-relaxed text-slate-600">
-                            {request.description || "طلب خدمة"}
-                          </p>
+                          ) : null}
+
+                          {bookingStatus !== "PENDING" && bookingStatus !== "IN_PROGRESS" && (
+                            <div className="flex items-center gap-2 rounded-xl border border-slate-50 bg-slate-50/50 px-3 py-2 text-[9px] font-bold text-slate-400">
+                              <Clock3 size={12} />
+                              هذا الطلب محفوظ في السجل.
+                            </div>
+                          )}
                         </div>
-
-                        <span className={`badge ${getStatusBadgeClass(bookingStatus)}`}>
-                          {STATUS_LABELS[bookingStatus] || bookingStatus}
-                        </span>
-                      </div>
-
-                      <div className="grid gap-3 text-[11px] font-bold text-slate-500 sm:grid-cols-2">
-                        <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
-                          <CalendarDays size={14} className="text-blue-600" />
-                          {formatDateTime(request.bookingDate)}
-                        </div>
-                        <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
-                          <Wallet size={14} className="text-emerald-600" />
-                          {formatPrice(request.price)}
-                        </div>
-                        <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 sm:col-span-2">
-                          <MapPin size={14} className="text-rose-500" />
-                          {request.address || "العنوان غير متوفر"}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        {bookingStatus === "PENDING" && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => handleBookingAction(request.id, "accept")}
-                              className="btn btn-primary btn-sm"
-                            >
-                              قبول الطلب
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleBookingAction(request.id, "reject")}
-                              className="btn btn-secondary btn-sm"
-                            >
-                              رفض
-                            </button>
-                          </>
-                        )}
-
-                        {bookingStatus === "ACCEPTED" && (
-                          <button
-                            type="button"
-                            onClick={() => handleBookingAction(request.id, "complete")}
-                            className="btn btn-primary btn-sm bg-emerald-600 shadow-emerald-500/20 hover:bg-emerald-700"
-                          >
-                            إنهاء العمل
-                          </button>
-                        )}
-
-                        {bookingStatus !== "PENDING" && bookingStatus !== "ACCEPTED" && (
-                          <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-500">
-                            <Clock3 size={14} />
-                            هذا الطلب محفوظ في السجل للرجوع إليه لاحقًا.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+                      </article>
+                    )
+                  })}
+                </div>
               </section>
             )
           })

@@ -30,6 +30,7 @@ import {
   uploadWorkerImage
 } from "../api"
 import { combineIdentityFiles } from "../utils/imageFiles"
+import { useLanguage } from "../i18n/LanguageContext"
 
 const EMPTY_FORM = {
   name: "",
@@ -517,6 +518,7 @@ function WorkerDetailsModal({ worker, onClose, onEdit, onDelete }) {
 }
 
 export default function ManageWorkersPage() {
+  const { dir } = useLanguage()
   const [workers, setWorkers] = useState([])
   const [users, setUsers] = useState([])
   const [usersLoading, setUsersLoading] = useState(false)
@@ -526,7 +528,6 @@ export default function ManageWorkersPage() {
   const [selectedWorker, setSelectedWorker] = useState(null)
   const [editingWorker, setEditingWorker] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
-
   const loadUsers = useCallback(async () => {
     setUsersLoading(true)
     try {
@@ -653,15 +654,18 @@ export default function ManageWorkersPage() {
 
     try {
       await deleteWorkerProfile(worker.id)
+      setWorkers((current) => current.filter((item) => item.id !== worker.id))
       setSelectedWorker(null)
-      await loadWorkers()
+      setEditingWorker((current) => (current?.id === worker.id ? null : current))
+      setError("")
+      loadWorkers()
     } catch (deleteError) {
       setError(normalizeWorkerErrorMessage(deleteError.message || "تعذر حذف العامل."))
     }
   }
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-8" dir="rtl">
+    <div className="space-y-8" dir={dir}>
       <section className="app-page-header mt-2">
         <div className="app-page-header-row">
           <div>

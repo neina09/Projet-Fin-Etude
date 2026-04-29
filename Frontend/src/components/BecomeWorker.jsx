@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, Lock, User, Briefcase, Camera, ShieldCheck, Up
 import { createWorkerProfile, getMyWorkerProfile, uploadIdentityDocument, uploadWorkerImage } from "../api"
 import { combineIdentityFiles } from "../utils/imageFiles"
 import { storeSessionToken } from "../utils/auth"
+import { isValidMauritanianPhone, normalizePhoneNumber, validateImageFile } from "../utils/security"
 
 const SPECIALTIES = ["سباك", "كهربائي", "دهان", "تنظيف", "نجار", "حداد", "بناء"]
 
@@ -29,7 +30,7 @@ export default function BecomeWorker({ onSuccess }) {
     const { name, value, type, checked } = event.target
     setForm((current) => ({
       ...current,
-      [name]: type === "checkbox" ? checked : value
+      [name]: type === "checkbox" ? checked : (name === "phoneNumber" ? normalizePhoneNumber(value) : value)
     }))
   }
 
@@ -38,6 +39,11 @@ export default function BecomeWorker({ onSuccess }) {
 
     if (form.nationalIdNumber.length !== 10 || !/^\d{10}$/.test(form.nationalIdNumber)) {
       setError("رقم الهوية الوطنية الموريتانية يجب أن يتكون من 10 أرقام بالضبط.")
+      return
+    }
+
+    if (!isValidMauritanianPhone(form.phoneNumber)) {
+      setError("يرجى إدخال رقم هاتف موريتاني صحيح.")
       return
     }
 
@@ -58,6 +64,10 @@ export default function BecomeWorker({ onSuccess }) {
       if (!identityFrontFile || !identityBackFile) {
         throw new Error("يجب إضافة صورة البطاقة من الأمام والخلف قبل إرسال الطلب.")
       }
+
+      validateImageFile(workerImageFile, "الصورة الشخصية")
+      validateImageFile(identityFrontFile, "الوجه الأمامي للهوية")
+      validateImageFile(identityBackFile, "الوجه الخلفي للهوية")
 
       const response = await createWorkerProfile({
         ...form,

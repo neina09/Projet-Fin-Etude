@@ -85,6 +85,15 @@ public class WorkerController {
         return ResponseEntity.ok(workerService.rejectWorker(id, currentUser, notes));
     }
 
+    @DeleteMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteWorkerAsAdmin(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        workerService.deleteWorker(id, currentUser);
+        return ResponseEntity.ok("Worker deleted successfully");
+    }
+
     @GetMapping
     public ResponseEntity<List<WorkerResponseDto>> getAllWorkers() {
         return ResponseEntity.ok(workerService.getAllWorkers());
@@ -181,3 +190,4 @@ public class WorkerController {
         return ResponseEntity.ok(workerService.getWorkersByAddress(address));
     }
 }
+

@@ -10,8 +10,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -26,6 +28,7 @@ public class LocalResourcePropertyInitializer implements ApplicationContextIniti
     @Override
     public void initialize(ConfigurableApplicationContext applicationContext) {
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
+        loadDotEnvFiles(environment);
         Path resourcesDirectory = Path.of("src", "main", "resources");
 
         if (!Files.isDirectory(resourcesDirectory)) {
@@ -46,6 +49,58 @@ public class LocalResourcePropertyInitializer implements ApplicationContextIniti
         }
 
         provideDevelopmentJwtSecretIfMissing(environment, profiles);
+    }
+
+    private void loadDotEnvFiles(ConfigurableEnvironment environment) {
+        List<Path> candidatePaths = new ArrayList<>();
+        candidatePaths.add(Path.of(".env"));
+        candidatePaths.add(Path.of("..", ".env"));
+        candidatePaths.add(Path.of("..", "Frontend", ".env"));
+        candidatePaths.add(Path.of("..", "backend", ".env"));
+
+        for (Path candidatePath : candidatePaths) {
+            loadDotEnvIfExists(environment, candidatePath.normalize());
+        }
+    }
+
+    private void loadDotEnvIfExists(ConfigurableEnvironment environment, Path filePath) {
+        if (!Files.isRegularFile(filePath)) {
+            return;
+        }
+
+        Properties properties = new Properties();
+        try {
+            for (String line : Files.readAllLines(filePath)) {
+                String trimmedLine = line.trim();
+                if (trimmedLine.isBlank() || trimmedLine.startsWith("#")) {
+                    continue;
+                }
+
+                int separatorIndex = trimmedLine.indexOf('=');
+                if (separatorIndex <= 0) {
+                    continue;
+                }
+
+                String key = trimmedLine.substring(0, separatorIndex).trim();
+                String value = trimmedLine.substring(separatorIndex + 1).trim();
+
+                if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.substring(1, value.length() - 1);
+                }
+
+                if (!key.isBlank()) {
+                    properties.setProperty(key, value);
+                }
+            }
+
+            if (!properties.isEmpty()) {
+                environment.getPropertySources().addLast(
+                        new PropertiesPropertySource(PROPERTY_SOURCE_PREFIX + filePath.toString(), properties)
+                );
+            }
+        } catch (IOException ignored) {
+            // Ignore local .env loading failures and continue with normal Spring resolution.
+        }
     }
 
     private void loadIfExists(ConfigurableEnvironment environment, Path filePath, String sourceName) {

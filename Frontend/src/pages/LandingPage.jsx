@@ -8,11 +8,13 @@ import Testimonials from "../components/Testimonials"
 import CtaSection from "../components/CtaSection"
 import Footer from "../components/Footer"
 
+
 function LandingPage() {
   const navigate = useNavigate()
 
+
   return (
-    <div className="landing-wrapper min-h-screen">
+    <div className="landing-wrapper min-h-screen" >
       <Navbar onLogin={() => navigate("/auth")} />
       <main>
         <Hero />

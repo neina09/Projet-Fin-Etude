@@ -6,7 +6,7 @@ Spring Boot backend for authentication, workers, tasks, bookings, ratings, chat,
 
 - Authentication now uses `phone` instead of `email`.
 - Validation was tightened for auth and profile DTOs.
-- Swagger UI and OpenAPI JSON are enabled.
+- Swagger UI and OpenAPI JSON are enabled in `dev` and disabled by default elsewhere.
 - Environment configuration is split into `dev`, `prod`, and `test`.
 - Automated tests were added for auth, task offers, booking acceptance, and auth controller behavior.
 
@@ -115,7 +115,7 @@ Use these auth requests:
 {
   "username": "youssef",
   "phone": "+22222123456",
-  "password": "123456"
+  "password": "Youss1234"
 }
 ```
 
@@ -135,7 +135,7 @@ Take the verification code from the backend logs, then send:
 ```json
 {
   "phone": "+22222123456",
-  "password": "123456"
+  "password": "Youss1234"
 }
 ```
 

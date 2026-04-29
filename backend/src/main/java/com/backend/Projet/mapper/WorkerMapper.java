@@ -40,7 +40,7 @@ public class WorkerMapper {
                 .verificationNotes(includeSensitiveDetails ? worker.getVerificationNotes() : null)
                 .userId(worker.getUser() != null ? worker.getUser().getId() : null)
                 .username(worker.getUser() != null ? worker.getUser().getUsername() : null)
-                .userPhone(worker.getUser() != null ? worker.getUser().getPhone() : null)
+                .userPhone(includeSensitiveDetails && worker.getUser() != null ? worker.getUser().getPhone() : null)
                 .verified(worker.getVerificationStatus() == WorkerVerificationStatus.VERIFIED)
                 .build();
     }

@@ -1,7 +1,20 @@
 import React, { useEffect, useMemo, useState } from "react"
-import { Bell, Briefcase, Check, ChevronLeft, ChevronRight, Clock, FileCheck, Info, MessageSquare, ShieldCheck, UserCheck } from "lucide-react"
+import {
+  Bell,
+  Briefcase,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  FileCheck,
+  Info,
+  MessageSquare,
+  ShieldCheck,
+  Trash2,
+  UserCheck
+} from "lucide-react"
 
-const ITEMS_PER_PAGE = 5
+const ITEMS_PER_PAGE = 15
 
 const formatNotificationMessage = (notification) => {
   const rawMessage = String(notification?.message || "").trim()
@@ -24,10 +37,7 @@ const formatNotificationMessage = (notification) => {
     [" has refused the task: ", " رفض المهمة: "]
   ]
 
-  return replacements.reduce(
-    (message, [from, to]) => message.replace(from, to),
-    rawMessage
-  )
+  return replacements.reduce((message, [from, to]) => message.replace(from, to), rawMessage)
 }
 
 const getRelativeTime = (dateStr) => {
@@ -40,9 +50,7 @@ const getRelativeTime = (dateStr) => {
   if (diff < 3600) return `منذ ${Math.floor(diff / 60)} دقيقة`
   if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} ساعة`
 
-  return new Intl.DateTimeFormat("ar", {
-    dateStyle: "short"
-  }).format(date)
+  return new Intl.DateTimeFormat("ar", { dateStyle: "short" }).format(date)
 }
 
 const typeConfig = (iconSize) => ({
@@ -64,7 +72,7 @@ const typeConfig = (iconSize) => ({
   DEFAULT: { icon: <Info size={iconSize} />, color: "text-slate-600", bg: "bg-slate-50" }
 })
 
-export default function NotificationList({ notifications, onMarkAsRead, onMarkAllAsRead, unreadCount }) {
+export default function NotificationList({ notifications, onMarkAsRead, onMarkAllAsRead, unreadCount, onDelete, onDeleteAll }) {
   const [page, setPage] = useState(1)
   const iconSize = 16
   const configByType = typeConfig(iconSize)
@@ -87,12 +95,19 @@ export default function NotificationList({ notifications, onMarkAsRead, onMarkAl
             <Bell size={16} className="text-blue-600" />
             الإشعارات
           </h3>
-          <p className="mt-1 text-[10px] font-bold text-slate-400">
-            {notifications.length} إشعار • {ITEMS_PER_PAGE} في الصفحة
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
+          {notifications.length > 0 && (
+            <button
+              type="button"
+              onClick={onDeleteAll}
+              className="group flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
+              title="حذف الكل"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
           {unreadCount > 0 && (
             <button
               type="button"
@@ -110,6 +125,7 @@ export default function NotificationList({ notifications, onMarkAsRead, onMarkAl
         {pagedNotifications.length > 0 ? (
           pagedNotifications.map((notification) => {
             const config = configByType[notification.type] || configByType.DEFAULT
+
             return (
               <div
                 key={notification.id}
@@ -130,19 +146,33 @@ export default function NotificationList({ notifications, onMarkAsRead, onMarkAl
                   </div>
                 </div>
 
-                {!notification.isRead && (
+                <div className="absolute left-4 top-1/2 flex -translate-y-1/2 items-center gap-2">
+                  {!notification.isRead && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onMarkAsRead(notification.id)
+                      }}
+                      className="flex h-6 w-6 items-center justify-center rounded-lg border border-emerald-50 bg-white text-emerald-500 shadow-sm transition-all hover:bg-emerald-50"
+                      aria-label="تحديد كمقروء"
+                    >
+                      <Check size={14} />
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation()
-                      onMarkAsRead(notification.id)
+                      onDelete(notification.id)
                     }}
-                    className="absolute left-4 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-lg border border-emerald-50 bg-white text-emerald-500 opacity-0 shadow-sm transition-all group-hover:opacity-100 hover:bg-emerald-50"
-                    aria-label="تحديد كمقروء"
+                    className="flex h-6 w-6 items-center justify-center rounded-lg border border-rose-50 bg-white text-rose-500 shadow-sm transition-all hover:bg-rose-50"
+                    aria-label="حذف الإشعار"
                   >
-                    <Check size={14} />
+                    <Trash2 size={14} />
                   </button>
-                )}
+                </div>
               </div>
             )
           })
