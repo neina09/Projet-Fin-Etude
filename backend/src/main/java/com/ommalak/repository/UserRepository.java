@@ -1,0 +1,15 @@
+package com.ommalak.repository;
+
+import com.ommalak.entity.User;
+import com.ommalak.enums.UserRole;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByPhone(String phone);
+    boolean existsByPhone(String phone);
+    List<User> findByFullNameContainingIgnoreCaseOrPhoneContaining(String name, String phone);
+    long countByRole(UserRole role);
+}

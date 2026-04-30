@@ -1,19 +1,258 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="dedb643a-9eee-43d7-b5e8-ab918577859c" name="Changes" comment="" />
+    <list default="true" id="e796528e-c1f0-4e9e-8a67-5040f0d62126" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/Projet-Fin-Etude.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/MobileApp/node_modules/clone/clone.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/MobileApp/node_modules/defaults/node_modules/clone/clone.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env.production.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Projet Fin de etuide.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/.dockerignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/.env.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/.env.production.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/eslint.config.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/nginx.conf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/old_WorkersSection.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/package-lock.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/package.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/postcss.config.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/public/icons.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/public/logo.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/App.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/api.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/assets/auth/avatars.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/assets/auth/branding.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/assets/auth/mascot.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/assets/hero-worker.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/assets/image.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/assets/logo.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/assets/premium-bg.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/assets/worker-bg.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/AboutUs.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/AdminDashboard.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/AuthForm.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/AvatarBadge.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/BecomeTasker.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/BecomeWorker.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/ConfirmDialog.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/CtaSection.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/Dashboard.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/DashboardHeader.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/FeaturedWorkers.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/FilePreview.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/Footer.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/GoogleMapPicker.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/Hero.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/HowItWorks.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/LanguageToggle.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/LeafletMapPicker.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/Logo.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/ManageWorkersPage.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/MyRequestsSection.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/Navbar.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/NotificationList.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/ProblemBoard.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/ProblemCard.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/ProblemForm.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/ProfileSettings.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/ProtectedRoute.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/RatingsSection.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/SearchBar.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/ServicesCards.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/Sidebar.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/SimpleFooter.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/TaskStatsCharts.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/Tasksverificationpage.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/TechnicalSupport.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/Testimonials.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/UserGuide.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/WorkerCard.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/WorkerRequestModal.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/WorkersSection.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/auth/ForgotPassword.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/auth/LoginForm.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/auth/ResetPassword.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/auth/SignupForm.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/auth/VerifyScreen.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/problem-board/BoardFilters.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/problem-board/BoardHeader.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/problem-board/BoardTabs.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/profile/AccountSettings.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/profile/BookingHistory.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/profile/SecuritySettings.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/profile/WorkerProfileEditor.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/profile/WorkerRequestsList.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/hooks/useScrollAnimation.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/i18n/LanguageContext.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/i18n/translations.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/index.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/main.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/pages/AuthPage.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/pages/LandingPage.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/utils/auth.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/utils/imageFiles.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/utils/security.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/tailwind.config.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/vite.config.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.dockerignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/build_errors.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/build_output.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/docs/bruno-testing.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/docs/demo-day-checklist.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/docs/document-projet-exemple.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/docs/frontend-handoff-antigravity.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/mvnw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/sms_run.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/ProjetApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/ApplicationConfiguration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/DataInitializer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/DatabaseUtf8mb4Migration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/JwtAuthenticationFilter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/LocalResourcePropertyInitializer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/NotificationTypeColumnMigration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/OpenApiConfiguration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/RatingTaskColumnMigration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/SecurityConfiguration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/StorageConfiguration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/TaskStatusColumnMigration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/UserImageColumnMigration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/config/WebSocketConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/controller/AdminController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/controller/AuthenticationController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/controller/BookingController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/controller/NotificationController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/controller/RatingController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/controller/TaskController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/controller/UserController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/controller/WorkerController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/AdminDashboardDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/AppErrorResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/BookingRequestDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/BookingResponseDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/ChangePasswordDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/ForgotPasswordDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/LoginResponseDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/LoginUserDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/NotificationResponseDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/NotificationUnreadCountDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/OfferRequestDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/OfferResponseDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/PageResponseDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/RatingRequestDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/RatingResponseDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/RegisterUserDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/ResetPasswordDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/TaskRequestDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/TaskResponseDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/UpdateProfileDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/UserResponseDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/VerifyUserDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/WorkerReferralRequestDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/WorkerRequestDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/dto/WorkerResponseDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/exception/BookingStatusException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/exception/BusinessException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/exception/GlobalExceptionHandler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/exception/ResourceNotFoundException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/exception/TooManyRequestsException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/exception/UnauthorizedException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/mapper/BookingMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/mapper/NotificationMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/mapper/OfferMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/mapper/RatingMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/mapper/TaskMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/mapper/UserMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/mapper/WorkerMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/Booking.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/BookingStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/Notification.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/NotificationType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/Offer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/OfferStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/Rating.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/Role.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/Task.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/TaskStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/User.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/Worker.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/WorkerAvailability.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/model/WorkerVerificationStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/repository/BookingRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/repository/NotificationRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/repository/OfferRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/repository/RatingRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/repository/TaskRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/repository/UserRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/repository/WorkerRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/AdminService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/AuthRateLimitService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/AuthenticationService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/BookingService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/CustomUserDetailsService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/FileStorageService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/JwtService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/NotificationService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/RatingService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/SmsService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/TaskService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/UserService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/service/WorkerService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/util/MauritaniaPhoneUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/backend/Projet/util/PasswordPolicy.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/application-dev.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/application-prod.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/http-client.env.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/backend/Projet/ProjetApplicationTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/backend/Projet/SecurityConfigurationIntegrationTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/backend/Projet/controller/AuthenticationControllerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/backend/Projet/controller/BookingControllerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/backend/Projet/resources/application-test.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/backend/Projet/service/AdminServiceTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/backend/Projet/service/AuthenticationServiceTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/backend/Projet/service/BookingServiceTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/backend/Projet/service/FileStorageServiceTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/backend/Projet/service/TaskServiceTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/backend/Projet/service/WorkerServiceTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/resources/application-test.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/test_results.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/test_results_utf8.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/test_results_v2.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/test_results_v2_utf8.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.prod.yml" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7
+  "associatedIndex": 3,
+  "fromUser": false
 }]]></component>
-  <component name="ProjectId" id="3CQepzbBbLDTht9vZ8Sqxrdw9NF" />
+  <component name="ProjectId" id="3D3STiZhMvuaICKyxx3sb3c5aur" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -22,23 +261,25 @@
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "mobile",
+    "last_opened_file_path": "/Users/meldesign/Development/Projet-Fin-Etude",
+    "show.migrate.to.gradle.popup": "false"
   }
 }]]></component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="dedb643a-9eee-43d7-b5e8-ab918577859c" name="Changes" comment="" />
-      <created>1776322409455</created>
+      <changelist id="e796528e-c1f0-4e9e-8a67-5040f0d62126" name="Changes" comment="" />
+      <created>1777509270647</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1776322409455</updated>
-      <workItem from="1776322411751" duration="41000" />
+      <updated>1777509270647</updated>
     </task>
     <servers />
   </component>
