@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Phone, Lock, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import Input from '../../components/ui/Input'
 import Button from '../../components/ui/Button'
@@ -15,6 +15,7 @@ export default function Login() {
   const [form, setForm] = useState({ phone: '', password: '' })
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
 
   const handleSubmit = async (e) => {
@@ -23,17 +24,56 @@ export default function Login() {
     setLoading(true)
     try {
       const user = await login(form.phone, form.password)
+      setSuccess(true)
+      await new Promise(r => setTimeout(r, 700))
       if (user?.role === 'ADMIN' || user?.roles?.includes('ADMIN')) navigate('/admin')
       else navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.message || t('errors.serverError'))
-    } finally {
       setLoading(false)
     }
   }
 
   return (
     <Layout noFooter>
+      {/* Success overlay */}
+      <AnimatePresence>
+        {success && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="w-20 h-20 rounded-full bg-primary-500 flex items-center justify-center shadow-2xl shadow-primary-500/40 mb-4"
+            >
+              <motion.svg
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+                viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"
+                strokeLinecap="round" strokeLinejoin="round"
+                className="w-10 h-10"
+              >
+                <motion.path d="M5 13l4 4L19 7" />
+              </motion.svg>
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-gray-700 dark:text-gray-300 font-medium"
+            >
+              {t('auth.loggingIn')}
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-primary-50/30 dark:from-gray-950 dark:to-gray-900">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -41,7 +81,6 @@ export default function Login() {
           className="w-full max-w-md"
         >
           <div className="card p-8">
-            {/* Header */}
             <div className="text-center mb-8">
               <div className="w-14 h-14 bg-primary-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">ع</div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('auth.login.title')}</h1>
@@ -85,9 +124,13 @@ export default function Login() {
               </div>
 
               {error && (
-                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
+                <motion.div
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm"
+                >
                   {error}
-                </div>
+                </motion.div>
               )}
 
               <Button type="submit" loading={loading} className="w-full mt-1">

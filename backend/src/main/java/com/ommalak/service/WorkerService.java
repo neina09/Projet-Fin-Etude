@@ -65,6 +65,11 @@ public class WorkerService {
         if (req.getSalaryExpectation() != null) wp.setSalaryExpectation(req.getSalaryExpectation());
         if (req.getBio() != null) wp.setBio(req.getBio());
         if (req.getIdDocumentUrl() != null) wp.setIdDocumentUrl(req.getIdDocumentUrl());
+        if (req.getProfilePictureUrl() != null) wp.setProfilePictureUrl(req.getProfilePictureUrl());
+        if (req.getPortfolioPhotos() != null) {
+            wp.getPortfolioPhotos().clear();
+            wp.getPortfolioPhotos().addAll(req.getPortfolioPhotos());
+        }
         workerProfileRepository.save(wp);
         if (req.getCity() != null) {
             user.setCity(req.getCity());

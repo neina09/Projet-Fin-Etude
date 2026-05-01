@@ -9,13 +9,16 @@
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/entity/WorkerProfile.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/repository/TaskRepository.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/enums/UserRole.java
+/Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/PlatformEarningsResponse.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/exception/ApiException.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/UserResponse.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/TaskResponse.java
+/Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/request/PenaltyRequest.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/entity/Booking.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/service/NotificationService.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/request/WorkerProfileRequest.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/StatsResponse.java
+/Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/AdminReviewResponse.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/repository/WorkerProfileRepository.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/entity/Notification.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/config/DataSeeder.java
@@ -29,8 +32,10 @@
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/request/OfferRequest.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/repository/BookingRepository.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/entity/Offer.java
+/Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/EarningsHistoryPoint.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/repository/NotificationRepository.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/service/BookingService.java
+/Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/WorkerEarningsResponse.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/request/RegisterRequest.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/config/CorsConfig.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/service/WorkerService.java
@@ -38,6 +43,7 @@
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/security/JwtUtil.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/repository/OtpCodeRepository.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/BookingResponse.java
+/Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/PenaltyResponse.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/entity/Task.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/enums/Availability.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/WorkerResponse.java
@@ -46,6 +52,7 @@
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/controller/NotificationController.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/exception/GlobalExceptionHandler.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/entity/User.java
+/Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/entity/WorkerPenalty.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/controller/AdminController.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/controller/BookingController.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/AuthResponse.java
@@ -59,3 +66,4 @@
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/repository/ReviewRepository.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/request/TaskRequest.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/request/RateRequest.java
+/Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/repository/WorkerPenaltyRepository.java

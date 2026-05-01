@@ -9,12 +9,28 @@ import Layout from '../../components/layout/Layout'
 import { PageLoader } from '../../components/ui/Spinner'
 import EmptyState from '../../components/ui/EmptyState'
 
+const PROFESSION_MAP = {
+  plumber:     'Plombier',
+  electrician: 'Électricien',
+  carpenter:   'Menuisier',
+  painter:     'Peintre',
+  mason:       'Maçon',
+  cleaner:     'nettoyage',
+  mechanic:    'Mécanicien',
+  gardener:    'Jardinier',
+}
+
+function resolveSearch(raw) {
+  if (!raw) return ''
+  return PROFESSION_MAP[raw.toLowerCase()] || raw
+}
+
 export default function WorkersPage() {
   const { t } = useTranslation()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const [workers, setWorkers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => resolveSearch(searchParams.get('profession')))
   const [filterAvailable, setFilterAvailable] = useState(false)
 
   useEffect(() => {
@@ -24,6 +40,11 @@ export default function WorkersPage() {
       .catch(() => setWorkers([]))
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    const p = searchParams.get('profession')
+    if (p) setSearch(resolveSearch(p))
+  }, [searchParams])
 
   const filtered = workers.filter(w => {
     const name = (w.name || w.fullName || w.user?.name || '').toLowerCase()

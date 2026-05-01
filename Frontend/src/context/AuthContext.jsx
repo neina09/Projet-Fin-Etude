@@ -4,18 +4,34 @@ import { authApi } from '../api/auth'
 const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('user')) } catch { return null }
-  })
-  const [loading, setLoading] = useState(false)
+  const [user, setUser] = useState(null)
+  const [appReady, setAppReady]       = useState(false)
+  const [loggingIn, setLoggingIn]     = useState(false)
+  const [loggingOut, setLoggingOut]   = useState(false)
+
+  // Rehydrate user from localStorage on first load
+  useEffect(() => {
+    const stored = localStorage.getItem('user')
+    if (stored) {
+      try { setUser(JSON.parse(stored)) } catch {}
+    }
+    // Minimum splash display of 1.5 s
+    const timer = setTimeout(() => setAppReady(true), 1500)
+    return () => clearTimeout(timer)
+  }, [])
 
   const login = async (phone, password) => {
-    const res = await authApi.login(phone, password)
-    const { token, user: userData } = res.data
-    localStorage.setItem('token', token)
-    localStorage.setItem('user', JSON.stringify(userData))
-    setUser(userData)
-    return userData
+    setLoggingIn(true)
+    try {
+      const res = await authApi.login(phone, password)
+      const { token, user: userData } = res.data
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(userData))
+      setUser(userData)
+      return userData
+    } finally {
+      setLoggingIn(false)
+    }
   }
 
   const register = async (data) => {
@@ -24,10 +40,13 @@ export function AuthProvider({ children }) {
   }
 
   const logout = async () => {
+    setLoggingOut(true)
     try { await authApi.logout() } catch {}
+    await new Promise(r => setTimeout(r, 600))
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     setUser(null)
+    setLoggingOut(false)
   }
 
   const refreshProfile = async () => {
@@ -42,7 +61,11 @@ export function AuthProvider({ children }) {
   const isAdmin  = user?.role === 'ADMIN'  || user?.roles?.includes('ADMIN')
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshProfile, isWorker, isAdmin }}>
+    <AuthContext.Provider value={{
+      user, appReady, loggingIn, loggingOut,
+      login, register, logout, refreshProfile,
+      isWorker, isAdmin,
+    }}>
       {children}
     </AuthContext.Provider>
   )

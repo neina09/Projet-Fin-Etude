@@ -37,8 +37,10 @@ export default function Navbar() {
       <nav className="page-container flex items-center justify-between h-16">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary-600 dark:text-primary-400">
-          <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">ع</div>
-          <span className="hidden sm:block">Ommalak</span>
+          <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
+            <img src="/logo.svg" alt="عمــــالك" />
+          </div>
+          <span className="hidden sm:block">عمــــالك</span>
         </Link>
 
         {/* Desktop links */}

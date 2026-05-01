@@ -126,6 +126,10 @@
     "empty": "Aucun travailleur trouvé",
     "loading": "Chargement des travailleurs..."
   },
+  "worker": {
+    "portfolio": "Portfolio",
+    "noPortfolio": "Aucune photo de portfolio pour le moment"
+  },
   "tasks": {
     "title": "Tableau des tâches",
     "subtitle": "Parcourez les missions disponibles",
@@ -236,7 +240,37 @@
     "users": "Gestion des utilisateurs",
     "tasks": "Modération des tâches",
     "delete": "Supprimer",
-    "noData": "Aucune donnée disponible"
+    "noData": "Aucune donnée disponible",
+    "completedTasks": "Tâches complétées",
+    "earnings": {
+      "title": "Revenus de la plateforme",
+      "totalRevenue": "Revenu total",
+      "workerShare": "Part travailleurs",
+      "platformFee": "Commission plateforme",
+      "perWorker": "Détail par travailleur",
+      "history": "Historique des revenus",
+      "completedBookings": "Réservations complétées",
+      "filters": {
+        "7d": "7j",
+        "30d": "30j",
+        "90d": "3 mois",
+        "1y": "1 an"
+      }
+    },
+    "penalty": {
+      "add": "Ajouter une pénalité",
+      "reason": "Motif",
+      "amount": "Montant (MRU)",
+      "confirm": "Appliquer la pénalité",
+      "target": "Pénalité pour",
+      "list": "Pénalités",
+      "noPenalties": "Aucune pénalité enregistrée"
+    },
+    "reviews": {
+      "title": "Avis clients",
+      "clientPhone": "Téléphone",
+      "noReviews": "Aucun avis"
+    }
   },
   "notifications": {
     "title": "Notifications",
@@ -263,7 +297,9 @@
     "or": "ou",
     "submitting": "Envoi en cours...",
     "perDay": "/jour",
-    "stars": "étoiles"
+    "stars": "étoiles",
+    "loggingIn": "Connexion en cours...",
+    "loggingOut": "Déconnexion en cours..."
   },
   "profile": {
     "title": "Mon profil",

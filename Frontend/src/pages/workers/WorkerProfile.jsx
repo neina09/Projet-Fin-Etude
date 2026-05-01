@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { MapPin, Star, CheckCircle2, Calendar, ArrowLeft, Briefcase, Clock } from 'lucide-react'
+import { MapPin, Star, CheckCircle2, Calendar, ArrowLeft, Briefcase, Images } from 'lucide-react'
 import { workersApi } from '../../api/workers'
 import { bookingsApi } from '../../api/bookings'
 import { useAuth } from '../../context/AuthContext'
@@ -25,6 +25,7 @@ export default function WorkerProfile() {
   const [loading, setLoading] = useState(true)
   const [bookingOpen, setBookingOpen] = useState(searchParams.get('book') === '1')
   const [rateOpen, setRateOpen] = useState(false)
+  const [lightboxSrc, setLightboxSrc] = useState(null)
   const [bookingForm, setBookingForm] = useState({ date: '', description: '' })
   const [rateForm, setRateForm] = useState({ rating: 5, comment: '' })
   const [submitting, setSubmitting] = useState(false)
@@ -69,6 +70,8 @@ export default function WorkerProfile() {
   const name = worker.name || worker.fullName || worker.user?.name || 'Worker'
   const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
   const isAvail = worker.available || worker.availability === 'AVAILABLE'
+  const isOwner = user && (String(user.id) === String(id) || String(user.workerId) === String(id))
+  const canRate = user && !isOwner
 
   return (
     <Layout>
@@ -78,18 +81,32 @@ export default function WorkerProfile() {
         </button>
 
         {successMsg && (
-          <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl text-sm">
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl text-sm"
+          >
             {successMsg}
-          </div>
+          </motion.div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Sidebar */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-1 flex flex-col gap-4">
             <div className="card p-6 text-center">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">
-                {initials}
-              </div>
+              {/* Profile picture */}
+              {worker.profilePictureUrl ? (
+                <img
+                  src={worker.profilePictureUrl}
+                  alt={name}
+                  className="w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-primary-100 dark:border-primary-900 shadow-md"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold text-3xl mx-auto mb-4 shadow-md">
+                  {initials}
+                </div>
+              )}
+
               <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2">
                 {name}
                 {worker.verified && <CheckCircle2 size={17} className="text-primary-500" />}
@@ -109,9 +126,11 @@ export default function WorkerProfile() {
                 <Button onClick={() => user ? setBookingOpen(true) : navigate('/login')} className="w-full">
                   {t('workers.profile.book')}
                 </Button>
-                <Button variant="outline" onClick={() => user ? setRateOpen(true) : navigate('/login')} className="w-full">
-                  {t('workers.profile.rate')}
-                </Button>
+                {canRate && (
+                  <Button variant="outline" onClick={() => setRateOpen(true)} className="w-full">
+                    {t('workers.profile.rate')}
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -161,24 +180,82 @@ export default function WorkerProfile() {
               </div>
             )}
 
+            {/* Portfolio photos */}
+            {worker.portfolioPhotos?.length > 0 ? (
+              <div className="card p-5">
+                <h2 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Images size={16} className="text-primary-500" />
+                  {t('worker.portfolio')}
+                </h2>
+                <div className="grid grid-cols-3 gap-2">
+                  {worker.portfolioPhotos.map((url, i) => (
+                    <motion.button
+                      key={i}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.06 }}
+                      onClick={() => setLightboxSrc(url)}
+                      className="aspect-square rounded-xl overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <img src={url} alt={`portfolio-${i}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="card p-5 text-center text-sm text-gray-400 dark:text-gray-500">
+                <Images size={28} className="mx-auto mb-2 opacity-40" />
+                {t('worker.noPortfolio')}
+              </div>
+            )}
+
             {worker.reviews?.length > 0 && (
               <div className="card p-5">
                 <h2 className="font-semibold text-gray-900 dark:text-white mb-4">{t('workers.profile.reviews')}</h2>
                 <div className="flex flex-col gap-4">
                   {worker.reviews.map((r, i) => (
-                    <div key={i} className="border-b border-gray-100 dark:border-gray-800 last:border-0 pb-4 last:pb-0">
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="border-b border-gray-100 dark:border-gray-800 last:border-0 pb-4 last:pb-0"
+                    >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-sm text-gray-800 dark:text-gray-200">{r.reviewerName || 'Anonyme'}</span>
                         <StarRating value={r.rating} readOnly size={14} />
                       </div>
                       {r.comment && <p className="text-sm text-gray-500 dark:text-gray-400">{r.comment}</p>}
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
             )}
           </motion.div>
         </div>
+
+        {/* Lightbox */}
+        <AnimatePresence>
+          {lightboxSrc && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setLightboxSrc(null)}
+              className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 cursor-pointer"
+            >
+              <motion.img
+                initial={{ scale: 0.85 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.85 }}
+                src={lightboxSrc}
+                alt="portfolio"
+                className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl object-contain"
+                onClick={e => e.stopPropagation()}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Booking Modal */}
         <Modal open={bookingOpen} onClose={() => setBookingOpen(false)} title={t('bookings.create')}>

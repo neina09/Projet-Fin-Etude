@@ -93,7 +93,9 @@ export default function TasksPage() {
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
-                {s === 'ALL' ? t('workers.filter.all') : t(`tasks.status.${s.toLowerCase().replace('_', '')}` ) || s}
+                {s === 'ALL'
+                  ? t('workers.filter.all')
+                  : t(`tasks.status.${s.toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase()).replace('_', '')}`) || s}
               </button>
             ))}
           </div>

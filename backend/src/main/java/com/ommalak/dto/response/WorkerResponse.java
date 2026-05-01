@@ -1,6 +1,5 @@
 package com.ommalak.dto.response;
 
-import com.ommalak.entity.Review;
 import com.ommalak.entity.WorkerProfile;
 import com.ommalak.enums.Availability;
 import lombok.Builder;
@@ -17,6 +16,8 @@ public class WorkerResponse {
     private String profession;
     private Double salaryExpectation;
     private String bio;
+    private String profilePictureUrl;
+    private List<String> portfolioPhotos;
     private Availability availability;
     private boolean verified;
     private double rating;
@@ -32,6 +33,8 @@ public class WorkerResponse {
                 .profession(wp.getProfession())
                 .salaryExpectation(wp.getSalaryExpectation())
                 .bio(wp.getBio())
+                .profilePictureUrl(wp.getProfilePictureUrl())
+                .portfolioPhotos(wp.getPortfolioPhotos())
                 .availability(wp.getAvailability())
                 .verified(wp.isVerified())
                 .rating(wp.getRating())

@@ -16,6 +16,7 @@ public class BookingResponse {
     private String workerName;
     private String profession;
     private String notes;
+    private Double price;
     private BookingStatus status;
     private LocalDateTime createdAt;
 
@@ -27,6 +28,7 @@ public class BookingResponse {
                 .workerId(b.getWorker().getId())
                 .workerName(b.getWorker().getFullName())
                 .notes(b.getNotes())
+                .price(b.getPrice())
                 .status(b.getStatus())
                 .createdAt(b.getCreatedAt());
 

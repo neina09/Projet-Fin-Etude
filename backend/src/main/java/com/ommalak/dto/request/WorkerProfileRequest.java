@@ -9,4 +9,6 @@ public class WorkerProfileRequest {
     private String bio;
     private String idDocumentUrl;
     private String city;
+    private String profilePictureUrl;
+    private java.util.List<String> portfolioPhotos;
 }

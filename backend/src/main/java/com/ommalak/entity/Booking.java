@@ -26,6 +26,8 @@ public class Booking {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    private Double price;
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private BookingStatus status = BookingStatus.PENDING;

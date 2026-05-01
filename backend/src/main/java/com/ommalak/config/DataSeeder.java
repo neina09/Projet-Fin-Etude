@@ -281,27 +281,42 @@ public class DataSeeder implements CommandLineRunner {
         bookingRepository.save(Booking.builder()
                 .client(c1).worker(w2)
                 .notes("Bonjour, j'ai besoin d'un électricien pour installer 3 prises supplémentaires dans mon bureau à domicile. Disponible samedi matin.")
-                .status(BookingStatus.ACCEPTED).createdAt(ago(12)).build());
+                .status(BookingStatus.ACCEPTED).price(2500.0).createdAt(ago(12)).build());
 
         bookingRepository.save(Booking.builder()
                 .client(c2).worker(w3)
                 .notes("Installation de portes intérieures pour mon appartement. 4 portes en bois mélaminé blanc. Livraison des portes prévue jeudi.")
-                .status(BookingStatus.COMPLETED).createdAt(ago(22)).build());
+                .status(BookingStatus.COMPLETED).price(8500.0).createdAt(ago(22)).build());
 
         bookingRepository.save(Booking.builder()
                 .client(c3).worker(w1)
                 .notes("Fuite sous évier cuisine. Tuyau d'évacuation fissuré. Besoin d'intervention cette semaine.")
-                .status(BookingStatus.PENDING).createdAt(ago(1)).build());
+                .status(BookingStatus.COMPLETED).price(1200.0).createdAt(ago(18)).build());
 
         bookingRepository.save(Booking.builder()
                 .client(c4).worker(w6)
                 .notes("Vidange et contrôle général de ma Land Cruiser avant un long trajet Zouerate–Nouakchott. Merci de prévoir 2h.")
-                .status(BookingStatus.ACCEPTED).createdAt(ago(3)).build());
+                .status(BookingStatus.COMPLETED).price(3500.0).createdAt(ago(10)).build());
 
         bookingRepository.save(Booking.builder()
                 .client(c5).worker(w4)
                 .notes("Peinture de la façade extérieure de ma villa. Surface : 120m². Couleur : blanc avec liseré ocre. Disponible en semaine.")
-                .status(BookingStatus.REJECTED).createdAt(ago(8)).build());
+                .status(BookingStatus.COMPLETED).price(18000.0).createdAt(ago(15)).build());
+
+        bookingRepository.save(Booking.builder()
+                .client(c1).worker(w5)
+                .notes("Construction d'un mur de clôture autour du jardin. Hauteur 1.8m, longueur 25m. Matériaux fournis par le client.")
+                .status(BookingStatus.COMPLETED).price(22000.0).createdAt(ago(30)).build());
+
+        bookingRepository.save(Booking.builder()
+                .client(c2).worker(w7)
+                .notes("Installation d'un climatiseur 18000 BTU dans le salon. Tuyauterie et câblage inclus.")
+                .status(BookingStatus.COMPLETED).price(5500.0).createdAt(ago(25)).build());
+
+        bookingRepository.save(Booking.builder()
+                .client(c3).worker(w8)
+                .notes("Jardinage et aménagement paysager pour la cour intérieure. Plantation d'arbustes et gazon.")
+                .status(BookingStatus.PENDING).price(null).createdAt(ago(2)).build());
 
         // ── 8. REVIEWS ───────────────────────────────────────────────────────
         reviewRepository.save(Review.builder()

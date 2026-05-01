@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-2 text-white font-bold text-lg mb-3">
-              <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-sm">ع</div>
+              <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-sm"><img src="/logo.svg" alt="Ommalak" /></div>
               Ommalak
             </div>
             <p className="text-sm leading-relaxed">{t('app.description')}</p>
