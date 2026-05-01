@@ -27,6 +27,7 @@ export default function UserDashboard() {
   const [profileOpen, setProfileOpen] = useState(false)
   const [profileForm, setProfileForm] = useState({ name: user?.name || user?.fullName || '', phone: user?.phone || '' })
   const [saving, setSaving] = useState(false)
+  const [cancelling, setCancelling] = useState(null)
 
   useEffect(() => {
     Promise.all([
@@ -34,6 +35,15 @@ export default function UserDashboard() {
       bookingsApi.getMy().then(r => setBookings(r.data?.content || r.data || [])).catch(() => {}),
     ]).finally(() => setLoading(false))
   }, [])
+
+  const handleCancelBooking = async (id) => {
+    setCancelling(id)
+    try {
+      await bookingsApi.cancel(id)
+      setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'CANCELLED' } : b))
+    } catch {}
+    setCancelling(null)
+  }
 
   const handleSaveProfile = async (e) => {
     e.preventDefault()
@@ -174,7 +184,19 @@ export default function UserDashboard() {
                     </h3>
                     <p className="text-xs text-gray-400 mt-0.5">{b.date || new Date(b.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <Badge variant={statusVariant[b.status] || 'gray'}>{b.status?.toLowerCase()}</Badge>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Badge variant={statusVariant[b.status] || 'gray'}>{b.status?.toLowerCase()}</Badge>
+                    {(b.status === 'PENDING' || b.status === 'CONFIRMED') && (
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        loading={cancelling === b.id}
+                        onClick={() => handleCancelBooking(b.id)}
+                      >
+                        {t('common.cancel')}
+                      </Button>
+                    )}
+                  </div>
                 </motion.div>
               ))
             )}

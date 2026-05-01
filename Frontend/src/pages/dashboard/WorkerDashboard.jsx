@@ -28,6 +28,7 @@ export default function WorkerDashboard() {
     profession: '', bio: '', location: '', salary: '', skills: ''
   })
   const [saving, setSaving] = useState(false)
+  const [responding, setResponding] = useState(null)
 
   useEffect(() => {
     bookingsApi.getWorker()
@@ -42,6 +43,15 @@ export default function WorkerDashboard() {
       await workersApi.updateAvailability(newStatus)
       setAvailable(!available)
     } catch {}
+  }
+
+  const handleRespond = async (id, status) => {
+    setResponding(`${id}-${status}`)
+    try {
+      await bookingsApi.respond(id, status)
+      setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b))
+    } catch {}
+    setResponding(null)
   }
 
   const handleSaveProfile = async (e) => {
@@ -140,9 +150,30 @@ export default function WorkerDashboard() {
                   <p className="text-xs text-gray-400 mt-0.5">{b.date || new Date(b.createdAt).toLocaleDateString()}</p>
                   {b.description && <p className="text-xs text-gray-500 mt-1 truncate">{b.description}</p>}
                 </div>
-                <Badge variant={{ PENDING: 'yellow', CONFIRMED: 'green', COMPLETED: 'primary', CANCELLED: 'red' }[b.status] || 'gray'}>
-                  {b.status?.toLowerCase()}
-                </Badge>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Badge variant={{ PENDING: 'yellow', CONFIRMED: 'green', COMPLETED: 'primary', CANCELLED: 'red' }[b.status] || 'gray'}>
+                    {b.status?.toLowerCase()}
+                  </Badge>
+                  {b.status === 'PENDING' && (
+                    <>
+                      <Button
+                        size="sm"
+                        loading={responding === `${b.id}-CONFIRMED`}
+                        onClick={() => handleRespond(b.id, 'CONFIRMED')}
+                      >
+                        {t('workerDashboard.accept')}
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        loading={responding === `${b.id}-CANCELLED`}
+                        onClick={() => handleRespond(b.id, 'CANCELLED')}
+                      >
+                        {t('common.cancel')}
+                      </Button>
+                    </>
+                  )}
+                </div>
               </motion.div>
             ))
           )}

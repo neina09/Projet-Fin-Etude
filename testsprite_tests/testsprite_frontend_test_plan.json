@@ -1,0 +1,1379 @@
+[
+  {
+    "id": "TC001",
+    "title": "Login and access the dashboard",
+    "description": "Verifies a user can log in with valid phone and password and reach the protected dashboard.",
+    "category": "User Login",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the dashboard"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Verify OTP for registration and continue to login",
+    "description": "Verifies a newly-registered user can submit an OTP code on the verification screen and proceed to the login page on success.",
+    "category": "OTP Verification",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{FULL_NAME}} into the full name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PHONE_NUMBER}} into the phone number field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PASSWORD}} into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{OTP_CODE}} into the OTP code field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the OTP verification form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the login page"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Start registration and proceed to OTP verification screen",
+    "description": "Verifies a new user can submit the registration form and is taken to the OTP verification screen to continue account creation.",
+    "category": "User Registration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{FULL_NAME}} into the full name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PHONE_NUMBER}} into the phone number field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PASSWORD}} into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the OTP verification page"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Request password reset OTP and continue to OTP entry",
+    "description": "Verifies a user can request a password reset by submitting a phone number and is taken to the OTP entry page to continue recovery.",
+    "category": "Forgot Password",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /forgot-password"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the phone number field"
+      },
+      {
+        "type": "action",
+        "description": "Click the send OTP action"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the next page to load"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the OTP verification page"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Reset password successfully and return to login",
+    "description": "Verifies a user can set a new valid password and is redirected to login with a success confirmation.",
+    "category": "Reset Password",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /reset-password"
+      },
+      {
+        "type": "action",
+        "description": "Fill ValidPass123! into the new password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill ValidPass123! into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the reset password form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a success confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the login page"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Submit a booking request from a worker profile",
+    "description": "Verifies a user can open a worker profile from the workers directory, submit a booking request with required details, and see a booking confirmation.",
+    "category": "Worker Profile & Booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /workers"
+      },
+      {
+        "type": "action",
+        "description": "Click a worker from the list to open the worker profile"
+      },
+      {
+        "type": "action",
+        "description": "Click the booking action to start a booking request"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid booking details into the booking form"
+      },
+      {
+        "type": "action",
+        "description": "Submit the booking request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a booking confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Cancel an active booking from the user dashboard",
+    "description": "Verifies an authenticated user can cancel an active booking from the dashboard and the booking is no longer shown as active.",
+    "category": "User Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the login identifier field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the dashboard navigation entry"
+      },
+      {
+        "type": "action",
+        "description": "Cancel an active booking from the bookings list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the cancelled booking no longer appears in the active bookings list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the booking appears under cancelled or past bookings"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Admin can access admin dashboard and view platform statistics",
+    "description": "Verifies an admin can log in, open the admin dashboard, and see platform statistics displayed successfully.",
+    "category": "Admin Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the login submission control"
+      },
+      {
+        "type": "action",
+        "description": "Click the admin dashboard navigation entry"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the admin dashboard is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify platform statistics are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Accept an incoming booking request from the worker dashboard",
+    "description": "Verifies an authenticated worker can accept an incoming booking request and it appears under upcoming bookings.",
+    "category": "Worker Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the login identifier field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the dashboard navigation entry"
+      },
+      {
+        "type": "action",
+        "description": "Open the incoming booking requests section"
+      },
+      {
+        "type": "action",
+        "description": "Accept one incoming booking request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the accepted booking appears in the upcoming bookings section"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the accepted request is no longer listed as incoming"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Find a worker using search and filters and open the worker profile",
+    "description": "Verifies a user can browse the worker directory, refine results with search and filters, and open a worker’s profile from the results list.",
+    "category": "Browse Workers",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /workers"
+      },
+      {
+        "type": "action",
+        "description": "Fill a search term into the worker search field"
+      },
+      {
+        "type": "action",
+        "description": "Select a category filter option"
+      },
+      {
+        "type": "action",
+        "description": "Select an availability filter option"
+      },
+      {
+        "type": "action",
+        "description": "Click a worker from the results list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the worker profile details page is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Submit an offer from task detail and see it listed",
+    "description": "Verifies a user can open a task, submit an offer with a price and message, and see the offer listed among existing offers.",
+    "category": "Task Detail & Offer",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /tasks"
+      },
+      {
+        "type": "action",
+        "description": "Click a task from the list to open the task detail"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid price into the offer form"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid message into the offer form"
+      },
+      {
+        "type": "action",
+        "description": "Submit the offer"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the submitted offer is listed among the offers"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Browse tasks and open task detail from filtered results",
+    "description": "Verifies a user can browse tasks, apply a category or status filter, and open a task detail page from the filtered list.",
+    "category": "Browse Tasks",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /tasks"
+      },
+      {
+        "type": "action",
+        "description": "Select a category or status filter"
+      },
+      {
+        "type": "action",
+        "description": "Click a task from the filtered list to open the task detail"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the task detail content is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC013",
+    "title": "Admin can view the user list in user management",
+    "description": "Verifies an admin can navigate to user management and see the platform user list loaded successfully.",
+    "category": "Admin Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the login submission control"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "action",
+        "description": "Click the user management section entry"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the users are listed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each listed user shows identifying details"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC014",
+    "title": "Rate a completed booking from the user dashboard",
+    "description": "Verifies an authenticated user can rate a completed booking and the dashboard reflects that the booking is rated.",
+    "category": "User Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the login identifier field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the dashboard navigation entry"
+      },
+      {
+        "type": "action",
+        "description": "Open a completed booking that supports rating"
+      },
+      {
+        "type": "action",
+        "description": "Select a rating value"
+      },
+      {
+        "type": "action",
+        "description": "Submit the rating"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the booking shows as rated or includes the submitted rating state"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC015",
+    "title": "Non-admin cannot access the admin dashboard",
+    "description": "Verifies a non-admin user is prevented from accessing the admin dashboard and is routed to a non-admin experience.",
+    "category": "Admin Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the login submission control"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access to the admin dashboard is denied"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is shown a non-admin destination or message"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC016",
+    "title": "Submit a worker profile for approval",
+    "description": "Verifies an authenticated user can submit the become-worker form with required details and sees a confirmation that the profile is pending admin approval.",
+    "category": "Become Worker",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the login identifier field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the become-worker navigation entry"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid skills into the skills field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid description into the description field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid hourly rate into the hourly rate field"
+      },
+      {
+        "type": "action",
+        "description": "Select an availability option"
+      },
+      {
+        "type": "action",
+        "description": "Submit the worker profile form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a submission confirmation is visible indicating the application is pending approval"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC017",
+    "title": "Admin can approve a pending worker application",
+    "description": "Verifies an admin can approve a pending worker application and the application moves out of the pending state to a verified/approved state.",
+    "category": "Admin Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the login submission control"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "action",
+        "description": "Click the pending worker applications section entry"
+      },
+      {
+        "type": "action",
+        "description": "Click to open a pending worker application"
+      },
+      {
+        "type": "action",
+        "description": "Approve the worker application"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the worker application is no longer shown as pending"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the worker is shown as approved or verified in the admin view"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC018",
+    "title": "Review worker profile details before booking",
+    "description": "Verifies a user can view a worker’s skills, rating, and reviews on the profile page to inform a booking decision.",
+    "category": "Worker Profile & Booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /workers"
+      },
+      {
+        "type": "action",
+        "description": "Click a worker from the list to open the worker profile"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the worker skills are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify rating and reviews are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC019",
+    "title": "Prevent reset when confirmation password does not match",
+    "description": "Verifies the reset password form blocks submission when passwords mismatch and shows a mismatch validation error.",
+    "category": "Reset Password",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /reset-password"
+      },
+      {
+        "type": "action",
+        "description": "Fill ValidPass123! into the new password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill DifferentPass123! into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the reset password form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a password mismatch validation error is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user remains on the reset-password page"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC020",
+    "title": "Admin can reject a pending worker application with an admin note",
+    "description": "Verifies an admin can reject a pending worker application with an optional note and the application becomes marked as rejected.",
+    "category": "Admin Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the login submission control"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "action",
+        "description": "Click the pending worker applications section entry"
+      },
+      {
+        "type": "action",
+        "description": "Click to open a pending worker application"
+      },
+      {
+        "type": "action",
+        "description": "Fill a note into the admin note field"
+      },
+      {
+        "type": "action",
+        "description": "Reject the worker application"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the worker application is marked as rejected"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the rejection note is visible on the application"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC021",
+    "title": "Require strong password on reset",
+    "description": "Verifies the reset password form blocks weak passwords and shows a password strength validation error.",
+    "category": "Reset Password",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /reset-password"
+      },
+      {
+        "type": "action",
+        "description": "Fill 123456 into the new password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill 123456 into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the reset password form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a weak password validation error is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user remains on the reset-password page"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC022",
+    "title": "View notification details from the user dashboard",
+    "description": "Verifies an authenticated user can open the notifications area and view notification details when selecting an item.",
+    "category": "User Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the login identifier field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the dashboard navigation entry"
+      },
+      {
+        "type": "action",
+        "description": "Open the notifications panel"
+      },
+      {
+        "type": "action",
+        "description": "Click a notification item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the notification detail view is displayed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC023",
+    "title": "Show validation error for incorrect OTP",
+    "description": "Verifies submitting an incorrect OTP shows an invalid-OTP error and does not allow the user to continue.",
+    "category": "OTP Verification",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /verify-otp"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{INVALID_OTP_CODE}} into the OTP code field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the OTP verification form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an invalid OTP error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user remains on the OTP verification page"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC024",
+    "title": "Review offers on a posted task from the worker dashboard",
+    "description": "Verifies an authenticated worker can open a task from the dashboard tasks area and view its offers list if present.",
+    "category": "Worker Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the login identifier field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the dashboard navigation entry"
+      },
+      {
+        "type": "action",
+        "description": "Open the tasks or offers section"
+      },
+      {
+        "type": "action",
+        "description": "Click a task entry to review offers"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the task detail view shows an offers list or an empty offers state"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC025",
+    "title": "Block registration when passwords do not match",
+    "description": "Verifies registration is prevented when the password and confirm password values differ and a validation error is shown.",
+    "category": "User Registration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{FULL_NAME}} into the full name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PHONE_NUMBER}} into the phone number field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{DIFFERENT_PASSWORD}} into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a password mismatch validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user remains on the registration page"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC026",
+    "title": "Prevent offer submission when price or message is missing",
+    "description": "Verifies submitting an offer without a required price or message is blocked and a validation error is shown.",
+    "category": "Task Detail & Offer",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /tasks"
+      },
+      {
+        "type": "action",
+        "description": "Click a task from the list to open the task detail"
+      },
+      {
+        "type": "action",
+        "description": "Fill the offer form leaving either price or message empty"
+      },
+      {
+        "type": "action",
+        "description": "Submit the offer"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the offer is not submitted"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC027",
+    "title": "Block login with invalid credentials",
+    "description": "Verifies login fails with incorrect credentials and the user sees an invalid-credentials error without reaching the dashboard.",
+    "category": "User Login",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{WRONG_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an invalid credentials error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user remains on the login page"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC028",
+    "title": "Block OTP request when phone number format is invalid",
+    "description": "Verifies the forgot-password form prevents continuing when the phone number format is invalid and shows a validation error.",
+    "category": "Forgot Password",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /forgot-password"
+      },
+      {
+        "type": "action",
+        "description": "Fill 123 into the phone number field"
+      },
+      {
+        "type": "action",
+        "description": "Click the send OTP action"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a phone number validation error is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user remains on the forgot-password page"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC029",
+    "title": "Prevent booking submission when required booking details are missing",
+    "description": "Verifies submitting a booking request with missing required fields is blocked and a validation error is shown.",
+    "category": "Worker Profile & Booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /workers"
+      },
+      {
+        "type": "action",
+        "description": "Click a worker from the list to open the worker profile"
+      },
+      {
+        "type": "action",
+        "description": "Click the booking action to start a booking request"
+      },
+      {
+        "type": "action",
+        "description": "Fill incomplete booking details leaving at least one required field empty"
+      },
+      {
+        "type": "action",
+        "description": "Submit the booking request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the booking request is not submitted"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC030",
+    "title": "Validate required fields on become-worker submission",
+    "description": "Verifies the become-worker form prevents submission when required fields are missing and shows validation feedback to the user.",
+    "category": "Become Worker",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the login identifier field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the become-worker navigation entry"
+      },
+      {
+        "type": "action",
+        "description": "Clear any prefilled values for required fields if present"
+      },
+      {
+        "type": "action",
+        "description": "Submit the worker profile form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation errors are displayed for the missing required fields"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC031",
+    "title": "Show clear error when registration phone input is invalid and server rejects OTP send",
+    "description": "Verifies submitting registration with an invalid phone format results in a clear, user-visible error and does not proceed to OTP verification.",
+    "category": "User Registration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{FULL_NAME}} into the full name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{INVALID_PHONE}} into the phone number field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PASSWORD}} into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an error message is visible indicating the registration cannot continue"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user remains on the registration page"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC032",
+    "title": "Show empty state when worker filters return no results",
+    "description": "Verifies the workers page shows an empty state when filters yield no matches and allows the user to adjust filters to recover results.",
+    "category": "Browse Workers",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /workers"
+      },
+      {
+        "type": "action",
+        "description": "Fill an unlikely search term into the worker search field"
+      },
+      {
+        "type": "action",
+        "description": "Select a restrictive category filter option"
+      },
+      {
+        "type": "action",
+        "description": "Select a restrictive availability filter option"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty results state is displayed"
+      },
+      {
+        "type": "action",
+        "description": "Clear the search term or relax at least one filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify worker listings are displayed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC033",
+    "title": "Show empty state when filters exclude all tasks and recover by changing filters",
+    "description": "Verifies the tasks page shows an empty state when filters yield no results and the user can modify filters to see tasks again.",
+    "category": "Browse Tasks",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /tasks"
+      },
+      {
+        "type": "action",
+        "description": "Select filters that exclude all tasks"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the filtered results to update"
+      },
+      {
+        "type": "action",
+        "description": "Modify or clear at least one filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty state is shown when no tasks match"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify tasks are listed after adjusting filters"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC034",
+    "title": "Handle empty bookings state on the user dashboard",
+    "description": "Verifies the dashboard shows an appropriate empty state when the authenticated user has no bookings to display.",
+    "category": "User Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the login identifier field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the dashboard navigation entry"
+      },
+      {
+        "type": "action",
+        "description": "Switch between bookings tabs or filters if available"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty state is displayed indicating there are no bookings"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC035",
+    "title": "Resend OTP and verify using the new code",
+    "description": "Verifies a user can request a resend of the OTP and then successfully verify using the newly received code.",
+    "category": "OTP Verification",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /verify-otp"
+      },
+      {
+        "type": "action",
+        "description": "Request a resend of the OTP"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the resend confirmation to appear"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{NEW_OTP_CODE}} into the OTP code field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the OTP verification form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify OTP verification succeeds and the user can continue to the next step of the flow"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC036",
+    "title": "Prevent invalid hourly rate values on become-worker form",
+    "description": "Verifies the become-worker form blocks clearly invalid hourly rate input and keeps the user on the form with validation feedback.",
+    "category": "Become Worker",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the login identifier field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the become-worker navigation entry"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid skills into the skills field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid description into the description field"
+      },
+      {
+        "type": "action",
+        "description": "Fill an invalid hourly rate value into the hourly rate field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the worker profile form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a validation error is shown for the hourly rate and the form is not submitted"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC037",
+    "title": "Toggle password visibility while registering",
+    "description": "Verifies a user can toggle password visibility on the registration form without losing entered values.",
+    "category": "User Registration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Toggle password visibility"
+      },
+      {
+        "type": "action",
+        "description": "Toggle password visibility again"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{PASSWORD}} into the confirm password field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify both password fields still contain user-entered values"
+      }
+    ],
+    "priority": "Low"
+  }
+]

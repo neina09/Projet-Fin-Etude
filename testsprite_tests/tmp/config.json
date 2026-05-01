@@ -1,0 +1,20 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "diff",
+  "localEndpoint": "http://localhost:3000",
+  "loginUser": "28660638",
+  "loginPassword": "123456789",
+  "executionArgs": {
+    "projectName": "Projet-Fin-Etude",
+    "projectPath": "/Users/meldesign/Development/Projet-Fin-Etude",
+    "testIds": [],
+    "additionalInstruction": "",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-AlQGDZfSIP5vDWmsZlPTQ6zm_ySCyYQ2nNC_g2sXpk9n-RlfsLZMPIFXAl4lhWCL2C-KbE9QuB31ZR4uiovVifdLc_LxfViTniDx_8bZ9G1BlNltvpMqvL6V2Mc6bL0Aoog"
+    }
+  },
+  "serverPort": 56529,
+  "proxy": "http://f0043f22-89f2-49fd-a065-743813f8203d:RzMaFJWMVuLvFZmtDkpMcChj6hbW3XaJ@tun.testsprite.com:8080"
+}

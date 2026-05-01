@@ -203,7 +203,9 @@
       "rating": "Note moyenne",
       "jobs": "Missions effectuées",
       "pending": "En attente"
-    }
+    },
+    "accept": "Accepter",
+    "reject": "Rejeter"
   },
   "becomeWorker": {
     "title": "Devenir travailleur",

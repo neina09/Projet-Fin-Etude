@@ -18,6 +18,7 @@
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/StatsResponse.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/repository/WorkerProfileRepository.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/entity/Notification.java
+/Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/config/DataSeeder.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/response/ReviewResponse.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/dto/request/ResetPasswordRequest.java
 /Users/meldesign/Development/Projet-Fin-Etude/Backend/src/main/java/com/ommalak/config/SecurityConfig.java

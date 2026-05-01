@@ -10,5 +10,5 @@ export const authApi = {
   updateProfile:  (data)                           => api.put('/auth/me', data),
   becomeWorker:   (data)                           => api.post('/auth/become-worker', data),
   forgotPassword: (phone)                          => api.post('/auth/forgot-password', { phone }),
-  resetPassword:  (phone, code, newPassword)       => api.post('/auth/reset-password', { phone, code, newPassword }),
+  resetPassword:  (phone, code, newPassword)       => api.post('/auth/reset-password', { phone, code, password: newPassword }),
 }

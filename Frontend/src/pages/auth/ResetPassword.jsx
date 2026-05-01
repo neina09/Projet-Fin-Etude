@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -14,6 +14,10 @@ export default function ResetPassword() {
   const [form, setForm] = useState({ newPassword: '', confirm: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!state?.phone || !state?.code) navigate('/forgot-password', { replace: true })
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

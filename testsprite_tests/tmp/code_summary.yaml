@@ -1,0 +1,279 @@
+version: "2"
+type: frontend
+tech_stack:
+  - JavaScript
+  - React
+  - Vite
+  - Tailwind CSS
+  - React Router
+  - i18next
+  - Framer Motion
+  - Axios
+routes:
+  - path: /
+    file: Frontend/src/pages/Home.jsx
+    auth_required: false
+    description: Home landing page
+  - path: /login
+    file: Frontend/src/pages/auth/Login.jsx
+    auth_required: false
+    description: User login page
+  - path: /register
+    file: Frontend/src/pages/auth/Register.jsx
+    auth_required: false
+    description: User registration page
+  - path: /verify-otp
+    file: Frontend/src/pages/auth/OtpVerify.jsx
+    auth_required: false
+    description: OTP verification page after registration or forgot-password
+  - path: /forgot-password
+    file: Frontend/src/pages/auth/ForgotPassword.jsx
+    auth_required: false
+    description: Forgot password - sends OTP to phone
+  - path: /reset-password
+    file: Frontend/src/pages/auth/ResetPassword.jsx
+    auth_required: false
+    description: Reset password using OTP
+  - path: /workers
+    file: Frontend/src/pages/workers/WorkersPage.jsx
+    auth_required: false
+    description: Browse available workers
+  - path: /workers/:id
+    file: Frontend/src/pages/workers/WorkerProfile.jsx
+    auth_required: false
+    description: View a worker's profile and book them
+  - path: /tasks
+    file: Frontend/src/pages/tasks/TasksPage.jsx
+    auth_required: false
+    description: Browse available tasks
+  - path: /tasks/:id
+    file: Frontend/src/pages/tasks/TaskDetail.jsx
+    auth_required: false
+    description: Task detail and offer submission
+  - path: /dashboard
+    file: Frontend/src/pages/dashboard/UserDashboard.jsx
+    auth_required: true
+    description: User or worker dashboard depending on role
+  - path: /become-worker
+    file: Frontend/src/pages/BecomeWorker.jsx
+    auth_required: true
+    description: Form to register as a worker
+  - path: /admin
+    file: Frontend/src/pages/admin/AdminDashboard.jsx
+    auth_required: true
+    description: Admin dashboard for managing users and platform
+features:
+  - name: User Registration
+    description: Register a new user account with full name, phone, password and OTP verification
+    files:
+      - Frontend/src/pages/auth/Register.jsx
+      - Frontend/src/api/auth.js
+    entry_route: /register
+    user_interactions:
+      - Fill full name input field
+      - Fill phone number input field
+      - Fill password input field
+      - Fill confirm password input field
+      - Toggle password visibility
+      - Click register button to submit
+      - See error message on password mismatch or server error
+      - Get redirected to OTP verification page
+    api_calls:
+      - method: POST
+        endpoint: /api/auth/send-otp
+    auth_required: false
+  - name: User Login
+    description: Login with phone and password credentials
+    files:
+      - Frontend/src/pages/auth/Login.jsx
+      - Frontend/src/api/auth.js
+      - Frontend/src/context/AuthContext.jsx
+    entry_route: /login
+    user_interactions:
+      - Fill phone input field
+      - Fill password input field
+      - Click login button to submit
+      - See error message on invalid credentials
+      - Get redirected to dashboard on success
+    api_calls:
+      - method: POST
+        endpoint: /api/auth/login
+    auth_required: false
+  - name: OTP Verification
+    description: Verify phone number with OTP code for registration or password reset
+    files:
+      - Frontend/src/pages/auth/OtpVerify.jsx
+      - Frontend/src/api/auth.js
+    entry_route: /verify-otp
+    user_interactions:
+      - Enter OTP code received on phone
+      - Click verify button
+      - Resend OTP if not received
+      - See error on invalid OTP
+    api_calls:
+      - method: POST
+        endpoint: /api/auth/verify-otp
+      - method: POST
+        endpoint: /api/auth/register
+    auth_required: false
+  - name: Forgot Password
+    description: Request password reset by sending OTP to phone number
+    files:
+      - Frontend/src/pages/auth/ForgotPassword.jsx
+      - Frontend/src/api/auth.js
+    entry_route: /forgot-password
+    user_interactions:
+      - Fill phone number input
+      - Click send OTP button
+      - Get redirected to OTP verify page
+    api_calls:
+      - method: POST
+        endpoint: /api/auth/send-otp
+    auth_required: false
+  - name: Reset Password
+    description: Set a new password after OTP verification
+    files:
+      - Frontend/src/pages/auth/ResetPassword.jsx
+      - Frontend/src/api/auth.js
+    entry_route: /reset-password
+    user_interactions:
+      - Fill new password
+      - Fill confirm password
+      - Click reset button
+      - See error on mismatch or weak password
+    api_calls:
+      - method: POST
+        endpoint: /api/auth/reset-password
+    auth_required: false
+  - name: Browse Workers
+    description: View a list of available workers with search and filter
+    files:
+      - Frontend/src/pages/workers/WorkersPage.jsx
+      - Frontend/src/components/workers/WorkerCard.jsx
+      - Frontend/src/api/workers.js
+    entry_route: /workers
+    user_interactions:
+      - Search workers by name or skill
+      - Filter by category or availability
+      - Click on a worker card to view profile
+    api_calls:
+      - method: GET
+        endpoint: /api/workers
+    auth_required: false
+  - name: Worker Profile & Booking
+    description: View worker details and book their services
+    files:
+      - Frontend/src/pages/workers/WorkerProfile.jsx
+      - Frontend/src/api/workers.js
+      - Frontend/src/api/bookings.js
+    entry_route: /workers/:id
+    user_interactions:
+      - View worker skills, rating, and reviews
+      - Click book button
+      - Fill booking details
+      - Submit booking request
+    api_calls:
+      - method: GET
+        endpoint: /api/workers/{id}
+      - method: POST
+        endpoint: /api/bookings
+    auth_required: false
+  - name: Browse Tasks
+    description: View available tasks posted by users
+    files:
+      - Frontend/src/pages/tasks/TasksPage.jsx
+      - Frontend/src/components/tasks/TaskCard.jsx
+      - Frontend/src/api/tasks.js
+    entry_route: /tasks
+    user_interactions:
+      - Browse task listings
+      - Filter by category or status
+      - Click task card to view detail
+    api_calls:
+      - method: GET
+        endpoint: /api/tasks
+    auth_required: false
+  - name: Task Detail & Offer
+    description: View task details and submit an offer as a worker
+    files:
+      - Frontend/src/pages/tasks/TaskDetail.jsx
+      - Frontend/src/api/tasks.js
+    entry_route: /tasks/:id
+    user_interactions:
+      - View task description and requirements
+      - Submit an offer with price and message
+      - See existing offers
+    api_calls:
+      - method: GET
+        endpoint: /api/tasks/{id}
+      - method: POST
+        endpoint: /api/tasks/{id}/offers
+    auth_required: false
+  - name: User Dashboard
+    description: Manage bookings, notifications, and profile for logged-in users
+    files:
+      - Frontend/src/pages/dashboard/UserDashboard.jsx
+      - Frontend/src/api/bookings.js
+      - Frontend/src/api/notifications.js
+    entry_route: /dashboard
+    user_interactions:
+      - View active and past bookings
+      - Cancel or rate completed bookings
+      - View notifications
+    api_calls:
+      - method: GET
+        endpoint: /api/bookings
+      - method: GET
+        endpoint: /api/notifications
+    auth_required: true
+  - name: Worker Dashboard
+    description: Manage tasks, offers, and earnings for workers
+    files:
+      - Frontend/src/pages/dashboard/WorkerDashboard.jsx
+      - Frontend/src/api/bookings.js
+      - Frontend/src/api/tasks.js
+    entry_route: /dashboard
+    user_interactions:
+      - View incoming booking requests
+      - Accept or reject bookings
+      - View posted tasks and offers
+    api_calls:
+      - method: GET
+        endpoint: /api/bookings
+      - method: PUT
+        endpoint: /api/bookings/{id}
+    auth_required: true
+  - name: Become Worker
+    description: Submit worker profile to offer services on the platform
+    files:
+      - Frontend/src/pages/BecomeWorker.jsx
+      - Frontend/src/api/workers.js
+    entry_route: /become-worker
+    user_interactions:
+      - Fill skills and description
+      - Set hourly rate and availability
+      - Submit worker profile form
+    api_calls:
+      - method: POST
+        endpoint: /api/workers/profile
+    auth_required: true
+  - name: Admin Dashboard
+    description: Admin panel to manage users, workers, tasks, and platform statistics
+    files:
+      - Frontend/src/pages/admin/AdminDashboard.jsx
+      - Frontend/src/api/admin.js
+    entry_route: /admin
+    user_interactions:
+      - View platform statistics
+      - Manage user accounts
+      - View and moderate tasks and bookings
+    api_calls:
+      - method: GET
+        endpoint: /api/admin/stats
+      - method: GET
+        endpoint: /api/admin/users
+    auth_required: true
+known_limitations:
+  - issue: Registration form sends OTP before verifying if phone number is valid format
+    location: Frontend/src/pages/auth/Register.jsx:28
+    impact: Invalid phone numbers will trigger an API call and show a server error instead of a client-side validation error

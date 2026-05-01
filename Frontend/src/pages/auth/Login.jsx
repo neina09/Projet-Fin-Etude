@@ -48,7 +48,7 @@ export default function Login() {
               <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">{t('auth.login.subtitle')}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
               <div className="relative">
                 <Input
                   label={t('auth.login.phone')}

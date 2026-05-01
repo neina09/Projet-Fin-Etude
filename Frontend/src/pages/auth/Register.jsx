@@ -11,7 +11,7 @@ import Layout from '../../components/layout/Layout'
 export default function Register() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ name: '', phone: '', password: '', confirm: '' })
+  const [form, setForm] = useState({ fullName: '', phone: '', password: '', confirm: '' })
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -20,6 +20,8 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!form.fullName.trim()) return setError(t('errors.required'))
+    if (!form.phone.trim()) return setError(t('errors.required'))
     if (form.password !== form.confirm) return setError(t('errors.passwordMismatch'))
     if (form.password.length < 6) return setError(t('errors.minPassword'))
     setError('')
@@ -45,8 +47,8 @@ export default function Register() {
               <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">{t('auth.register.subtitle')}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <Input label={t('auth.register.name')} placeholder="Ahmed Mohamed" value={form.name} onChange={set('name')} required />
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+              <Input label={t('auth.register.name')} placeholder="Ahmed Mohamed" value={form.fullName} onChange={set('fullName')} required />
               <Input label={t('auth.register.phone')} type="tel" placeholder="+222 XX XX XX XX" value={form.phone} onChange={set('phone')} required />
 
               <div className="relative">
