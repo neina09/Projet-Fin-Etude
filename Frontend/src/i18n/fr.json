@@ -1,0 +1,320 @@
+{
+  "app": {
+    "name": "عمالك",
+    "tagline": "Connectez-vous avec des travailleurs locaux qualifiés",
+    "description": "La marketplace de services à la demande en Mauritanie"
+  },
+  "nav": {
+    "home": "Accueil",
+    "workers": "Travailleurs",
+    "tasks": "Tableau des tâches",
+    "dashboard": "Tableau de bord",
+    "admin": "Administration",
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "logout": "Déconnexion",
+    "profile": "Mon profil",
+    "becomeWorker": "Devenir travailleur",
+    "notifications": "Notifications"
+  },
+  "home": {
+    "hero": {
+      "title": "Trouvez le bon travailleur,",
+      "titleHighlight": "au bon moment",
+      "subtitle": "Ommalak connecte les clients mauritaniens avec des plombiers, électriciens, charpentiers et autres professionnels vérifiés près de chez eux.",
+      "ctaWorkers": "Parcourir les travailleurs",
+      "ctaTasks": "Publier une tâche",
+      "stats": {
+        "workers": "Travailleurs vérifiés",
+        "tasks": "Tâches publiées",
+        "clients": "Clients satisfaits"
+      }
+    },
+    "howItWorks": {
+      "title": "Comment ça marche",
+      "step1": { "title": "Publiez votre tâche", "desc": "Décrivez le travail dont vous avez besoin et votre localisation." },
+      "step2": { "title": "Recevez des offres", "desc": "Des travailleurs qualifiés soumettent leurs propositions et tarifs." },
+      "step3": { "title": "Choisissez et payez", "desc": "Sélectionnez le meilleur profil et confirmez la mission." }
+    },
+    "featuredWorkers": {
+      "title": "Travailleurs en vedette",
+      "subtitle": "Découvrez nos meilleurs prestataires vérifiés",
+      "viewAll": "Voir tous les travailleurs"
+    },
+    "categories": {
+      "title": "Catégories populaires",
+      "plumber": "Plombier",
+      "electrician": "Électricien",
+      "carpenter": "Charpentier",
+      "painter": "Peintre",
+      "mason": "Maçon",
+      "cleaner": "Nettoyage"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Bon retour",
+      "subtitle": "Connectez-vous à votre compte",
+      "phone": "Numéro de téléphone",
+      "password": "Mot de passe",
+      "forgotPassword": "Mot de passe oublié ?",
+      "submit": "Se connecter",
+      "noAccount": "Pas encore de compte ?",
+      "register": "S'inscrire"
+    },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Rejoignez la communauté Ommalak",
+      "name": "Nom complet",
+      "phone": "Numéro de téléphone",
+      "password": "Mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "submit": "S'inscrire",
+      "hasAccount": "Déjà un compte ?",
+      "login": "Se connecter"
+    },
+    "otp": {
+      "title": "Vérification OTP",
+      "subtitle": "Entrez le code reçu par SMS",
+      "code": "Code de vérification",
+      "submit": "Vérifier",
+      "resend": "Renvoyer le code",
+      "placeholder": "------"
+    },
+    "forgotPassword": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Entrez votre numéro pour recevoir un code",
+      "phone": "Numéro de téléphone",
+      "submit": "Envoyer le code",
+      "backToLogin": "Retour à la connexion"
+    },
+    "resetPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Créez un nouveau mot de passe sécurisé",
+      "code": "Code OTP",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "submit": "Réinitialiser"
+    }
+  },
+  "workers": {
+    "title": "Travailleurs vérifiés",
+    "subtitle": "Trouvez le professionnel idéal pour votre besoin",
+    "search": "Rechercher un travailleur...",
+    "filter": {
+      "all": "Tous",
+      "available": "Disponibles",
+      "profession": "Profession"
+    },
+    "card": {
+      "verified": "Vérifié",
+      "available": "Disponible",
+      "busy": "Occupé",
+      "rating": "Note",
+      "viewProfile": "Voir le profil",
+      "book": "Réserver"
+    },
+    "profile": {
+      "skills": "Compétences",
+      "location": "Localisation",
+      "salary": "Tarif journalier",
+      "joinedDate": "Membre depuis",
+      "reviews": "Avis clients",
+      "book": "Réserver maintenant",
+      "rate": "Laisser un avis"
+    },
+    "empty": "Aucun travailleur trouvé",
+    "loading": "Chargement des travailleurs..."
+  },
+  "worker": {
+    "portfolio": "Portfolio",
+    "noPortfolio": "Aucune photo de portfolio pour le moment"
+  },
+  "tasks": {
+    "title": "Tableau des tâches",
+    "subtitle": "Parcourez les missions disponibles",
+    "create": "Publier une tâche",
+    "myTasks": "Mes tâches",
+    "search": "Rechercher une tâche...",
+    "status": {
+      "pending": "En attente",
+      "open": "Ouvert",
+      "inProgress": "En cours",
+      "completed": "Terminé",
+      "cancelled": "Annulé"
+    },
+    "form": {
+      "title": "Titre de la tâche",
+      "description": "Description",
+      "profession": "Profession requise",
+      "location": "Localisation",
+      "budget": "Budget estimé",
+      "submit": "Publier la tâche",
+      "update": "Mettre à jour"
+    },
+    "offers": {
+      "title": "Offres reçues",
+      "submit": "Soumettre une offre",
+      "price": "Prix proposé",
+      "message": "Message",
+      "accept": "Accepter",
+      "pending": "En attente",
+      "accepted": "Acceptée",
+      "noOffers": "Aucune offre pour l'instant"
+    },
+    "empty": "Aucune tâche disponible",
+    "loading": "Chargement des tâches..."
+  },
+  "bookings": {
+    "title": "Mes réservations",
+    "create": "Nouvelle réservation",
+    "workerBookings": "Mes missions",
+    "form": {
+      "date": "Date souhaitée",
+      "description": "Description du travail",
+      "submit": "Confirmer la réservation"
+    },
+    "status": {
+      "pending": "En attente",
+      "confirmed": "Confirmée",
+      "completed": "Terminée",
+      "cancelled": "Annulée"
+    },
+    "empty": "Aucune réservation",
+    "loading": "Chargement..."
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "welcome": "Bienvenue",
+    "myTasks": "Mes tâches",
+    "myBookings": "Mes réservations",
+    "profile": "Mon profil",
+    "stats": {
+      "tasks": "Tâches publiées",
+      "bookings": "Réservations",
+      "offers": "Offres reçues"
+    }
+  },
+  "workerDashboard": {
+    "title": "Espace travailleur",
+    "availability": "Disponibilité",
+    "available": "Disponible",
+    "busy": "Occupé",
+    "myOffers": "Mes offres",
+    "myBookings": "Mes missions",
+    "profile": "Mon profil professionnel",
+    "stats": {
+      "rating": "Note moyenne",
+      "jobs": "Missions effectuées",
+      "pending": "En attente"
+    },
+    "accept": "Accepter",
+    "reject": "Rejeter"
+  },
+  "becomeWorker": {
+    "title": "Devenir travailleur",
+    "subtitle": "Rejoignez notre réseau de professionnels vérifiés",
+    "form": {
+      "profession": "Votre métier",
+      "skills": "Compétences (séparées par des virgules)",
+      "bio": "Présentation",
+      "location": "Localisation",
+      "salary": "Tarif journalier (MRU)",
+      "idDocument": "Document d'identité",
+      "submit": "Soumettre la demande"
+    },
+    "pending": "Votre demande est en cours de traitement",
+    "success": "Demande soumise avec succès !"
+  },
+  "admin": {
+    "title": "Administration",
+    "stats": {
+      "users": "Utilisateurs",
+      "workers": "Travailleurs",
+      "tasks": "Tâches",
+      "bookings": "Réservations"
+    },
+    "pendingWorkers": "Demandes en attente",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "users": "Gestion des utilisateurs",
+    "tasks": "Modération des tâches",
+    "delete": "Supprimer",
+    "noData": "Aucune donnée disponible",
+    "completedTasks": "Tâches complétées",
+    "earnings": {
+      "title": "Revenus de la plateforme",
+      "totalRevenue": "Revenu total",
+      "workerShare": "Part travailleurs",
+      "platformFee": "Commission plateforme",
+      "perWorker": "Détail par travailleur",
+      "history": "Historique des revenus",
+      "completedBookings": "Réservations complétées",
+      "filters": {
+        "7d": "7j",
+        "30d": "30j",
+        "90d": "3 mois",
+        "1y": "1 an"
+      }
+    },
+    "penalty": {
+      "add": "Ajouter une pénalité",
+      "reason": "Motif",
+      "amount": "Montant (MRU)",
+      "confirm": "Appliquer la pénalité",
+      "target": "Pénalité pour",
+      "list": "Pénalités",
+      "noPenalties": "Aucune pénalité enregistrée"
+    },
+    "reviews": {
+      "title": "Avis clients",
+      "clientPhone": "Téléphone",
+      "noReviews": "Aucun avis"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAll": "Tout marquer comme lu",
+    "empty": "Aucune notification",
+    "unread": "non lues"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "confirm": "Confirmer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "noData": "Aucune donnée",
+    "success": "Opération réussie",
+    "viewMore": "Voir plus",
+    "close": "Fermer",
+    "or": "ou",
+    "submitting": "Envoi en cours...",
+    "perDay": "/jour",
+    "stars": "étoiles",
+    "loggingIn": "Connexion en cours...",
+    "loggingOut": "Déconnexion en cours..."
+  },
+  "profile": {
+    "title": "Mon profil",
+    "name": "Nom",
+    "phone": "Téléphone",
+    "update": "Mettre à jour le profil",
+    "success": "Profil mis à jour avec succès"
+  },
+  "errors": {
+    "required": "Ce champ est obligatoire",
+    "invalidPhone": "Numéro de téléphone invalide",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "minPassword": "Le mot de passe doit contenir au moins 6 caractères",
+    "serverError": "Erreur serveur. Veuillez réessayer.",
+    "unauthorized": "Session expirée. Veuillez vous reconnecter.",
+    "notFound": "Ressource introuvable"
+  }
+}
