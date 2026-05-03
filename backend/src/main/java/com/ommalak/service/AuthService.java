@@ -84,8 +84,9 @@ public class AuthService {
     @Transactional
     public void becomeWorker(User user, WorkerProfileRequest req) {
         if (user.getRole() == UserRole.WORKER) throw new ApiException("Already a worker");
-        user.setRole(UserRole.WORKER);
-        userRepository.save(user);
+        if (workerProfileRepository.findByUserId(user.getId()).isPresent()) {
+            throw new ApiException("Worker request already pending approval");
+        }
 
         WorkerProfile wp = WorkerProfile.builder()
                 .user(user)
@@ -94,6 +95,9 @@ public class AuthService {
                 .bio(req.getBio())
                 .idDocumentUrl(req.getIdDocumentUrl())
                 .build();
+        if (req.getSkills() != null) {
+            wp.getSkills().addAll(req.getSkills());
+        }
         workerProfileRepository.save(wp);
     }
 

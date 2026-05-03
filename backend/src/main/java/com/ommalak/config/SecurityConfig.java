@@ -41,7 +41,8 @@ public class SecurityConfig {
                                          "/api/auth/forgot-password",
                                          "/api/auth/reset-password").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/workers/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/workers/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/tasks/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

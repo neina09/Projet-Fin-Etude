@@ -1,0 +1,377 @@
+{"timestamp":"2026-05-02T22:18:31.641Z","level":"debug","message":"Generate code and execute params","context":{"projectName":"Backend","projectPath":"/Users/meldesign/Development/Projet-Fin-Etude copy/Backend","testIds":[],"serverMode":"development"}}
+{"timestamp":"2026-05-02T22:18:31.646Z","level":"info","message":"Attempting to start server (attempt 1/3)"}
+{"timestamp":"2026-05-02T22:18:31.695Z","level":"info","message":"detectServerMode: no pattern matched for command: /opt/homebrew/Cellar/openjdk@17/17.0.17/libexec/openjdk.jdk/Contents/Home/bin/java -XX:TieredStopAtLevel=1 -cp /Users/meldesign/Development/Projet-Fin-Etude copy/Backend/target/classes:/Users/meldesign/.m2/repository/org/springframework/boot/spring-boot/3.2.5/spring-boot-3.2.5.jar:/Users/meldesign/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/3.2.5/spring-boot-autoconfigure-3.2.5.jar:/Users/meldesign/.m2/repository/ch/qos/logback/logback-classic/1.4.14/logback-classic-1.4.14.jar:/Users/meldesign/.m2/repository/ch/qos/logback/logback-core/1.4.14/logback-core-1.4.14.jar:/Users/meldesign/.m2/repository/org/apache/logging/log4j/log4j-to-slf4j/2.21.1/log4j-to-slf4j-2.21.1.jar:/Users/meldesign/.m2/repository/org/apache/logging/log4j/log4j-api/2.21.1/log4j-api-2.21.1.jar:/Users/meldesign/.m2/repository/org/slf4j/jul-to-slf4j/2.0.13/jul-to-slf4j-2.0.13.jar:/Users/meldesign/.m2/repository/jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar:/Users/meldesign/.m2/repository/org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.15.4/jackson-datatype-jdk8-2.15.4.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.15.4/jackson-datatype-jsr310-2.15.4.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/module/jackson-module-parameter-names/2.15.4/jackson-module-parameter-names-2.15.4.jar:/Users/meldesign/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/10.1.20/tomcat-embed-core-10.1.20.jar:/Users/meldesign/.m2/repository/org/apache/tomcat/embed/tomcat-embed-websocket/10.1.20/tomcat-embed-websocket-10.1.20.jar:/Users/meldesign/.m2/repository/org/springframework/spring-web/6.1.6/spring-web-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-beans/6.1.6/spring-beans-6.1.6.jar:/Users/meldesign/.m2/repository/io/micrometer/micrometer-observation/1.12.5/micrometer-observation-1.12.5.jar:/Users/meldesign/.m2/repository/io/micrometer/micrometer-commons/1.12.5/micrometer-commons-1.12.5.jar:/Users/meldesign/.m2/repository/org/springframework/spring-webmvc/6.1.6/spring-webmvc-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-context/6.1.6/spring-context-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-expression/6.1.6/spring-expression-6.1.6.jar:/Users/meldesign/.m2/repository/org/aspectj/aspectjweaver/1.9.22/aspectjweaver-1.9.22.jar:/Users/meldesign/.m2/repository/com/zaxxer/HikariCP/5.0.1/HikariCP-5.0.1.jar:/Users/meldesign/.m2/repository/org/springframework/spring-jdbc/6.1.6/spring-jdbc-6.1.6.jar:/Users/meldesign/.m2/repository/org/hibernate/orm/hibernate-core/6.4.4.Final/hibernate-core-6.4.4.Final.jar:/Users/meldesign/.m2/repository/jakarta/persistence/jakarta.persistence-api/3.1.0/jakarta.persistence-api-3.1.0.jar:/Users/meldesign/.m2/repository/jakarta/transaction/jakarta.transaction-api/2.0.1/jakarta.transaction-api-2.0.1.jar:/Users/meldesign/.m2/repository/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.jar:/Users/meldesign/.m2/repository/org/hibernate/common/hibernate-commons-annotations/6.0.6.Final/hibernate-commons-annotations-6.0.6.Final.jar:/Users/meldesign/.m2/repository/io/smallrye/jandex/3.1.2/jandex-3.1.2.jar:/Users/meldesign/.m2/repository/com/fasterxml/classmate/1.6.0/classmate-1.6.0.jar:/Users/meldesign/.m2/repository/net/bytebuddy/byte-buddy/1.14.13/byte-buddy-1.14.13.jar:/Users/meldesign/.m2/repository/org/glassfish/jaxb/jaxb-runtime/4.0.5/jaxb-runtime-4.0.5.jar:/Users/meldesign/.m2/repository/org/glassfish/jaxb/jaxb-core/4.0.5/jaxb-core-4.0.5.jar:/Users/meldesign/.m2/repository/org/eclipse/angus/angus-activation/2.0.2/angus-activation-2.0.2.jar:/Users/meldesign/.m2/repository/org/glassfish/jaxb/txw2/4.0.5/txw2-4.0.5.jar:/Users/meldesign/.m2/repository/com/sun/istack/istack-commons-runtime/4.1.2/istack-commons-runtime-4.1.2.jar:/Users/meldesign/.m2/repository/jakarta/inject/jakarta.inject-api/2.0.1/jakarta.inject-api-2.0.1.jar:/Users/meldesign/.m2/repository/org/antlr/antlr4-runtime/4.13.0/antlr4-runtime-4.13.0.jar:/Users/meldesign/.m2/repository/org/springframework/data/spring-data-jpa/3.2.5/spring-data-jpa-3.2.5.jar:/Users/meldesign/.m2/repository/org/springframework/data/spring-data-commons/3.2.5/spring-data-commons-3.2.5.jar:/Users/meldesign/.m2/repository/org/springframework/spring-orm/6.1.6/spring-orm-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-tx/6.1.6/spring-tx-6.1.6.jar:/Users/meldesign/.m2/repository/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.jar:/Users/meldesign/.m2/repository/org/springframework/spring-aspects/6.1.6/spring-aspects-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-aop/6.1.6/spring-aop-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/security/spring-security-config/6.2.4/spring-security-config-6.2.4.jar:/Users/meldesign/.m2/repository/org/springframework/security/spring-security-core/6.2.4/spring-security-core-6.2.4.jar:/Users/meldesign/.m2/repository/org/springframework/security/spring-security-crypto/6.2.4/spring-security-crypto-6.2.4.jar:/Users/meldesign/.m2/repository/org/springframework/security/spring-security-web/6.2.4/spring-security-web-6.2.4.jar:/Users/meldesign/.m2/repository/org/apache/tomcat/embed/tomcat-embed-el/10.1.20/tomcat-embed-el-10.1.20.jar:/Users/meldesign/.m2/repository/org/hibernate/validator/hibernate-validator/8.0.1.Final/hibernate-validator-8.0.1.Final.jar:/Users/meldesign/.m2/repository/jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2.jar:/Users/meldesign/.m2/repository/com/mysql/mysql-connector-j/8.3.0/mysql-connector-j-8.3.0.jar:/Users/meldesign/.m2/repository/io/jsonwebtoken/jjwt-api/0.12.5/jjwt-api-0.12.5.jar:/Users/meldesign/.m2/repository/io/jsonwebtoken/jjwt-impl/0.12.5/jjwt-impl-0.12.5.jar:/Users/meldesign/.m2/repository/io/jsonwebtoken/jjwt-jackson/0.12.5/jjwt-jackson-0.12.5.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.15.4/jackson-databind-2.15.4.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.15.4/jackson-annotations-2.15.4.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.15.4/jackson-core-2.15.4.jar:/Users/meldesign/.m2/repository/jakarta/xml/bind/jakarta.xml.bind-api/4.0.2/jakarta.xml.bind-api-4.0.2.jar:/Users/meldesign/.m2/repository/jakarta/activation/jakarta.activation-api/2.1.3/jakarta.activation-api-2.1.3.jar:/Users/meldesign/.m2/repository/org/springframework/spring-core/6.1.6/spring-core-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-jcl/6.1.6/spring-jcl-6.1.6.jar com.ommalak.OmmalakApplication"}
+{"timestamp":"2026-05-02T22:18:31.647Z","level":"info","message":"HTTP server started successfully on port 57068"}
+{"timestamp":"2026-05-02T22:18:32.375Z","level":"info","message":"HTTP proxy started successfully on port 57072"}
+{"timestamp":"2026-05-02T22:18:32.374Z","level":"info","message":"Attempting to start HTTP proxy (attempt 1/3)"}
+{"timestamp":"2026-05-02T22:18:33.013Z","level":"info","message":"🚀 Starting tunnel client: 380c9b38-cdfc-4a27-ac89-0fec9624f894","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:33.013Z","level":"info","message":"📋 Config: localhost:57072 -> tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:33.014Z","level":"info","message":"⏱️ Network timeout: 10000ms, Auth: enabled","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:33.425Z","level":"info","message":"Verifying tunnel connectivity..."}
+{"timestamp":"2026-05-02T22:18:33.424Z","level":"info","message":"proxy: [REDACTED]tun.testsprite.com:8080"}
+{"timestamp":"2026-05-02T22:18:33.014Z","level":"info","message":"🔗 Establishing control connection...","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:33.425Z","level":"info","message":"Tunnel probe attempt 1/2 through tun.testsprite.com:8080 to http://localhost:8080..."}
+{"timestamp":"2026-05-02T22:18:33.843Z","level":"info","message":"✅ Tunnel established, remote port: 8080","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:33.987Z","level":"info","message":"🔄 [1] New connection request: b5f58c9b-8372-491d-9788-df9a69cad2e1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:33.988Z","level":"info","message":"🌐 [1] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.139Z","level":"info","message":"TIME END: remote-connect-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.142Z","level":"info","message":"TIME END: local-connect-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:33.988Z","level":"info","message":"🔗 [1] Starting handleConnection for b5f58c9b-8372-491d-9788-df9a69cad2e1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.293Z","level":"info","message":"🔄 [1] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.140Z","level":"info","message":"📡 [1] Connecting to local localhost:57072","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.292Z","level":"info","message":"✋ [1] Sending Accept message for b5f58c9b-8372-491d-9788-df9a69cad2e1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:33.988Z","level":"info","message":"TIME: connection-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:33.988Z","level":"info","message":"TIME: remote-connect-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.142Z","level":"info","message":"✅ [1] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.143Z","level":"info","message":"🔐 [1] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.140Z","level":"info","message":"✅ [1] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.142Z","level":"info","message":"👋 [1] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.140Z","level":"info","message":"local-connect-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.142Z","level":"info","message":"🤝 [1] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.891Z","level":"info","message":"📦 [Proxy-1] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.905Z","level":"info","message":"🔚 [Proxy-1] Local closed after 612ms (transferred: 348→214 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.294Z","level":"info","message":"✅ [1] Connection b5f58c9b-8372-491d-9788-df9a69cad2e1 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.292Z","level":"info","message":"✅ [1] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.294Z","level":"info","message":"TIME END: connection-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:34.293Z","level":"info","message":"🔄 [Proxy-1] Starting proxy: local 127.0.0.1:57072 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:35.051Z","level":"info","message":"Tunnel connectivity verified."}
+{"timestamp":"2026-05-02T22:18:35.051Z","level":"info","message":"Tunnel probe succeeded on attempt 1: status=403"}
+{"timestamp":"2026-05-02T22:18:35.203Z","level":"info","message":"🔚 [Proxy-1] Remote closed after 910ms (transferred: 348→214 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.122Z","level":"info","message":"🔄 [2] New connection request: 54c708b8-ec7c-4751-90d7-b0a40e2d1d46","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.122Z","level":"info","message":"TIME: remote-connect-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.271Z","level":"info","message":"TIME END: remote-connect-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.272Z","level":"info","message":"✅ [2] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.122Z","level":"info","message":"🔗 [2] Starting handleConnection for 54c708b8-ec7c-4751-90d7-b0a40e2d1d46","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.442Z","level":"info","message":"✅ [2] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.442Z","level":"info","message":"✋ [2] Sending Accept message for 54c708b8-ec7c-4751-90d7-b0a40e2d1d46","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.273Z","level":"info","message":"TIME END: local-connect-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.443Z","level":"info","message":"🔄 [2] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.122Z","level":"info","message":"🌐 [2] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.122Z","level":"info","message":"TIME: connection-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.274Z","level":"info","message":"🔐 [2] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.272Z","level":"info","message":"local-connect-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.272Z","level":"info","message":"📡 [2] Connecting to local localhost:57072","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.274Z","level":"info","message":"👋 [2] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.273Z","level":"info","message":"✅ [2] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.273Z","level":"info","message":"🤝 [2] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.983Z","level":"info","message":"🔚 [Proxy-2] Local closed after 540ms (transferred: 348→311 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.974Z","level":"info","message":"📦 [Proxy-2] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.130Z","level":"info","message":"🔚 [Proxy-2] Remote closed after 687ms (transferred: 348→311 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.135Z","level":"info","message":"🔄 [3] New connection request: 7e30fbf2-3aee-4b6a-9fd8-8657ba52da76","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.443Z","level":"info","message":"🔄 [Proxy-2] Starting proxy: local 127.0.0.1:57072 <-> remote 3.223.9.40:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.443Z","level":"info","message":"✅ [2] Connection 54c708b8-ec7c-4751-90d7-b0a40e2d1d46 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:46.443Z","level":"info","message":"TIME END: connection-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.135Z","level":"info","message":"TIME: connection-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.285Z","level":"info","message":"TIME END: remote-connect-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.285Z","level":"info","message":"📡 [3] Connecting to local localhost:57072","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.136Z","level":"info","message":"🔗 [3] Starting handleConnection for 7e30fbf2-3aee-4b6a-9fd8-8657ba52da76","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.474Z","level":"info","message":"✋ [3] Sending Accept message for 7e30fbf2-3aee-4b6a-9fd8-8657ba52da76","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.474Z","level":"info","message":"🔄 [3] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.286Z","level":"info","message":"local-connect-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.474Z","level":"info","message":"✅ [3] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.136Z","level":"info","message":"TIME: remote-connect-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.136Z","level":"info","message":"🌐 [3] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.285Z","level":"info","message":"✅ [3] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.287Z","level":"info","message":"🤝 [3] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.287Z","level":"info","message":"🔐 [3] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.287Z","level":"info","message":"✅ [3] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.287Z","level":"info","message":"👋 [3] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.287Z","level":"info","message":"TIME END: local-connect-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.025Z","level":"info","message":"📦 [Proxy-3] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.030Z","level":"info","message":"🔚 [Proxy-3] Local closed after 556ms (transferred: 348→298 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.177Z","level":"info","message":"🔚 [Proxy-3] Remote closed after 703ms (transferred: 348→298 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.475Z","level":"info","message":"✅ [3] Connection 7e30fbf2-3aee-4b6a-9fd8-8657ba52da76 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.474Z","level":"info","message":"🔄 [Proxy-3] Starting proxy: local 127.0.0.1:57072 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:47.475Z","level":"info","message":"TIME END: connection-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.182Z","level":"info","message":"🔄 [4] New connection request: d2b7183d-4ba5-4ea1-8b02-851c8990adf9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.182Z","level":"info","message":"TIME: connection-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.347Z","level":"info","message":"📡 [4] Connecting to local localhost:57072","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.348Z","level":"info","message":"TIME END: local-connect-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.183Z","level":"info","message":"TIME: remote-connect-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.521Z","level":"info","message":"✋ [4] Sending Accept message for d2b7183d-4ba5-4ea1-8b02-851c8990adf9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.522Z","level":"info","message":"TIME END: connection-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.347Z","level":"info","message":"TIME END: remote-connect-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.522Z","level":"info","message":"✅ [4] Connection d2b7183d-4ba5-4ea1-8b02-851c8990adf9 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.182Z","level":"info","message":"🔗 [4] Starting handleConnection for d2b7183d-4ba5-4ea1-8b02-851c8990adf9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.183Z","level":"info","message":"🌐 [4] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.347Z","level":"info","message":"local-connect-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.348Z","level":"info","message":"✅ [4] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.347Z","level":"info","message":"✅ [4] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.348Z","level":"info","message":"👋 [4] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.348Z","level":"info","message":"🤝 [4] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.348Z","level":"info","message":"🔐 [4] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.193Z","level":"info","message":"📦 [Proxy-4] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.219Z","level":"info","message":"🔚 [Proxy-4] Local closed after 697ms (transferred: 440→423 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.521Z","level":"info","message":"✅ [4] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.521Z","level":"info","message":"🔄 [4] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:48.522Z","level":"info","message":"🔄 [Proxy-4] Starting proxy: local 127.0.0.1:57072 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.368Z","level":"info","message":"🔚 [Proxy-4] Remote closed after 846ms (transferred: 440→423 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.373Z","level":"info","message":"🔄 [5] New connection request: 4860e7e9-d10b-4459-a176-a603416bc4d9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.373Z","level":"info","message":"TIME: connection-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.571Z","level":"info","message":"✅ [5] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.570Z","level":"info","message":"TIME END: remote-connect-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.719Z","level":"info","message":"✋ [5] Sending Accept message for 4860e7e9-d10b-4459-a176-a603416bc4d9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.719Z","level":"info","message":"TIME END: connection-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.571Z","level":"info","message":"📡 [5] Connecting to local localhost:57072","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.719Z","level":"info","message":"🔄 [5] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.373Z","level":"info","message":"TIME: remote-connect-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.373Z","level":"info","message":"🔗 [5] Starting handleConnection for 4860e7e9-d10b-4459-a176-a603416bc4d9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.373Z","level":"info","message":"🌐 [5] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.254Z","level":"info","message":"📦 [Proxy-5] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.571Z","level":"info","message":"local-connect-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.572Z","level":"info","message":"TIME END: local-connect-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.572Z","level":"info","message":"✅ [5] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.572Z","level":"info","message":"🤝 [5] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.573Z","level":"info","message":"🔐 [5] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.573Z","level":"info","message":"👋 [5] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.357Z","level":"info","message":"🔚 [Proxy-5] Local closed after 638ms (transferred: 442→410 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.719Z","level":"info","message":"✅ [5] Connection 4860e7e9-d10b-4459-a176-a603416bc4d9 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.719Z","level":"info","message":"🔄 [Proxy-5] Starting proxy: local 127.0.0.1:57072 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:49.718Z","level":"info","message":"✅ [5] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.524Z","level":"info","message":"🔚 [Proxy-5] Remote closed after 805ms (transferred: 442→410 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.618Z","level":"info","message":"🔄 [6] New connection request: c7d0ecba-9a50-4ff8-b832-e252de83d023","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.618Z","level":"info","message":"TIME: connection-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.767Z","level":"info","message":"TIME END: remote-connect-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.767Z","level":"info","message":"📡 [6] Connecting to local localhost:57072","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.919Z","level":"info","message":"🔄 [6] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.919Z","level":"info","message":"TIME END: connection-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.767Z","level":"info","message":"✅ [6] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.919Z","level":"info","message":"✅ [6] Connection c7d0ecba-9a50-4ff8-b832-e252de83d023 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.618Z","level":"info","message":"🔗 [6] Starting handleConnection for c7d0ecba-9a50-4ff8-b832-e252de83d023","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.618Z","level":"info","message":"TIME: remote-connect-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.618Z","level":"info","message":"🌐 [6] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:51.454Z","level":"info","message":"📦 [Proxy-6] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:51.461Z","level":"info","message":"🔚 [Proxy-6] Local closed after 542ms (transferred: 348→393 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.769Z","level":"info","message":"👋 [6] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.768Z","level":"info","message":"local-connect-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.769Z","level":"info","message":"🤝 [6] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.769Z","level":"info","message":"✅ [6] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.769Z","level":"info","message":"TIME END: local-connect-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.769Z","level":"info","message":"🔐 [6] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.918Z","level":"info","message":"✋ [6] Sending Accept message for c7d0ecba-9a50-4ff8-b832-e252de83d023","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.918Z","level":"info","message":"✅ [6] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:50.919Z","level":"info","message":"🔄 [Proxy-6] Starting proxy: local 127.0.0.1:57072 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:51.670Z","level":"info","message":"🔚 [Proxy-6] Remote closed after 751ms (transferred: 348→393 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.237Z","level":"info","message":"🔄 [7] New connection request: 522f98af-d42f-46a0-8168-9449d323f920","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.237Z","level":"info","message":"TIME: remote-connect-7","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.391Z","level":"info","message":"TIME END: remote-connect-7","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.393Z","level":"info","message":"TIME END: local-connect-7","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.237Z","level":"info","message":"🌐 [7] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.568Z","level":"info","message":"🔄 [7] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.568Z","level":"info","message":"✋ [7] Sending Accept message for 522f98af-d42f-46a0-8168-9449d323f920","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.392Z","level":"info","message":"local-connect-7","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.567Z","level":"info","message":"✅ [7] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.237Z","level":"info","message":"TIME: connection-7","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.237Z","level":"info","message":"🔗 [7] Starting handleConnection for 522f98af-d42f-46a0-8168-9449d323f920","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.393Z","level":"info","message":"✅ [7] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.392Z","level":"info","message":"📡 [7] Connecting to local localhost:57072","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.392Z","level":"info","message":"✅ [7] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.393Z","level":"info","message":"🤝 [7] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.393Z","level":"info","message":"🔐 [7] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.393Z","level":"info","message":"👋 [7] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:00.113Z","level":"info","message":"📦 [Proxy-7] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:00.119Z","level":"info","message":"🔚 [Proxy-7] Local closed after 551ms (transferred: 348→342 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:00.271Z","level":"info","message":"🔚 [Proxy-7] Remote closed after 703ms (transferred: 348→342 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.568Z","level":"info","message":"✅ [7] Connection 522f98af-d42f-46a0-8168-9449d323f920 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.568Z","level":"info","message":"🔄 [Proxy-7] Starting proxy: local 127.0.0.1:57072 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:18:59.568Z","level":"info","message":"TIME END: connection-7","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.533Z","level":"info","message":"🔄 [8] New connection request: a25bb7fb-fafa-460e-a48a-bd546a4b39f4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.533Z","level":"info","message":"🔗 [8] Starting handleConnection for a25bb7fb-fafa-460e-a48a-bd546a4b39f4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.681Z","level":"info","message":"TIME END: remote-connect-8","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.681Z","level":"info","message":"local-connect-8","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.533Z","level":"info","message":"🌐 [8] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.853Z","level":"info","message":"✅ [8] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.854Z","level":"info","message":"TIME END: connection-8","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.682Z","level":"info","message":"✅ [8] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.853Z","level":"info","message":"✋ [8] Sending Accept message for a25bb7fb-fafa-460e-a48a-bd546a4b39f4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.533Z","level":"info","message":"TIME: remote-connect-8","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.533Z","level":"info","message":"TIME: connection-8","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.682Z","level":"info","message":"TIME END: local-connect-8","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.682Z","level":"info","message":"👋 [8] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.681Z","level":"info","message":"✅ [8] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.682Z","level":"info","message":"🤝 [8] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.681Z","level":"info","message":"📡 [8] Connecting to local localhost:57072","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.682Z","level":"info","message":"🔐 [8] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:02.403Z","level":"info","message":"📦 [Proxy-8] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:02.409Z","level":"info","message":"🔚 [Proxy-8] Local closed after 556ms (transferred: 348→311 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.853Z","level":"info","message":"🔄 [8] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.853Z","level":"info","message":"🔄 [Proxy-8] Starting proxy: local 127.0.0.1:57072 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:01.854Z","level":"info","message":"✅ [8] Connection a25bb7fb-fafa-460e-a48a-bd546a4b39f4 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:02.572Z","level":"info","message":"🔚 [Proxy-8] Remote closed after 719ms (transferred: 348→311 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.541Z","level":"info","message":"🔄 [9] New connection request: 938c3c75-7809-4f12-8d54-6667c0c26625","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.541Z","level":"info","message":"TIME: connection-9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.691Z","level":"info","message":"TIME END: remote-connect-9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.694Z","level":"info","message":"✅ [9] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.840Z","level":"info","message":"✋ [9] Sending Accept message for 938c3c75-7809-4f12-8d54-6667c0c26625","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.541Z","level":"info","message":"🔗 [9] Starting handleConnection for 938c3c75-7809-4f12-8d54-6667c0c26625","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.840Z","level":"info","message":"🔄 [Proxy-9] Starting proxy: local 127.0.0.1:57072 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.694Z","level":"info","message":"TIME END: local-connect-9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.840Z","level":"info","message":"✅ [9] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.541Z","level":"info","message":"TIME: remote-connect-9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.541Z","level":"info","message":"🌐 [9] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:11.384Z","level":"info","message":"📦 [Proxy-9] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:11.387Z","level":"info","message":"🔚 [Proxy-9] Local closed after 547ms (transferred: 348→361 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.692Z","level":"info","message":"local-connect-9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.694Z","level":"info","message":"👋 [9] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.692Z","level":"info","message":"✅ [9] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.694Z","level":"info","message":"🤝 [9] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.692Z","level":"info","message":"📡 [9] Connecting to local localhost:57072","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.694Z","level":"info","message":"🔐 [9] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.841Z","level":"info","message":"✅ [9] Connection 938c3c75-7809-4f12-8d54-6667c0c26625 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.840Z","level":"info","message":"🔄 [9] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:10.841Z","level":"info","message":"TIME END: connection-9","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T22:19:11.591Z","level":"info","message":"🔚 [Proxy-9] Remote closed after 751ms (transferred: 348→361 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:39.763Z","level":"debug","message":"Generate code and execute params","context":{"projectName":"Backend","projectPath":"/Users/meldesign/Development/Projet-Fin-Etude copy/Backend","testIds":[],"serverMode":"development"}}
+{"timestamp":"2026-05-02T23:01:39.768Z","level":"info","message":"Attempting to start server (attempt 1/3)"}
+{"timestamp":"2026-05-02T23:01:39.809Z","level":"info","message":"detectServerMode: no pattern matched for command: /opt/homebrew/Cellar/openjdk@17/17.0.17/libexec/openjdk.jdk/Contents/Home/bin/java -XX:TieredStopAtLevel=1 -cp /Users/meldesign/Development/Projet-Fin-Etude copy/Backend/target/classes:/Users/meldesign/.m2/repository/org/springframework/boot/spring-boot/3.2.5/spring-boot-3.2.5.jar:/Users/meldesign/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/3.2.5/spring-boot-autoconfigure-3.2.5.jar:/Users/meldesign/.m2/repository/ch/qos/logback/logback-classic/1.4.14/logback-classic-1.4.14.jar:/Users/meldesign/.m2/repository/ch/qos/logback/logback-core/1.4.14/logback-core-1.4.14.jar:/Users/meldesign/.m2/repository/org/apache/logging/log4j/log4j-to-slf4j/2.21.1/log4j-to-slf4j-2.21.1.jar:/Users/meldesign/.m2/repository/org/apache/logging/log4j/log4j-api/2.21.1/log4j-api-2.21.1.jar:/Users/meldesign/.m2/repository/org/slf4j/jul-to-slf4j/2.0.13/jul-to-slf4j-2.0.13.jar:/Users/meldesign/.m2/repository/jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar:/Users/meldesign/.m2/repository/org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.15.4/jackson-datatype-jdk8-2.15.4.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.15.4/jackson-datatype-jsr310-2.15.4.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/module/jackson-module-parameter-names/2.15.4/jackson-module-parameter-names-2.15.4.jar:/Users/meldesign/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/10.1.20/tomcat-embed-core-10.1.20.jar:/Users/meldesign/.m2/repository/org/apache/tomcat/embed/tomcat-embed-websocket/10.1.20/tomcat-embed-websocket-10.1.20.jar:/Users/meldesign/.m2/repository/org/springframework/spring-web/6.1.6/spring-web-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-beans/6.1.6/spring-beans-6.1.6.jar:/Users/meldesign/.m2/repository/io/micrometer/micrometer-observation/1.12.5/micrometer-observation-1.12.5.jar:/Users/meldesign/.m2/repository/io/micrometer/micrometer-commons/1.12.5/micrometer-commons-1.12.5.jar:/Users/meldesign/.m2/repository/org/springframework/spring-webmvc/6.1.6/spring-webmvc-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-context/6.1.6/spring-context-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-expression/6.1.6/spring-expression-6.1.6.jar:/Users/meldesign/.m2/repository/org/aspectj/aspectjweaver/1.9.22/aspectjweaver-1.9.22.jar:/Users/meldesign/.m2/repository/com/zaxxer/HikariCP/5.0.1/HikariCP-5.0.1.jar:/Users/meldesign/.m2/repository/org/springframework/spring-jdbc/6.1.6/spring-jdbc-6.1.6.jar:/Users/meldesign/.m2/repository/org/hibernate/orm/hibernate-core/6.4.4.Final/hibernate-core-6.4.4.Final.jar:/Users/meldesign/.m2/repository/jakarta/persistence/jakarta.persistence-api/3.1.0/jakarta.persistence-api-3.1.0.jar:/Users/meldesign/.m2/repository/jakarta/transaction/jakarta.transaction-api/2.0.1/jakarta.transaction-api-2.0.1.jar:/Users/meldesign/.m2/repository/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.jar:/Users/meldesign/.m2/repository/org/hibernate/common/hibernate-commons-annotations/6.0.6.Final/hibernate-commons-annotations-6.0.6.Final.jar:/Users/meldesign/.m2/repository/io/smallrye/jandex/3.1.2/jandex-3.1.2.jar:/Users/meldesign/.m2/repository/com/fasterxml/classmate/1.6.0/classmate-1.6.0.jar:/Users/meldesign/.m2/repository/net/bytebuddy/byte-buddy/1.14.13/byte-buddy-1.14.13.jar:/Users/meldesign/.m2/repository/org/glassfish/jaxb/jaxb-runtime/4.0.5/jaxb-runtime-4.0.5.jar:/Users/meldesign/.m2/repository/org/glassfish/jaxb/jaxb-core/4.0.5/jaxb-core-4.0.5.jar:/Users/meldesign/.m2/repository/org/eclipse/angus/angus-activation/2.0.2/angus-activation-2.0.2.jar:/Users/meldesign/.m2/repository/org/glassfish/jaxb/txw2/4.0.5/txw2-4.0.5.jar:/Users/meldesign/.m2/repository/com/sun/istack/istack-commons-runtime/4.1.2/istack-commons-runtime-4.1.2.jar:/Users/meldesign/.m2/repository/jakarta/inject/jakarta.inject-api/2.0.1/jakarta.inject-api-2.0.1.jar:/Users/meldesign/.m2/repository/org/antlr/antlr4-runtime/4.13.0/antlr4-runtime-4.13.0.jar:/Users/meldesign/.m2/repository/org/springframework/data/spring-data-jpa/3.2.5/spring-data-jpa-3.2.5.jar:/Users/meldesign/.m2/repository/org/springframework/data/spring-data-commons/3.2.5/spring-data-commons-3.2.5.jar:/Users/meldesign/.m2/repository/org/springframework/spring-orm/6.1.6/spring-orm-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-tx/6.1.6/spring-tx-6.1.6.jar:/Users/meldesign/.m2/repository/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.jar:/Users/meldesign/.m2/repository/org/springframework/spring-aspects/6.1.6/spring-aspects-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-aop/6.1.6/spring-aop-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/security/spring-security-config/6.2.4/spring-security-config-6.2.4.jar:/Users/meldesign/.m2/repository/org/springframework/security/spring-security-core/6.2.4/spring-security-core-6.2.4.jar:/Users/meldesign/.m2/repository/org/springframework/security/spring-security-crypto/6.2.4/spring-security-crypto-6.2.4.jar:/Users/meldesign/.m2/repository/org/springframework/security/spring-security-web/6.2.4/spring-security-web-6.2.4.jar:/Users/meldesign/.m2/repository/org/apache/tomcat/embed/tomcat-embed-el/10.1.20/tomcat-embed-el-10.1.20.jar:/Users/meldesign/.m2/repository/org/hibernate/validator/hibernate-validator/8.0.1.Final/hibernate-validator-8.0.1.Final.jar:/Users/meldesign/.m2/repository/jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2.jar:/Users/meldesign/.m2/repository/com/mysql/mysql-connector-j/8.3.0/mysql-connector-j-8.3.0.jar:/Users/meldesign/.m2/repository/io/jsonwebtoken/jjwt-api/0.12.5/jjwt-api-0.12.5.jar:/Users/meldesign/.m2/repository/io/jsonwebtoken/jjwt-impl/0.12.5/jjwt-impl-0.12.5.jar:/Users/meldesign/.m2/repository/io/jsonwebtoken/jjwt-jackson/0.12.5/jjwt-jackson-0.12.5.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.15.4/jackson-databind-2.15.4.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.15.4/jackson-annotations-2.15.4.jar:/Users/meldesign/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.15.4/jackson-core-2.15.4.jar:/Users/meldesign/.m2/repository/jakarta/xml/bind/jakarta.xml.bind-api/4.0.2/jakarta.xml.bind-api-4.0.2.jar:/Users/meldesign/.m2/repository/jakarta/activation/jakarta.activation-api/2.1.3/jakarta.activation-api-2.1.3.jar:/Users/meldesign/.m2/repository/org/springframework/spring-core/6.1.6/spring-core-6.1.6.jar:/Users/meldesign/.m2/repository/org/springframework/spring-jcl/6.1.6/spring-jcl-6.1.6.jar com.ommalak.OmmalakApplication"}
+{"timestamp":"2026-05-02T23:01:39.769Z","level":"info","message":"HTTP server started successfully on port 61778"}
+{"timestamp":"2026-05-02T23:01:40.672Z","level":"info","message":"Attempting to start HTTP proxy (attempt 1/3)"}
+{"timestamp":"2026-05-02T23:01:40.673Z","level":"info","message":"HTTP proxy started successfully on port 61799"}
+{"timestamp":"2026-05-02T23:01:41.450Z","level":"info","message":"🚀 Starting tunnel client: a961e62b-d13f-4d59-b46c-8d3ea9e569cb","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:41.451Z","level":"info","message":"📋 Config: localhost:61799 -> tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:41.451Z","level":"info","message":"⏱️ Network timeout: 10000ms, Auth: enabled","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:41.949Z","level":"info","message":"Verifying tunnel connectivity..."}
+{"timestamp":"2026-05-02T23:01:41.949Z","level":"info","message":"proxy: [REDACTED]tun.testsprite.com:8080"}
+{"timestamp":"2026-05-02T23:01:41.451Z","level":"info","message":"🔗 Establishing control connection...","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:41.951Z","level":"info","message":"Tunnel probe attempt 1/2 through tun.testsprite.com:8080 to http://localhost:8080..."}
+{"timestamp":"2026-05-02T23:01:42.306Z","level":"info","message":"✅ Tunnel established, remote port: 8080","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.518Z","level":"info","message":"🔄 [1] New connection request: 43fe927d-ac39-4c50-b2ae-d60b8fa1bacc","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.518Z","level":"info","message":"TIME: connection-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.800Z","level":"info","message":"TIME END: remote-connect-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.518Z","level":"info","message":"🌐 [1] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.800Z","level":"info","message":"local-connect-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:43.057Z","level":"info","message":"✅ [1] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.800Z","level":"info","message":"✅ [1] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:43.057Z","level":"info","message":"✋ [1] Sending Accept message for 43fe927d-ac39-4c50-b2ae-d60b8fa1bacc","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.518Z","level":"info","message":"TIME: remote-connect-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.518Z","level":"info","message":"🔗 [1] Starting handleConnection for 43fe927d-ac39-4c50-b2ae-d60b8fa1bacc","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:43.057Z","level":"info","message":"🔄 [1] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.804Z","level":"info","message":"🤝 [1] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.804Z","level":"info","message":"🔐 [1] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.803Z","level":"info","message":"TIME END: local-connect-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.803Z","level":"info","message":"✅ [1] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.800Z","level":"info","message":"📡 [1] Connecting to local localhost:61799","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:42.804Z","level":"info","message":"👋 [1] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:43.058Z","level":"info","message":"🔄 [Proxy-1] Starting proxy: local 127.0.0.1:61799 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:43.058Z","level":"info","message":"TIME END: connection-1","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:43.058Z","level":"info","message":"✅ [1] Connection 43fe927d-ac39-4c50-b2ae-d60b8fa1bacc fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:43.787Z","level":"info","message":"📦 [Proxy-1] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:43.808Z","level":"info","message":"🔚 [Proxy-1] Local closed after 751ms (transferred: 348→214 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:43.966Z","level":"info","message":"Tunnel probe succeeded on attempt 1: status=403"}
+{"timestamp":"2026-05-02T23:01:43.966Z","level":"info","message":"Tunnel connectivity verified."}
+{"timestamp":"2026-05-02T23:01:44.175Z","level":"info","message":"🔚 [Proxy-1] Remote closed after 1118ms (transferred: 348→214 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.224Z","level":"info","message":"TIME: connection-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.225Z","level":"info","message":"TIME: remote-connect-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.473Z","level":"info","message":"TIME END: remote-connect-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.224Z","level":"info","message":"🔄 [2] New connection request: fe24351e-1ca4-488b-a61d-9ecba58cf714","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.473Z","level":"info","message":"✅ [2] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.626Z","level":"info","message":"✅ [2] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.627Z","level":"info","message":"🔄 [2] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.475Z","level":"info","message":"TIME END: local-connect-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.225Z","level":"info","message":"🌐 [2] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.224Z","level":"info","message":"🔗 [2] Starting handleConnection for fe24351e-1ca4-488b-a61d-9ecba58cf714","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.162Z","level":"info","message":"📦 [Proxy-2] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.172Z","level":"info","message":"🔚 [Proxy-2] Local closed after 545ms (transferred: 348→484 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.473Z","level":"info","message":"local-connect-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.476Z","level":"info","message":"👋 [2] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.476Z","level":"info","message":"🔐 [2] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.476Z","level":"info","message":"🤝 [2] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.476Z","level":"info","message":"✅ [2] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.473Z","level":"info","message":"📡 [2] Connecting to local localhost:61799","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.627Z","level":"info","message":"✋ [2] Sending Accept message for fe24351e-1ca4-488b-a61d-9ecba58cf714","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.627Z","level":"info","message":"🔄 [Proxy-2] Starting proxy: local 127.0.0.1:61799 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.627Z","level":"info","message":"✅ [2] Connection fe24351e-1ca4-488b-a61d-9ecba58cf714 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:55.627Z","level":"info","message":"TIME END: connection-2","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.370Z","level":"info","message":"🔗 [3] Starting handleConnection for 20967c08-15ff-41b6-98dd-a0bc41e8e813","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.370Z","level":"info","message":"🌐 [3] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.523Z","level":"info","message":"📡 [3] Connecting to local localhost:61799","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.524Z","level":"info","message":"TIME END: local-connect-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.523Z","level":"info","message":"✅ [3] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.370Z","level":"info","message":"TIME: connection-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.688Z","level":"info","message":"✋ [3] Sending Accept message for 20967c08-15ff-41b6-98dd-a0bc41e8e813","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.688Z","level":"info","message":"🔄 [3] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.524Z","level":"info","message":"🔐 [3] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.688Z","level":"info","message":"TIME END: connection-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.370Z","level":"info","message":"TIME: remote-connect-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.369Z","level":"info","message":"🔄 [3] New connection request: 20967c08-15ff-41b6-98dd-a0bc41e8e813","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.370Z","level":"info","message":"🔚 [Proxy-2] Remote closed after 743ms (transferred: 348→484 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.524Z","level":"info","message":"✅ [3] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.524Z","level":"info","message":"🤝 [3] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.523Z","level":"info","message":"local-connect-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.524Z","level":"info","message":"👋 [3] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.523Z","level":"info","message":"TIME END: remote-connect-3","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.284Z","level":"info","message":"🔚 [Proxy-3] Local closed after 596ms (transferred: 440→416 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.222Z","level":"info","message":"📦 [Proxy-3] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.687Z","level":"info","message":"✅ [3] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.688Z","level":"info","message":"🔄 [Proxy-3] Starting proxy: local 127.0.0.1:61799 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:56.688Z","level":"info","message":"✅ [3] Connection 20967c08-15ff-41b6-98dd-a0bc41e8e813 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.432Z","level":"info","message":"🔚 [Proxy-3] Remote closed after 744ms (transferred: 440→416 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.458Z","level":"info","message":"🌐 [4] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.458Z","level":"info","message":"TIME: connection-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.609Z","level":"info","message":"✅ [4] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.608Z","level":"info","message":"TIME END: remote-connect-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.458Z","level":"info","message":"TIME: remote-connect-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.766Z","level":"info","message":"✋ [4] Sending Accept message for 91e45335-d16a-43d6-b481-80d63a836a6c","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.766Z","level":"info","message":"✅ [4] Connection 91e45335-d16a-43d6-b481-80d63a836a6c fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.613Z","level":"info","message":"✅ [4] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.766Z","level":"info","message":"TIME END: connection-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.458Z","level":"info","message":"🔄 [4] New connection request: 91e45335-d16a-43d6-b481-80d63a836a6c","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.458Z","level":"info","message":"🔗 [4] Starting handleConnection for 91e45335-d16a-43d6-b481-80d63a836a6c","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.613Z","level":"info","message":"🤝 [4] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.609Z","level":"info","message":"📡 [4] Connecting to local localhost:61799","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.614Z","level":"info","message":"👋 [4] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.614Z","level":"info","message":"🔐 [4] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.613Z","level":"info","message":"TIME END: local-connect-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.609Z","level":"info","message":"local-connect-4","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.346Z","level":"info","message":"📦 [Proxy-4] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.766Z","level":"info","message":"✅ [4] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.766Z","level":"info","message":"🔄 [Proxy-4] Starting proxy: local 127.0.0.1:61799 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:57.766Z","level":"info","message":"🔄 [4] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.505Z","level":"info","message":"🔚 [Proxy-4] Local closed after 739ms (transferred: 442→412 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.667Z","level":"info","message":"🔚 [Proxy-4] Remote closed after 901ms (transferred: 442→412 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.667Z","level":"info","message":"TIME: connection-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.819Z","level":"info","message":"TIME END: remote-connect-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.820Z","level":"info","message":"👋 [5] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.819Z","level":"info","message":"✅ [5] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.667Z","level":"info","message":"🌐 [5] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.974Z","level":"info","message":"✅ [5] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.974Z","level":"info","message":"🔄 [Proxy-5] Starting proxy: local 127.0.0.1:61799 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.819Z","level":"info","message":"local-connect-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.974Z","level":"info","message":"🔄 [5] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.667Z","level":"info","message":"TIME: remote-connect-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.667Z","level":"info","message":"🔗 [5] Starting handleConnection for 89897282-75d9-4923-987e-fb83c2866548","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.667Z","level":"info","message":"🔄 [5] New connection request: 89897282-75d9-4923-987e-fb83c2866548","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.820Z","level":"info","message":"✅ [5] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.820Z","level":"info","message":"🤝 [5] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.820Z","level":"info","message":"🔐 [5] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.819Z","level":"info","message":"📡 [5] Connecting to local localhost:61799","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.820Z","level":"info","message":"TIME END: local-connect-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:59.532Z","level":"info","message":"📦 [Proxy-5] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:59.625Z","level":"info","message":"🔚 [Proxy-5] Local closed after 651ms (transferred: 442→405 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.974Z","level":"info","message":"✅ [5] Connection 89897282-75d9-4923-987e-fb83c2866548 fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.974Z","level":"info","message":"TIME END: connection-5","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:58.974Z","level":"info","message":"✋ [5] Sending Accept message for 89897282-75d9-4923-987e-fb83c2866548","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:01:59.798Z","level":"info","message":"🔚 [Proxy-5] Remote closed after 824ms (transferred: 442→405 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.399Z","level":"info","message":"🔄 [6] New connection request: 654e44b9-01f5-4fc4-9eb6-6512d6cac7da","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.399Z","level":"info","message":"🔗 [6] Starting handleConnection for 654e44b9-01f5-4fc4-9eb6-6512d6cac7da","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.548Z","level":"info","message":"local-connect-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.549Z","level":"info","message":"👋 [6] Hello message sent","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.548Z","level":"info","message":"✅ [6] Remote connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.549Z","level":"info","message":"✅ [6] Local connection established","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.694Z","level":"info","message":"✅ [6] Authentication completed","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.399Z","level":"info","message":"TIME: connection-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.694Z","level":"info","message":"TIME END: connection-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.548Z","level":"info","message":"TIME END: remote-connect-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.694Z","level":"info","message":"🔄 [6] Starting data proxy","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.399Z","level":"info","message":"🌐 [6] Connecting to remote tun.testsprite.com:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.399Z","level":"info","message":"TIME: remote-connect-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.549Z","level":"info","message":"🤝 [6] Starting handshake","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.549Z","level":"info","message":"🔐 [6] Performing authentication","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.549Z","level":"info","message":"TIME END: local-connect-6","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.548Z","level":"info","message":"📡 [6] Connecting to local localhost:61799","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:09.302Z","level":"info","message":"📦 [Proxy-6] First data packet transferred","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:09.305Z","level":"info","message":"🔚 [Proxy-6] Local closed after 611ms (transferred: 348→311 bytes)","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.694Z","level":"info","message":"🔄 [Proxy-6] Starting proxy: local 127.0.0.1:61799 <-> remote 35.170.174.200:7300","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.694Z","level":"info","message":"✋ [6] Sending Accept message for 654e44b9-01f5-4fc4-9eb6-6512d6cac7da","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:08.694Z","level":"info","message":"✅ [6] Connection 654e44b9-01f5-4fc4-9eb6-6512d6cac7da fully established and proxying","context":{"tunnelVersion":"1"}}
+{"timestamp":"2026-05-02T23:02:09.450Z","level":"info","message":"🔚 [Proxy-6] Remote closed after 756ms (transferred: 348→311 bytes)","context":{"tunnelVersion":"1"}}

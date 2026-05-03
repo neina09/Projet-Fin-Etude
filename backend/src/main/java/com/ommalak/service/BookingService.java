@@ -41,11 +41,13 @@ public class BookingService {
         return BookingResponse.from(booking);
     }
 
+    @Transactional(readOnly = true)
     public List<BookingResponse> getMyBookings(User client) {
         return bookingRepository.findByClientOrderByCreatedAtDesc(client)
                 .stream().map(BookingResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<BookingResponse> getWorkerBookings(User worker) {
         return bookingRepository.findByWorkerOrderByCreatedAtDesc(worker)
                 .stream().map(BookingResponse::from).toList();

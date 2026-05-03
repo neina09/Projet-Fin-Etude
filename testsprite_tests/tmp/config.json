@@ -8,13 +8,21 @@
   "executionArgs": {
     "projectName": "Projet-Fin-Etude",
     "projectPath": "/Users/meldesign/Development/Projet-Fin-Etude",
-    "testIds": [],
-    "additionalInstruction": "",
+    "testIds": [
+      "TC006",
+      "TC009",
+      "TC010",
+      "TC016",
+      "TC017",
+      "TC018",
+      "TC020"
+    ],
+    "additionalInstruction": "Please test the worker functionality and worker profile parts",
     "serverMode": "development",
     "envs": {
       "API_KEY": "sk-user-AlQGDZfSIP5vDWmsZlPTQ6zm_ySCyYQ2nNC_g2sXpk9n-RlfsLZMPIFXAl4lhWCL2C-KbE9QuB31ZR4uiovVifdLc_LxfViTniDx_8bZ9G1BlNltvpMqvL6V2Mc6bL0Aoog"
     }
   },
-  "serverPort": 56529,
-  "proxy": "http://f0043f22-89f2-49fd-a065-743813f8203d:RzMaFJWMVuLvFZmtDkpMcChj6hbW3XaJ@tun.testsprite.com:8080"
+  "serverPort": 58924,
+  "proxy": "http://621166f5-0eff-4951-8f01-7c61e7a4ca1a:pdFpSnf3LNsQbQHcIHTMvMlJm3X5VRfX@tun.testsprite.com:8080"
 }

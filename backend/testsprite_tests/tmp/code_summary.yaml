@@ -1,0 +1,44 @@
+version: "2"
+type: backend
+tech_stack:
+  - java
+  - spring-boot
+  - hibernate
+routes: []
+features:
+  - name: Get All Workers
+    description: Retrieve a list of workers with optional filtering.
+    files:
+      - src/main/java/com/ommalak/controller/WorkerController.java
+    api_calls:
+      - method: GET
+        endpoint: /api/workers
+  - name: Get Worker By ID
+    description: Retrieve details of a specific worker by ID.
+    files:
+      - src/main/java/com/ommalak/controller/WorkerController.java
+    api_calls:
+      - method: GET
+        endpoint: /api/workers/{id}
+  - name: Update Worker Availability
+    description: Update the availability status of the authenticated worker.
+    files:
+      - src/main/java/com/ommalak/controller/WorkerController.java
+    api_calls:
+      - method: PUT
+        endpoint: /api/workers/availability
+  - name: Update Worker Profile
+    description: Update the profile details of the authenticated worker.
+    files:
+      - src/main/java/com/ommalak/controller/WorkerController.java
+    api_calls:
+      - method: PUT
+        endpoint: /api/workers/profile
+  - name: Rate Worker
+    description: Submit a rating for a specific worker.
+    files:
+      - src/main/java/com/ommalak/controller/WorkerController.java
+    api_calls:
+      - method: POST
+        endpoint: /api/workers/{workerId}/rate
+known_limitations: []

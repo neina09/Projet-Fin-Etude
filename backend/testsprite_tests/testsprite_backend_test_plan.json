@@ -1,0 +1,27 @@
+[
+  {
+    "id": "TC001",
+    "title": "get all workers with filters",
+    "description": "Test retrieving a list of workers with optional filters such as trade, location, and availability to ensure correct filtering and response format."
+  },
+  {
+    "id": "TC002",
+    "title": "get worker details by id",
+    "description": "Test fetching full profile details of a specific worker by their ID, verifying all expected fields like services, availability, ratings, and reviews are returned."
+  },
+  {
+    "id": "TC003",
+    "title": "update authenticated worker availability",
+    "description": "Test updating the availability status and schedule for an authenticated worker, including validation for overlapping or invalid times and confirmation of successful update."
+  },
+  {
+    "id": "TC004",
+    "title": "update authenticated worker profile",
+    "description": "Test editing and submitting updates to an authenticated worker's profile fields such as display name, services, hourly rate, and profile image, including validation for required fields."
+  },
+  {
+    "id": "TC005",
+    "title": "submit rating for worker",
+    "description": "Test submitting a star rating and optional comment for a worker after a completed job, including validation for required star rating and verifying the rating is reflected on the worker's profile."
+  }
+]

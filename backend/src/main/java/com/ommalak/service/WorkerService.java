@@ -27,6 +27,7 @@ public class WorkerService {
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
 
+    @Transactional(readOnly = true)
     public List<WorkerResponse> search(String profession, String availability, String search) {
         Availability avail = null;
         if (availability != null && !availability.isBlank()) {
@@ -39,6 +40,7 @@ public class WorkerService {
         ).stream().map(WorkerResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
     public WorkerResponse getById(Long userId) {
         WorkerProfile wp = workerProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ApiException("Worker not found", HttpStatus.NOT_FOUND));
@@ -69,6 +71,10 @@ public class WorkerService {
         if (req.getPortfolioPhotos() != null) {
             wp.getPortfolioPhotos().clear();
             wp.getPortfolioPhotos().addAll(req.getPortfolioPhotos());
+        }
+        if (req.getSkills() != null) {
+            wp.getSkills().clear();
+            wp.getSkills().addAll(req.getSkills());
         }
         workerProfileRepository.save(wp);
         if (req.getCity() != null) {

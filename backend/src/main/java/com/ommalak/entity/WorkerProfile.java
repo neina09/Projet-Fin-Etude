@@ -32,6 +32,12 @@ public class WorkerProfile {
     @Builder.Default
     private List<String> portfolioPhotos = new ArrayList<>();
 
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "worker_skills", joinColumns = @JoinColumn(name = "worker_profile_id"))
+    @Column(name = "skill")
+    @Builder.Default
+    private List<String> skills = new ArrayList<>();
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private Availability availability = Availability.AVAILABLE;

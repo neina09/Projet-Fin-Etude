@@ -78,8 +78,8 @@ export default function AdminDashboard() {
   const [completedTasks, setCompletedTasks] = useState([])
 
   // ── Loaders ──────────────────────────────────────────────────────────────
-  const load = useCallback(async () => {
-    setLoading(true)
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     const settle = (p) => p.then(r => ({ ok: true, data: r.data })).catch(() => ({ ok: false, data: null }))
     const [statsRes, pendingRes, usersRes, tasksRes, earningsRes] = await Promise.all([
       settle(adminApi.getStats()),
@@ -119,13 +119,29 @@ export default function AdminDashboard() {
   // ── Actions ───────────────────────────────────────────────────────────────
   const approve = async (id) => {
     setActioning(id)
-    try { await adminApi.approveWorker(id); load() } catch {}
+    const old = [...pendingWorkers]
+    setPending(prev => prev.filter(w => w.id !== id))
+    try { 
+      await adminApi.approveWorker(id)
+      await load(true) 
+    } catch { 
+      setPending(old)
+      alert('Erreur lors de l\'approbation') 
+    }
     setActioning(null)
   }
 
   const reject = async (id) => {
     setActioning(id)
-    try { await adminApi.rejectWorker(id, ''); load() } catch {}
+    const old = [...pendingWorkers]
+    setPending(prev => prev.filter(w => w.id !== id))
+    try { 
+      await adminApi.rejectWorker(id, '')
+      await load(true) 
+    } catch { 
+      setPending(old)
+      alert('Erreur lors du rejet') 
+    }
     setActioning(null)
   }
 

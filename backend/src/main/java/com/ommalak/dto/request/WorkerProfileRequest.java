@@ -11,4 +11,5 @@ public class WorkerProfileRequest {
     private String city;
     private String profilePictureUrl;
     private java.util.List<String> portfolioPhotos;
+    private java.util.List<String> skills;
 }

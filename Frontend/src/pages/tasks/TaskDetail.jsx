@@ -30,12 +30,19 @@ export default function TaskDetail() {
 
   const load = async () => {
     try {
-      const [taskRes, offersRes] = await Promise.all([
-        tasksApi.getById(id),
-        tasksApi.getOffers(id),
-      ])
+      const taskRes = await tasksApi.getById(id)
       setTask(taskRes.data)
-      setOffers(offersRes.data || [])
+      
+      // Only fetch offers if user is logged in
+      if (user) {
+        try {
+          const offersRes = await tasksApi.getOffers(id)
+          setOffers(offersRes.data || [])
+        } catch (err) {
+          // It's okay if we can't see offers (e.g. not the owner)
+          setOffers([])
+        }
+      }
     } catch {
       navigate('/tasks')
     } finally {
@@ -69,7 +76,7 @@ export default function TaskDetail() {
   if (loading) return <Layout><PageLoader /></Layout>
   if (!task) return null
 
-  const isOwner = user?.id === task.userId || user?.id === task.user?.id
+  const isOwner = user?.id === task.clientId
 
   return (
     <Layout>
@@ -112,7 +119,7 @@ export default function TaskDetail() {
                 <h2 className="font-semibold text-gray-900 dark:text-white">
                   {t('tasks.offers.title')} ({offers.length})
                 </h2>
-                {isWorker && task.status === 'OPEN' && (
+                {isWorker && (task.status === 'OPEN' || task.status === 'PENDING') && (
                   <Button size="sm" onClick={() => user ? setOfferOpen(true) : navigate('/login')}>
                     {t('tasks.offers.submit')}
                   </Button>
@@ -137,7 +144,7 @@ export default function TaskDetail() {
                             <p className="text-xs text-primary-600 dark:text-primary-400 font-semibold">{offer.price} MRU</p>
                           </div>
                         </div>
-                        {isOwner && task.status === 'OPEN' && (
+                        {isOwner && (task.status === 'OPEN' || task.status === 'PENDING') && (
                           <Button
                             size="sm"
                             onClick={() => handleAcceptOffer(offer.id)}

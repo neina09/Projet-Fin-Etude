@@ -28,6 +28,7 @@ public class TaskService {
     private final OfferRepository offerRepository;
     private final NotificationService notificationService;
 
+    @Transactional(readOnly = true)
     public List<TaskResponse> getAll(String status) {
         List<Task> tasks = (status != null && !status.isBlank())
                 ? taskRepository.findByStatusOrderByCreatedAtDesc(TaskStatus.valueOf(status))
@@ -35,11 +36,13 @@ public class TaskService {
         return tasks.stream().map(t -> TaskResponse.from(t, offerRepository.findByTask(t).size())).toList();
     }
 
+    @Transactional(readOnly = true)
     public TaskResponse getById(Long id) {
         Task task = find(id);
         return TaskResponse.from(task, offerRepository.findByTask(task).size());
     }
 
+    @Transactional(readOnly = true)
     public List<TaskResponse> getMyTasks(User user) {
         return taskRepository.findByClient(user)
                 .stream().map(t -> TaskResponse.from(t, offerRepository.findByTask(t).size())).toList();
@@ -54,7 +57,7 @@ public class TaskService {
                 .city(req.getCity())
                 .budget(req.getBudget())
                 .client(client)
-                .status(TaskStatus.PENDING)
+                .status(TaskStatus.OPEN)
                 .build();
         return TaskResponse.from(taskRepository.save(task), 0);
     }
@@ -81,7 +84,7 @@ public class TaskService {
     @Transactional
     public OfferResponse submitOffer(Long taskId, User worker, OfferRequest req) {
         Task task = find(taskId);
-        if (task.getStatus() != TaskStatus.OPEN) throw new ApiException("Task is not open for offers");
+        if (task.getStatus() != TaskStatus.OPEN && task.getStatus() != TaskStatus.PENDING) throw new ApiException("Task is not open for offers");
         if (offerRepository.existsByTaskAndWorker(task, worker)) throw new ApiException("You already submitted an offer");
 
         Offer offer = Offer.builder()
@@ -95,6 +98,7 @@ public class TaskService {
         return OfferResponse.from(offer);
     }
 
+    @Transactional(readOnly = true)
     public List<OfferResponse> getOffers(Long taskId, User user) {
         Task task = find(taskId);
         assertOwnerOrAdmin(task, user);

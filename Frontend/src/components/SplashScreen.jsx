@@ -21,7 +21,7 @@ export default function SplashScreen() {
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
             className="w-24 h-24 bg-gradient-to-br from-primary-400 to-primary-600 rounded-3xl shadow-2xl shadow-primary-500/40 flex items-center justify-center"
           >
-            <span className="text-5xl font-bold text-white select-none">ع</span>
+            <img src="logo.svg" alt="Ommalak" className="w-24 h-24" />
           </motion.div>
           {/* Ripple ring */}
           <motion.div

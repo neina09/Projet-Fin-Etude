@@ -18,6 +18,7 @@ public class WorkerResponse {
     private String bio;
     private String profilePictureUrl;
     private List<String> portfolioPhotos;
+    private List<String> skills;
     private Availability availability;
     private boolean verified;
     private double rating;
@@ -35,6 +36,7 @@ public class WorkerResponse {
                 .bio(wp.getBio())
                 .profilePictureUrl(wp.getProfilePictureUrl())
                 .portfolioPhotos(wp.getPortfolioPhotos())
+                .skills(wp.getSkills())
                 .availability(wp.getAvailability())
                 .verified(wp.isVerified())
                 .rating(wp.getRating())

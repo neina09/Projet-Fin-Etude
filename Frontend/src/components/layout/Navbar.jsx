@@ -32,15 +32,20 @@ export default function Navbar() {
     ...(isAdmin ? [{ to: '/admin', label: t('nav.admin') }] : []),
   ]
 
+  let name = "Ommalak"
+  if (lang === 'ar') {
+    name = "عمــــالك"
+  }
+
   return (
     <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
       <nav className="page-container flex items-center justify-between h-16">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary-600 dark:text-primary-400">
           <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-            <img src="/logo.svg" alt="عمــــالك" />
+            <img src="/logo.svg" alt={name} />
           </div>
-          <span className="hidden sm:block">عمــــالك</span>
+          <span className="hidden sm:block">{name}</span>
         </Link>
 
         {/* Desktop links */}

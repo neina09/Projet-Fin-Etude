@@ -57,8 +57,11 @@ public class AdminService {
         WorkerProfile wp = workerProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ApiException("Worker profile not found", HttpStatus.NOT_FOUND));
         wp.setVerified(true);
+        User user = wp.getUser();
+        user.setRole(UserRole.WORKER);
+        userRepository.save(user);
         workerProfileRepository.save(wp);
-        notificationService.send(wp.getUser(), NotificationType.APPROVAL,
+        notificationService.send(user, NotificationType.APPROVAL,
                 "تهانينا! تم قبول طلبك والتحقق من هويتك على منصة عُمَّالَكْ");
     }
 
@@ -67,11 +70,16 @@ public class AdminService {
         WorkerProfile wp = workerProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ApiException("Worker profile not found", HttpStatus.NOT_FOUND));
         User user = wp.getUser();
+        
+        // Break relationship to avoid cascade conflicts
+        user.setWorkerProfile(null);
         user.setRole(UserRole.CLIENT);
         userRepository.save(user);
+        
         workerProfileRepository.delete(wp);
+        
         notificationService.send(user, NotificationType.APPROVAL,
-                "تم رفض طلبك: " + (reason != null ? reason : "لم يستوف الشروط المطلوبة"));
+                "تم رفض طلبك: " + (reason != null && !reason.isBlank() ? reason : "لم يستوف الشروط المطلوبة"));
     }
 
     // ── Users ─────────────────────────────────────────────────────────────────

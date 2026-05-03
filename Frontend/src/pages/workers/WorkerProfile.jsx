@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { MapPin, Star, CheckCircle2, Calendar, ArrowLeft, Briefcase, Images } from 'lucide-react'
+import { MapPin, Star, CheckCircle2, Calendar, ArrowLeft, Briefcase, Images, Phone } from 'lucide-react'
 import { workersApi } from '../../api/workers'
 import { bookingsApi } from '../../api/bookings'
 import { useAuth } from '../../context/AuthContext'
@@ -135,17 +135,23 @@ export default function WorkerProfile() {
             </div>
 
             <div className="card p-5 flex flex-col gap-3 text-sm">
-              {worker.location && (
+              {(worker.city || worker.location) && (
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <MapPin size={15} className="text-primary-500" />
-                  <span>{worker.location}</span>
+                  <span>{worker.city || worker.location}</span>
                 </div>
               )}
-              {(worker.salary || worker.dailyRate) && (
+              {worker.phone && (
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                  <Phone size={15} className="text-primary-500" />
+                  <span>{worker.phone}</span>
+                </div>
+              )}
+              {(worker.salaryExpectation || worker.salary || worker.dailyRate) && (
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <Briefcase size={15} className="text-primary-500" />
                   <span className="font-medium text-gray-900 dark:text-white">
-                    {worker.salary || worker.dailyRate} MRU{t('common.perDay')}
+                    {worker.salaryExpectation || worker.salary || worker.dailyRate} MRU{t('common.perDay')}
                   </span>
                 </div>
               )}
